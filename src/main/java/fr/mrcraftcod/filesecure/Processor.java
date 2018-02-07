@@ -1,6 +1,7 @@
 package fr.mrcraftcod.filesecure;
 
 import fr.mrcraftcod.filesecure.files.Folder;
+import fr.mrcraftcod.filesecure.files.RootFolder;
 import fr.mrcraftcod.utils.base.Log;
 import org.jetbrains.annotations.NotNull;
 import java.io.File;
@@ -15,12 +16,12 @@ import java.util.function.Function;
  */
 public class Processor
 {
-	private final Folder rootFolder;
+	private final RootFolder rootFolder;
 	private static Processor INSTANCE;
 	
 	private Processor()
 	{
-		this.rootFolder = new Folder(null, "<ROOT>");
+		this.rootFolder = new RootFolder(null, "<ROOT>");
 	}
 	
 	public void process(@NotNull Path input, @NotNull Path output, Function<File, String> renameStrategy) throws IllegalStateException

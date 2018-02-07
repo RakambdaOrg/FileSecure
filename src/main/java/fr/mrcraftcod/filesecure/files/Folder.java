@@ -36,7 +36,7 @@ public class Folder
 	{
 		if(path.getParent() == null)
 		{
-			return getFolder(path.getFileName() == null ? "/" : path.getFileName().toString());
+			return getFolder(path.getRoot().toString());
 		}
 		Folder parent = getFolderAt(path.getParent());
 		return parent.getFolder(path.getFileName().toString());
@@ -63,7 +63,7 @@ public class Folder
 	
 	private Path getPath()
 	{
-		return parent == null ? Paths.get("/") : parent.getPath().resolve(getName());
+		return (parent == null || parent instanceof RootFolder) ? Paths.get(getName()) : parent.getPath().resolve(getName());
 	}
 	
 	public String getName()
@@ -74,7 +74,7 @@ public class Folder
 	@Override
 	public String toString()
 	{
-		return "Folder{" + "name='" + name + '\'' + ", parent=" + parent + ", children=" + folders.size() + '}';
+		return "Folder{" + "name='" + name + '\'' + ", parent=" + (parent == null ? "" : parent.getName()) + ", children=" + folders.size() + '}';
 	}
 	
 	public boolean isExplored()
