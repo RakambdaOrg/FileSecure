@@ -6,18 +6,16 @@
 
     <groupId>mrcraftcod</groupId>
     <artifactId>FileSecure</artifactId>
-    <version>1.10-SNAPSHOT</version>
+    <version>1.10</version>
     <properties>
         <project.build.sourceEncoding>UTF-8</project.build.sourceEncoding>
         <java.version>9</java.version>
-        <copy.build.path>${user.home}/Dropbox/Documents/JARs/</copy.build.path>
         <maven.compiler.source>1.6</maven.compiler.source>
         <maven.compiler.target>1.6</maven.compiler.target>
     </properties>
     <packaging>jar</packaging>
 
     <modules>
-
     </modules>
 
     <build>
