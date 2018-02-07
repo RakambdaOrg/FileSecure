@@ -2,6 +2,7 @@ package fr.mrcraftcod.filesecure;
 
 import fr.mrcraftcod.filesecure.files.FolderOld;
 import fr.mrcraftcod.filesecure.files.FolderDifference;
+import fr.mrcraftcod.filesecure.files.MissingFolderException;
 import fr.mrcraftcod.nameascreated.NameAsCreated;
 import fr.mrcraftcod.nameascreated.NewFile;
 import fr.mrcraftcod.utils.base.Log;
@@ -54,7 +55,7 @@ public class Main
 	 * @param args The arguments of the program:
 	 *             0: A path to the config file, to the json format.
 	 */
-	public static void main(String[] args) throws IOException
+	public static void main(String[] args)
 	{
 		Log.setAppName("FileSecure");
 		
@@ -63,25 +64,33 @@ public class Main
 			Path path = Paths.get(args[0]);
 			if(path.toFile().exists())
 			{
-				JSONObject json = new JSONObject(Files.readAllLines(path).stream().collect(Collectors.joining("\n")));
-				if(json.has("mappings"))
+				try
 				{
-					JSONArray mappings = json.getJSONArray("mappings");
-					for(int i = 0; i < mappings.length(); i++)
+					JSONObject json = new JSONObject(Files.readAllLines(path).stream().collect(Collectors.joining("\n")));
+					if(json.has("mappings"))
 					{
-						JSONObject map = mappings.getJSONObject(i);
-						try
+						JSONArray mappings = json.getJSONArray("mappings");
+						for(int i = 0; i < mappings.length(); i++)
 						{
-							Processor.getInstance().process(Paths.get(map.getString("input")), Paths.get(map.getString("output")), defaultRenameStrategy);
-						}
-						catch(IllegalStateException ignored)
-						{
+							JSONObject map = mappings.getJSONObject(i);
+							try
+							{
+								Processor.getInstance().process(Paths.get(map.getString("input")), Paths.get(map.getString("output")), defaultRenameStrategy);
+							}
+							catch(MissingFolderException e)
+							{
+								Log.warning("One of the folders doesn't exists", e);
+							}
 						}
 					}
+					else
+					{
+						Log.error("The config file doesn't contains the mappings key");
+					}
 				}
-				else
+				catch(IOException e)
 				{
-					Log.error("The config file doesn't contains the mappings key");
+					Log.warning("Couldn't read the configuration file", e);
 				}
 			}
 			else
@@ -93,11 +102,9 @@ public class Main
 		{
 			Log.error("No config file given");
 		}
-		
-		// inputs = new File[]{new File("D:\\Documents\\Dropbox\\Tha\\Save")};
-		// outputFolder = new FolderOld(new File("G:\\Tha"));
 	}
 	
+	@Deprecated
 	private static void processFolders(FolderOld sourceFolder, FolderOld outputFolder)
 	{
 		if(!outputFolder.getRoot().exists())
@@ -111,6 +118,7 @@ public class Main
 		copyFiles(filesDiff, sourceFolder, outputFolder);
 	}
 	
+	@Deprecated
 	private static void copyFiles(FolderDifference filesDiff, FolderOld sourceFolder, FolderOld outputFolder)
 	{
 		for(String folder : filesDiff.keySet())
