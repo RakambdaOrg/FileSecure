@@ -1,7 +1,5 @@
 package fr.mrcraftcod.filesecure;
 
-import fr.mrcraftcod.filesecure.files.FolderOld;
-import fr.mrcraftcod.filesecure.files.FolderDifference;
 import fr.mrcraftcod.filesecure.files.MissingFolderException;
 import fr.mrcraftcod.nameascreated.NameAsCreated;
 import fr.mrcraftcod.nameascreated.NewFile;
@@ -13,7 +11,6 @@ import java.io.IOException;
 import java.nio.file.Files;
 import java.nio.file.Path;
 import java.nio.file.Paths;
-import java.nio.file.StandardCopyOption;
 import java.util.function.Function;
 import java.util.stream.Collectors;
 
@@ -33,10 +30,10 @@ public class Main
 	 * <p>
 	 * See https://github.com/MrCraftCod/NameAsCreated
 	 */
-	private static Function<File, String> defaultRenameStrategy = f -> {
+	private static final Function<File, String> defaultRenameStrategy = f -> {
 		try
 		{
-			NewFile newFile = NameAsCreated.buildName(f);
+			NewFile newFile = NameAsCreated.buildName(f, false);
 			String newName = newFile.getName(f);
 			if(!newName.equals(f.getName()))
 				if(f.renameTo(new File(f.getParentFile(), newName)))
@@ -75,7 +72,7 @@ public class Main
 							JSONObject map = mappings.getJSONObject(i);
 							try
 							{
-								Processor.getInstance().process(Paths.get(map.getString("input")), Paths.get(map.getString("output")), defaultRenameStrategy);
+								Processor.getInstance().process(Paths.get(map.getString("input")), Paths.get(map.getString("output")), defaultRenameStrategy, map.has("strategy") ? Processor.BackupStrategy.getByName(map.getString("strategy")) : null);
 							}
 							catch(MissingFolderException e)
 							{
@@ -101,44 +98,6 @@ public class Main
 		else
 		{
 			Log.error("No config file given");
-		}
-	}
-	
-	@Deprecated
-	private static void processFolders(FolderOld sourceFolder, FolderOld outputFolder)
-	{
-		if(!outputFolder.getRoot().exists())
-		{
-			Log.error("OUTPUT DIR DO NOT EXISTS");
-			return;
-		}
-		FolderDifference filesDiff = outputFolder.findMissing(sourceFolder);
-		Log.info("Differences between " + sourceFolder.getRoot() + " & " + outputFolder.getRoot() + ":\n" + filesDiff);
-		
-		copyFiles(filesDiff, sourceFolder, outputFolder);
-	}
-	
-	@Deprecated
-	private static void copyFiles(FolderDifference filesDiff, FolderOld sourceFolder, FolderOld outputFolder)
-	{
-		for(String folder : filesDiff.keySet())
-		{
-			Log.info("Copying folder " + folder);
-			Path folderBase = Paths.get(sourceFolder.getRoot().getAbsolutePath(), folder);
-			Path endOut = Paths.get(outputFolder.getRoot().getAbsolutePath(), folder);
-			endOut.toFile().mkdirs();
-			for(String file : filesDiff.get(folder))
-			{
-				Log.info("\tCopying file " + file);
-				try
-				{
-					Files.move(folderBase.resolve(file).toAbsolutePath(), endOut.resolve(file).toAbsolutePath(), StandardCopyOption.REPLACE_EXISTING);
-				}
-				catch(IOException e)
-				{
-					Log.warning("", e);
-				}
-			}
 		}
 	}
 }

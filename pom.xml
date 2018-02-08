@@ -109,7 +109,7 @@
         <dependency>
             <groupId>mrcraftcod</groupId>
             <artifactId>NameAsCreated</artifactId>
-            <version>1.33.2</version>
+            <version>1.34</version>
         </dependency>
         <dependency>
             <groupId>org.json</groupId>

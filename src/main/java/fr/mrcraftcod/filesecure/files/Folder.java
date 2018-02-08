@@ -4,10 +4,8 @@ import org.jetbrains.annotations.NotNull;
 import java.io.File;
 import java.nio.file.Path;
 import java.nio.file.Paths;
-import java.util.ArrayList;
-import java.util.Arrays;
-import java.util.HashMap;
-import java.util.List;
+import java.util.*;
+import java.util.function.Function;
 import java.util.stream.Collectors;
 
 /**
@@ -32,7 +30,8 @@ public class Folder
 	 * @param parent The parent folder.
 	 * @param name   The name of the folder.
 	 */
-	protected Folder(Folder parent, String name)
+	@SuppressWarnings("WeakerAccess")
+	public Folder(Folder parent, String name)
 	{
 		this.name = name;
 		this.parent = parent;
@@ -65,7 +64,8 @@ public class Folder
 	 *
 	 * @return The Folder.
 	 */
-	private Folder getFolder(@NotNull String name)
+	@SuppressWarnings("WeakerAccess")
+	public Folder getFolder(@NotNull String name)
 	{
 		if(!folders.containsKey(name))
 			folders.put(name, new Folder(this, name));
@@ -77,7 +77,7 @@ public class Folder
 	 */
 	public void explore()
 	{
-		if(!isExplored())
+		if(!explored)
 		{
 			File[] filesArray = getPath().toFile().listFiles();
 			if(filesArray != null)
@@ -92,36 +92,64 @@ public class Folder
 	}
 	
 	/**
+	 * Clears the file list of this folder and its children.
+	 */
+	@SuppressWarnings("unused")
+	private void resetFiles()
+	{
+		explored = false;
+		files.clear();
+		folders.values().forEach(Folder::resetFiles);
+	}
+	
+	/**
 	 * Get the missing files from the given folder.
 	 *
-	 * @param folder The folder to get missing files from.
+	 * @param folder         The folder to get missing files from.
+	 * @param renameStrategy The rename strategy to use when we'll apply out backup strategy later.
 	 *
 	 * @return The difference.
 	 */
-	public FolderDifference getMissingWith(@NotNull Folder folder)
+	public FolderDifference getMissingWith(@NotNull Folder folder, Function<File, String> renameStrategy)
 	{
-		//TODO: Compute difference
-		return null;
+		return new FolderDifference(this, folder, renameStrategy);
 	}
 	
 	/**
-	 * Get the path of this folder.
+	 * Tells if this folders contains a file.
 	 *
-	 * @return The folder path.
+	 * @param name The file to check.
+	 *
+	 * @return True if contained, false otherwise.
 	 */
-	private Path getPath()
+	@SuppressWarnings("WeakerAccess")
+	public boolean containsFile(String name)
 	{
-		return (parent == null || parent instanceof RootFolder) ? Paths.get(getName()) : parent.getPath().resolve(getName());
+		return getFiles().contains(name);
 	}
 	
 	/**
-	 * Get the name of the folder.
+	 * Get all the files of this folder.
 	 *
-	 * @return The folder's name.
+	 * @return The files.
 	 */
-	public String getName()
+	@SuppressWarnings("WeakerAccess")
+	public ArrayList<String> getFiles()
 	{
-		return name;
+		return files;
+	}
+	
+	/**
+	 * Tells if this folders contains a folder.
+	 *
+	 * @param name The folder to check.
+	 *
+	 * @return True if contained, false otherwise.
+	 */
+	@SuppressWarnings("unused")
+	public boolean containsFolder(String name)
+	{
+		return folders.containsKey(name);
 	}
 	
 	@Override
@@ -131,12 +159,35 @@ public class Folder
 	}
 	
 	/**
-	 * Tells if the folder has been explored.
+	 * Get the name of the folder.
 	 *
-	 * @return The explored status of the folder.
+	 * @return The folder's name.
 	 */
-	public boolean isExplored()
+	@SuppressWarnings("WeakerAccess")
+	public String getName()
 	{
-		return explored;
+		return name;
+	}
+	
+	/**
+	 * Get all the folders of this folder.
+	 *
+	 * @return The files.
+	 */
+	@SuppressWarnings("WeakerAccess")
+	public Collection<Folder> getFolders()
+	{
+		return folders.values();
+	}
+	
+	/**
+	 * Get the path of this folder.
+	 *
+	 * @return The folder path.
+	 */
+	@SuppressWarnings("WeakerAccess")
+	public Path getPath()
+	{
+		return (parent == null || parent instanceof RootFolder) ? Paths.get(getName()) : parent.getPath().resolve(getName());
 	}
 }

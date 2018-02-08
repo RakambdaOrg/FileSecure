@@ -1,8 +1,10 @@
 package fr.mrcraftcod.filesecure;
 
 import fr.mrcraftcod.filesecure.files.Folder;
+import fr.mrcraftcod.filesecure.files.FolderDifference;
 import fr.mrcraftcod.filesecure.files.MissingFolderException;
 import fr.mrcraftcod.filesecure.files.RootFolder;
+import fr.mrcraftcod.utils.base.Log;
 import org.jetbrains.annotations.NotNull;
 import java.io.File;
 import java.nio.file.Path;
@@ -21,6 +23,45 @@ public class Processor
 {
 	private final RootFolder rootFolder;
 	private static Processor INSTANCE;
+	/**
+	 * The strategies available to do the backup.
+	 */
+	public enum BackupStrategy
+	{
+		COPY, MOVE;
+		
+		/**
+		 * Get the strategy by its name.
+		 *
+		 * @param name The name to search for.
+		 *
+		 * @return The strategy, or the default strategy if no strategies were found.
+		 */
+		public static BackupStrategy getByName(String name)
+		{
+			switch(name.toLowerCase())
+			{
+				case "copy":
+					return COPY;
+				case "move":
+					return MOVE;
+				default:
+					return getDefault();
+			}
+		}
+		
+		/**
+		 * @return The default strategy to use.
+		 */
+		@SuppressWarnings({
+				"WeakerAccess",
+				"SameReturnValue"
+		})
+		public static BackupStrategy getDefault()
+		{
+			return MOVE;
+		}
+	}
 	
 	/**
 	 * Constructor.
@@ -55,27 +96,31 @@ public class Processor
 	 * @param input          The folder to backup.
 	 * @param output         The folder where to backup.
 	 * @param renameStrategy The strategy used to rename files when executing the backup. If null the original name is kept.
+	 * @param backupStrategy The backup strategy to use (copy/move/...). If null BackupStrategy.getDefault() will be used.
 	 *
 	 * @throws MissingFolderException If one of the folders doesn't exists.
 	 */
-	public void process(@NotNull Path input, @NotNull Path output, Function<File, String> renameStrategy) throws MissingFolderException
+	@SuppressWarnings("WeakerAccess")
+	public void process(@NotNull Path input, @NotNull Path output, Function<File, String> renameStrategy, BackupStrategy backupStrategy) throws MissingFolderException
 	{
-		System.out.printf("Processing %s ==> %s\n", input, output);
+		Log.info(String.format("Processing %s ==> %s", input, output));
 		if(renameStrategy == null)
 			renameStrategy = File::getName;
 		if(!input.toFile().exists())
 			throw new MissingFolderException(input);
 		if(!output.toFile().exists())
 			throw new MissingFolderException(output);
+		
+		Log.info("Building input folder...");
 		Folder inputFolder = rootFolder.getFolderAt(input);
 		inputFolder.explore();
+		Log.info("Building output folder...");
 		Folder outputFolder = rootFolder.getFolderAt(output);
 		outputFolder.explore();
 		
-		//TODO: Get differences & move files
-		outputFolder.getMissingWith(inputFolder);
-		
-		System.out.println();
+		Log.info("Building differences...");
+		FolderDifference fd = outputFolder.getMissingWith(inputFolder, renameStrategy);
+		fd.applyStrategy(backupStrategy == null ? BackupStrategy.getDefault() : backupStrategy);
 	}
 	
 	/**
@@ -83,6 +128,7 @@ public class Processor
 	 *
 	 * @return The instance.
 	 */
+	@SuppressWarnings("WeakerAccess")
 	public static Processor getInstance()
 	{
 		if(INSTANCE == null)
