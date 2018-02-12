@@ -75,7 +75,7 @@ public class Main
 							JSONObject map = mappings.getJSONObject(i);
 							try
 							{
-								Processor.getInstance().process(Paths.get(map.getString("input")), Paths.get(map.getString("output")), defaultRenameStrategy, map.has("strategy") ? Processor.BackupStrategy.getByName(map.getString("strategy")) : null, map.has("filters") ? Arrays.stream(map.getString("filters").split(",")).map(f -> Pattern.compile(f)).collect(Collectors.toList()) : Collections.emptyList());
+								Processor.getInstance().process(Paths.get(map.getString("input")), Paths.get(map.getString("output")), defaultRenameStrategy, map.has("strategy") ? Processor.BackupStrategy.getByName(map.getString("strategy")) : null, map.has("filters") ? Arrays.stream(map.getString("filters").split(",")).map(Pattern::compile).collect(Collectors.toList()) : Collections.emptyList());
 							}
 							catch(MissingFolderException e)
 							{
