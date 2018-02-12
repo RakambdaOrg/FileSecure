@@ -8,7 +8,9 @@ import fr.mrcraftcod.utils.base.Log;
 import org.jetbrains.annotations.NotNull;
 import java.io.File;
 import java.nio.file.Path;
+import java.util.List;
 import java.util.function.Function;
+import java.util.regex.Pattern;
 
 /**
  * Process a pair of folder, one being the source of the backup, and the other the destination.
@@ -23,6 +25,7 @@ public class Processor
 {
 	private final RootFolder rootFolder;
 	private static Processor INSTANCE;
+	
 	/**
 	 * The strategies available to do the backup.
 	 */
@@ -99,11 +102,12 @@ public class Processor
 	 * @param output         The folder where to backup.
 	 * @param renameStrategy The strategy used to rename files when executing the backup. If null the original name is kept.
 	 * @param backupStrategy The backup strategy to use (copy/move/...). If null BackupStrategy.getDefault() will be used.
+	 * @param filters        The filters of the files to keep. If empty, all files will be kept.
 	 *
 	 * @throws MissingFolderException If one of the folders doesn't exists.
 	 */
 	@SuppressWarnings("WeakerAccess")
-	public void process(@NotNull Path input, @NotNull Path output, Function<File, String> renameStrategy, BackupStrategy backupStrategy) throws MissingFolderException
+	public void process(@NotNull Path input, @NotNull Path output, Function<File, String> renameStrategy, BackupStrategy backupStrategy, List<Pattern> filters) throws MissingFolderException
 	{
 		backupStrategy = backupStrategy == null ? BackupStrategy.getDefault() : backupStrategy;
 		Log.info(String.format("Processing (%s) %s ==> %s", backupStrategy.name(), input, output));
@@ -123,7 +127,7 @@ public class Processor
 		
 		Log.info("Building differences...");
 		FolderDifference fd = outputFolder.getMissingWith(inputFolder, renameStrategy);
-		fd.applyStrategy(backupStrategy);
+		fd.applyStrategy(backupStrategy, filters);
 	}
 	
 	/**

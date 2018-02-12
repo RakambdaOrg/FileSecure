@@ -74,4 +74,9 @@ public class Difference
 			Log.warning("", e);
 		}
 	}
+	
+	public String getBaseFileName()
+	{
+		return file.getKey();
+	}
 }
