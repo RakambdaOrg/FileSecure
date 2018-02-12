@@ -28,7 +28,7 @@ public class Processor
 	 */
 	public enum BackupStrategy
 	{
-		COPY, MOVE;
+		COPY, MOVE, NONE;
 		
 		/**
 		 * Get the strategy by its name.
@@ -45,6 +45,8 @@ public class Processor
 					return COPY;
 				case "move":
 					return MOVE;
+				case "none":
+					return NONE;
 				default:
 					return getDefault();
 			}
@@ -103,7 +105,8 @@ public class Processor
 	@SuppressWarnings("WeakerAccess")
 	public void process(@NotNull Path input, @NotNull Path output, Function<File, String> renameStrategy, BackupStrategy backupStrategy) throws MissingFolderException
 	{
-		Log.info(String.format("Processing %s ==> %s", input, output));
+		backupStrategy = backupStrategy == null ? BackupStrategy.getDefault() : backupStrategy;
+		Log.info(String.format("Processing (%s) %s ==> %s", backupStrategy.name(), input, output));
 		if(renameStrategy == null)
 			renameStrategy = File::getName;
 		if(!input.toFile().exists())
@@ -120,7 +123,7 @@ public class Processor
 		
 		Log.info("Building differences...");
 		FolderDifference fd = outputFolder.getMissingWith(inputFolder, renameStrategy);
-		fd.applyStrategy(backupStrategy == null ? BackupStrategy.getDefault() : backupStrategy);
+		fd.applyStrategy(backupStrategy);
 	}
 	
 	/**

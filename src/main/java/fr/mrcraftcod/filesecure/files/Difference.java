@@ -30,7 +30,7 @@ public class Difference
 	 * @param base   The source folder.
 	 * @param file   A pair describing the file name in the base (key) and un the target (value).
 	 */
-	public Difference(Folder target, Folder base, Pair<String, String> file)
+	public Difference(Folder base, Folder target, Pair<String, String> file)
 	{
 		this.target = target;
 		this.base = base;
@@ -52,8 +52,6 @@ public class Difference
 		Log.info(backupStrategy.name() + " file " + basePath + " to " + targetPath);
 		try
 		{
-			if(true)
-				return;
 			switch(backupStrategy)
 			{
 				case MOVE:

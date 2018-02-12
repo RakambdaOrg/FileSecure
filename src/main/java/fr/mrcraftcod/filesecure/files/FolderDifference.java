@@ -32,7 +32,7 @@ public class FolderDifference
 	@SuppressWarnings("WeakerAccess")
 	public FolderDifference(Folder target, Folder base, Function<File, String> renameStrategy)
 	{
-		differences = processInputs(target, base, renameStrategy);
+		differences = processInputs(base, target, renameStrategy);
 	}
 	
 	/**
@@ -44,10 +44,10 @@ public class FolderDifference
 	 *
 	 * @return The list of differences.
 	 */
-	private List<Difference> processInputs(Folder target, Folder base, Function<File, String> renameStrategy)
+	private List<Difference> processInputs(Folder base, Folder target, Function<File, String> renameStrategy)
 	{
 		Path basePath = base.getPath();
-		return Stream.concat(base.getFiles().stream().map(f -> new Pair<>(f, renameStrategy.apply(basePath.resolve(f).toFile()))).filter(pair -> !target.containsFile(pair.getValue())).map(pair -> new Difference(target, base, pair)), base.getFolders().stream().flatMap(folder -> processInputs(folder, target.getFolder(folder.getName()), renameStrategy).stream())).collect(Collectors.toList());
+		return Stream.concat(base.getFiles().stream().map(f -> new Pair<>(f, renameStrategy.apply(basePath.resolve(f).toFile()))).filter(pair -> !target.containsFile(pair.getValue())).map(pair -> new Difference(base, target, pair)), base.getFolders().stream().flatMap(folder -> processInputs(folder, target.getFolder(folder.getName()), renameStrategy).stream())).collect(Collectors.toList());
 	}
 	
 	/**
