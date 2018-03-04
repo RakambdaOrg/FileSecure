@@ -6,6 +6,7 @@ import java.io.File;
 import java.nio.file.Path;
 import java.util.List;
 import java.util.function.Function;
+import java.util.regex.Pattern;
 import java.util.stream.Collectors;
 import java.util.stream.Stream;
 
@@ -54,9 +55,10 @@ public class FolderDifference
 	 * Apply the given strategy (copy/move/...) to all differences.
 	 *
 	 * @param backupStrategy The strategy to apply.
+	 * @param filters        The filters of the files to keep. If empty, all files will be kept.
 	 */
-	public void applyStrategy(Processor.BackupStrategy backupStrategy)
+	public void applyStrategy(Processor.BackupStrategy backupStrategy, List<Pattern> filters)
 	{
-		differences.forEach(difference -> difference.applyStrategy(backupStrategy));
+		differences.stream().filter(difference -> filters.stream().map(f -> f.matcher(difference.getBaseFileName()).matches()).findAny().orElse(true)).forEach(difference -> difference.applyStrategy(backupStrategy));
 	}
 }
