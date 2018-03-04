@@ -6,7 +6,7 @@
 
     <groupId>mrcraftcod</groupId>
     <artifactId>FileSecure</artifactId>
-    <version>1.10</version>
+    <version>1.11</version>
     <properties>
         <project.build.sourceEncoding>UTF-8</project.build.sourceEncoding>
         <java.version>9</java.version>
@@ -108,8 +108,8 @@
         </dependency>
         <dependency>
             <groupId>mrcraftcod</groupId>
-            <artifactId>NameAsCreated</artifactId>
-            <version>1.34</version>
+            <artifactId>NAS</artifactId>
+            <version>2.0</version>
         </dependency>
         <dependency>
             <groupId>org.json</groupId>
