@@ -55,14 +55,14 @@ public class Difference
 			switch(backupStrategy)
 			{
 				case MOVE:
-					if(Files.move(basePath, targetPath, StandardCopyOption.REPLACE_EXISTING).toFile().exists())
+					if(!targetPath.toFile().exists() && Files.move(basePath, targetPath, StandardCopyOption.REPLACE_EXISTING).toFile().exists())
 					{
 						base.getFiles().remove(basePath.getFileName().toString());
 						target.getFiles().add(targetPath.getFileName().toString());
 					}
 					break;
 				case COPY:
-					if(Files.copy(basePath, targetPath, StandardCopyOption.REPLACE_EXISTING).toFile().exists())
+					if(!targetPath.toFile().exists() && Files.copy(basePath, targetPath, StandardCopyOption.REPLACE_EXISTING).toFile().exists())
 					{
 						target.getFiles().add(targetPath.getFileName().toString());
 					}

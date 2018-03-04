@@ -2,7 +2,6 @@ package fr.mrcraftcod.filesecure;
 
 import fr.mrcraftcod.filesecure.files.MissingFolderException;
 import fr.mrcraftcod.nameascreated.NameAsCreated;
-import fr.mrcraftcod.nameascreated.NewFile;
 import fr.mrcraftcod.utils.base.Log;
 import org.json.JSONArray;
 import org.json.JSONObject;
@@ -33,11 +32,7 @@ public class Main
 	private static final Function<File, String> defaultRenameStrategy = f -> {
 		try
 		{
-			NewFile newFile = NameAsCreated.buildName(f, false);
-			String newName = newFile.getName(f);
-			if(!newName.equals(f.getName()))
-				if(f.renameTo(new File(f.getParentFile(), newName)))
-					return newName;
+			return NameAsCreated.buildName(f, false).getName(f);
 		}
 		catch(IOException e)
 		{
