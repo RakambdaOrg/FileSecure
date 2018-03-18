@@ -83,7 +83,7 @@ public class Folder
 			if(filesArray != null)
 			{
 				List<File> files = Arrays.asList(filesArray);
-				this.files.addAll(files.stream().filter(File::isFile).map(File::getName).distinct().collect(Collectors.toList()));
+				this.files.addAll(files.stream().filter(File::isFile).map(File::getName).distinct().filter(n -> !n.equals(".dropbox")).collect(Collectors.toList()));
 				files.stream().filter(File::isDirectory).forEach(f -> folders.put(f.getName(), new Folder(this, f.getName())));
 			}
 			explored = true;
