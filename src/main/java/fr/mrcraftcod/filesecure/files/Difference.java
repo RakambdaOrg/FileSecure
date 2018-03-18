@@ -48,13 +48,13 @@ public class Difference
 		Path basePath = base.getPath().resolve(file.getKey());
 		Path targetPath = target.getPath().resolve(file.getValue());
 		//noinspection ResultOfMethodCallIgnored
-		targetPath.getParent().toFile().mkdirs();
 		Log.info(backupStrategy.name() + " file " + basePath + " to " + targetPath);
 		try
 		{
 			switch(backupStrategy)
 			{
 				case MOVE:
+					targetPath.getParent().toFile().mkdirs();
 					if(!targetPath.toFile().exists() && Files.move(basePath, targetPath, StandardCopyOption.REPLACE_EXISTING).toFile().exists())
 					{
 						base.getFiles().remove(basePath.getFileName().toString());
@@ -62,6 +62,7 @@ public class Difference
 					}
 					break;
 				case COPY:
+					targetPath.getParent().toFile().mkdirs();
 					if(!targetPath.toFile().exists() && Files.copy(basePath, targetPath, StandardCopyOption.REPLACE_EXISTING).toFile().exists())
 					{
 						target.getFiles().add(targetPath.getFileName().toString());
