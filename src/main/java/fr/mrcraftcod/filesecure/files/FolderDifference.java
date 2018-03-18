@@ -56,9 +56,10 @@ public class FolderDifference
 	 *
 	 * @param backupStrategy The strategy to apply.
 	 * @param filters        The filters of the files to keep. If empty, all files will be kept.
+	 * @param excludes       The filters of the files not to keep. If empty, all files will be kept.
 	 */
-	public void applyStrategy(Processor.BackupStrategy backupStrategy, List<Pattern> filters)
+	public void applyStrategy(Processor.BackupStrategy backupStrategy, List<Pattern> filters, List<Pattern> excludes)
 	{
-		differences.stream().filter(difference -> filters.stream().map(f -> f.matcher(difference.getBaseFileName()).matches()).findAny().orElse(true)).forEach(difference -> difference.applyStrategy(backupStrategy));
+		differences.stream().filter(difference -> !excludes.stream().map(f -> f.matcher(difference.getBaseFileName()).matches()).findAny().orElse(false)).filter(difference -> filters.stream().map(f -> f.matcher(difference.getBaseFileName()).matches()).findAny().orElse(true)).forEach(difference -> difference.applyStrategy(backupStrategy));
 	}
 }
