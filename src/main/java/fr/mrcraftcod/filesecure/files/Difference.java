@@ -2,7 +2,6 @@ package fr.mrcraftcod.filesecure.files;
 
 import fr.mrcraftcod.filesecure.Processor;
 import fr.mrcraftcod.utils.base.Log;
-import javafx.util.Pair;
 import java.io.IOException;
 import java.nio.file.Files;
 import java.nio.file.Path;
@@ -60,6 +59,8 @@ public class Difference
 						base.getFiles().remove(basePath.getFileName().toString());
 						target.getFiles().add(targetPath.getFileName().toString());
 					}
+					else
+						Log.info("File " + basePath + " not " + backupStrategy.name());
 					break;
 				case COPY:
 					targetPath.getParent().toFile().mkdirs();
@@ -67,6 +68,8 @@ public class Difference
 					{
 						target.getFiles().add(targetPath.getFileName().toString());
 					}
+					else
+						Log.info("File " + basePath + " not " + backupStrategy.name());
 					break;
 			}
 		}

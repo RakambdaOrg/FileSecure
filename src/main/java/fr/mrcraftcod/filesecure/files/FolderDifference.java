@@ -2,7 +2,6 @@ package fr.mrcraftcod.filesecure.files;
 
 import fr.mrcraftcod.filesecure.Processor;
 import fr.mrcraftcod.utils.base.Log;
-import javafx.util.Pair;
 import java.io.File;
 import java.nio.file.Path;
 import java.util.List;
@@ -50,12 +49,16 @@ public class FolderDifference
 	{
 		Path basePath = base.getPath();
 		return Stream.concat(base.getFiles().stream().map(f -> new Pair<>(f, renameStrategy.apply(basePath.resolve(f).toFile()))).filter(pair -> {
-			boolean result = target.containsFile(pair.getValue());
-			if(result)
+			int i = 1;
+			while(target.containsFile(pair.getValue()))
 			{
-				Log.info("File '" + pair.getKey() + "' in '" + base.getPath() + "' already exists in '" + target.getPath() + "' as '" + pair.getValue() + "'");
+				String name = pair.getValue();
+				int ext = name.lastIndexOf(".");
+				String newName = name.substring(0, ext) + " (" + i++ + ")" + name.substring(ext);
+				Log.info("File '" + pair.getKey() + "' in '" + base.getPath() + "' already exists in '" + target.getPath() + "' as '" + pair.getValue() + "', trying with suffix " + i);
+				pair.setValue(newName);
 			}
-			return !result;
+			return true;
 		}).map(pair -> new Difference(base, target, pair)), base.getFolders().stream().flatMap(folder -> processInputs(folder, target.getFolder(folder.getName()), renameStrategy).stream())).collect(Collectors.toList());
 	}
 	
