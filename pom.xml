@@ -6,7 +6,7 @@
 
     <groupId>mrcraftcod</groupId>
     <artifactId>FileSecure</artifactId>
-    <version>2.9</version>
+    <version>3.0</version>
 
     <properties>
         <project.build.sourceEncoding>UTF-8</project.build.sourceEncoding>
@@ -106,14 +106,14 @@
     </repositories>
     <dependencies>
         <dependency>
-            <groupId>mrcraftcod</groupId>
+            <groupId>fr.mrcraftcod</groupId>
             <artifactId>utils.base</artifactId>
             <version>2.0.1</version>
         </dependency>
         <dependency>
-            <groupId>mrcraftcod</groupId>
+            <groupId>fr.mrcraftcod</groupId>
             <artifactId>NAS</artifactId>
-            <version>2.8</version>
+            <version>3.0</version>
         </dependency>
         <dependency>
             <groupId>org.json</groupId>
