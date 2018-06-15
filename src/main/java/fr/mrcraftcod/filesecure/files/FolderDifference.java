@@ -49,13 +49,12 @@ public class FolderDifference
 	{
 		Path basePath = base.getPath();
 		return Stream.concat(base.getFiles().stream().map(f -> new Pair<>(f, renameStrategy.apply(basePath.resolve(f).toFile()))).filter(pair -> {
-			int i = 1;
+			int i = 0;
 			String name = pair.getValue();
-			while(target.containsFile(name))
-			{
-				name = pair.getValue();
 				int ext = name.lastIndexOf(".");
-				String newName = name.substring(0, ext) + " (" + i++ + ")" + name.substring(ext);
+			while(target.containsFile(pair.getValue()))
+			{
+				String newName = name.substring(0, ext) + " (" + ++i + ")" + name.substring(ext);
 				Log.info("File '" + pair.getKey() + "' in '" + base.getPath() + "' already exists in '" + target.getPath() + "' as '" + name + "', trying with suffix " + i);
 				pair.setValue(newName);
 			}
