@@ -6,7 +6,7 @@
 
     <groupId>mrcraftcod</groupId>
     <artifactId>FileSecure</artifactId>
-    <version>3.0</version>
+    <version>5.2</version>
 
     <properties>
         <project.build.sourceEncoding>UTF-8</project.build.sourceEncoding>
@@ -124,7 +124,7 @@
         <dependency>
             <groupId>fr.mrcraftcod</groupId>
             <artifactId>NAS</artifactId>
-            <version>3.0</version>
+            <version>5.0</version>
         </dependency>
         <dependency>
             <groupId>org.json</groupId>

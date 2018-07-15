@@ -49,15 +49,14 @@ public class FolderDifference
 	{
 		Path basePath = base.getPath();
 		return Stream.concat(base.getFiles().stream().map(f -> new Pair<>(f, renameStrategy.apply(basePath.resolve(f).toFile()))).filter(pair -> {
-			int i = 1;
+			int i = 0;
+			String name = pair.getValue();
+				int ext = name.lastIndexOf(".");
 			while(target.containsFile(pair.getValue()))
 			{
-				String name = pair.getValue();
-				int ext = name.lastIndexOf(".");
-				String newName = name.substring(0, ext) + " (" + i + ")" + name.substring(ext);
-				Log.info("File '" + pair.getKey() + "' in '" + base.getPath() + "' already exists in '" + target.getPath() + "' as '" + pair.getValue() + "', trying with suffix " + i);
+				String newName = name.substring(0, ext) + " (" + ++i + ")" + name.substring(ext);
+				Log.info("File '" + pair.getKey() + "' in '" + base.getPath() + "' already exists in '" + target.getPath() + "' as '" + name + "', trying with suffix " + i);
 				pair.setValue(newName);
-				i++;
 			}
 			return true;
 		}).map(pair -> new Difference(base, target, pair)), base.getFolders().stream().flatMap(folder -> processInputs(folder, target.getFolder(folder.getName()), renameStrategy).stream())).collect(Collectors.toList());
