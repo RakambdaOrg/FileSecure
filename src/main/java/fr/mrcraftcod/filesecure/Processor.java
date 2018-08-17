@@ -1,7 +1,6 @@
 package fr.mrcraftcod.filesecure;
 
-import fr.mrcraftcod.filesecure.files.MissingFolderException;
-import fr.mrcraftcod.filesecure.files.RootFolder;
+import fr.mrcraftcod.filesecure.files.FolderDifference;
 import org.jetbrains.annotations.NotNull;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
@@ -22,7 +21,6 @@ import java.util.regex.Pattern;
  */
 public class Processor{
 	private static final Logger LOGGER = LoggerFactory.getLogger(Processor.class);
-	private final RootFolder rootFolder;
 	private static Processor INSTANCE;
 	
 	/**
@@ -64,7 +62,6 @@ public class Processor{
 	 * Constructor.
 	 */
 	private Processor(){
-		this.rootFolder = new RootFolder();
 	}
 	
 	/**
@@ -111,15 +108,8 @@ public class Processor{
 			throw new MissingFolderException(output);
 		}
 		
-		LOGGER.info("Building input folder...");
-		final var inputFolder = rootFolder.getFolderAt(input);
-		inputFolder.explore();
-		LOGGER.info("Building output folder...");
-		final var outputFolder = rootFolder.getFolderAt(output);
-		outputFolder.explore();
-		
 		LOGGER.info("Building differences...");
-		final var fd = outputFolder.getMissingWith(inputFolder, renameStrategy);
+		final var fd = new FolderDifference(output, input, renameStrategy);
 		fd.applyStrategy(backupStrategy, filters, excludes);
 	}
 	

@@ -1,4 +1,4 @@
-package fr.mrcraftcod.filesecure.files;
+package fr.mrcraftcod.filesecure;
 
 import java.nio.file.Path;
 
@@ -19,7 +19,7 @@ public class MissingFolderException extends IllegalStateException
 	 *
 	 * @param path The path of the folder that doesn't exists.
 	 */
-	public MissingFolderException(final Path path)
+	MissingFolderException(final Path path)
 	{
 		super("The input folder " + path + " doesn't exists");
 	}

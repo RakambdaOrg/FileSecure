@@ -1,6 +1,5 @@
 package fr.mrcraftcod.filesecure;
 
-import fr.mrcraftcod.filesecure.files.MissingFolderException;
 import fr.mrcraftcod.nameascreated.NameAsCreated;
 import org.json.JSONObject;
 import org.slf4j.Logger;
