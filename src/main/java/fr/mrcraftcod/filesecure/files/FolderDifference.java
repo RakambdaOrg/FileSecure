@@ -63,7 +63,7 @@ public class FolderDifference{
 	 */
 	private Stream<Difference> getDifference(final Path input, final Path output, final Function<File, String> renameStrategy){
 		if(input.toFile().isFile()){
-			return Stream.of(new Difference(input.getParent(), output.getParent(), new Pair<>(input.getFileName().toString(), renameStrategy.apply(input.toFile()))));
+			return Stream.of(new Difference(input, output.getParent(), renameStrategy.apply(input.toFile())));
 		}
 		return Arrays.stream(Objects.requireNonNull(input.toFile().listFiles())).flatMap(f -> getDifference(Paths.get(f.toURI()), output.resolve(f.getName()), renameStrategy));
 	}

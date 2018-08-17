@@ -20,19 +20,21 @@ class Difference{
 	private final static Logger LOGGER = LoggerFactory.getLogger(Difference.class);
 	private final Path base;
 	private final Path target;
-	private final Pair<String, String> file;
+	private final String desiredNamed;
+	private String finalName;
 	
 	/**
 	 * Constructor.
 	 *
-	 * @param target The target folder (where to copy/move/...).
-	 * @param base   The source folder.
-	 * @param file   A pair describing the file name in the base (key) and in the target (value).
+	 * @param target       The target folder (where to copy/move/...).
+	 * @param base         The source folder.
+	 * @param desiredNamed A pair describing the file name in the base (key) and in the target (value).
 	 */
-	Difference(final Path base, final Path target, final Pair<String, String> file){
+	Difference(final Path base, final Path target, final String desiredNamed){
 		this.target = target;
 		this.base = base;
-		this.file = file;
+		this.desiredNamed = desiredNamed;
+		this.finalName = null;
 	}
 	
 	/**
@@ -43,21 +45,20 @@ class Difference{
 	void applyStrategy(final Processor.BackupStrategy backupStrategy){
 		generateUniqueName();
 		
-		final var basePath = base.resolve(file.getKey());
-		final var targetPath = target.resolve(file.getValue());
-		LOGGER.info("{} file {} to {}", backupStrategy.name(), basePath, targetPath);
+		final var targetPath = target.resolve(finalName);
+		LOGGER.info("{} file {} to {}", backupStrategy.name(), base, targetPath);
 		try{
 			switch(backupStrategy){
 				case MOVE:
 					targetPath.getParent().toFile().mkdirs();
-					if(targetPath.toFile().exists() || !Files.move(basePath, targetPath, StandardCopyOption.REPLACE_EXISTING).toFile().exists()){
-						LOGGER.info("File {} not {}", basePath, backupStrategy.name());
+					if(targetPath.toFile().exists() || !Files.move(base, targetPath, StandardCopyOption.REPLACE_EXISTING).toFile().exists()){
+						LOGGER.info("File {} not {}", base, backupStrategy.name());
 					}
 					break;
 				case COPY:
 					targetPath.getParent().toFile().mkdirs();
-					if(targetPath.toFile().exists() || !Files.copy(basePath, targetPath, StandardCopyOption.REPLACE_EXISTING).toFile().exists()){
-						LOGGER.info("File {} not {}", basePath, backupStrategy.name());
+					if(targetPath.toFile().exists() || !Files.copy(base, targetPath, StandardCopyOption.REPLACE_EXISTING).toFile().exists()){
+						LOGGER.info("File {} not {}", base, backupStrategy.name());
 					}
 					break;
 			}
@@ -69,29 +70,23 @@ class Difference{
 	
 	private void generateUniqueName(){
 		var i = 0;
-		final var name = file.getValue();
-		final var ext = name.lastIndexOf(".");
-		while(getTargetFolder().resolve(file.getValue()).toFile().exists()){
-			final var newName = name.substring(0, ext) + " (" + ++i + ")" + name.substring(ext);
-			LOGGER.debug("File '{}' in '{}' already exists in '{}' as '{}', trying with suffix {}", file.getKey(), getBaseFileName(), getTargetFolder(), name, i);
-			file.setValue(newName);
+		final var desiredPath = base.getParent().resolve(desiredNamed);
+		final var extIndex = desiredNamed.lastIndexOf(".");
+		final var prefix = desiredNamed.substring(0, extIndex);
+		final var ext = desiredNamed.substring(extIndex);
+		finalName = desiredNamed;
+		while(getTargetFolder().resolve(finalName).toFile().exists()){
+			final var newName = String.format("%s (%d)%s", prefix, ++i, ext);
+			LOGGER.debug("File '{}' already exists in target, trying with suffix {}", desiredPath, i);
+			finalName = newName;
 		}
 		
 		if(i > 0){
-			LOGGER.info("File {} was renamed to {}", name, file.getValue());
+			LOGGER.info("File {} was renamed to {}", desiredPath, finalName);
 		}
 	}
 	
 	public Path getTargetFolder(){
 		return target;
-	}
-	
-	/**
-	 * Get the name of the base file.
-	 *
-	 * @return The base file name.
-	 */
-	String getBaseFileName(){
-		return file.getKey();
 	}
 }
