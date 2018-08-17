@@ -4,7 +4,10 @@ import org.jetbrains.annotations.NotNull;
 import java.io.File;
 import java.nio.file.Path;
 import java.nio.file.Paths;
-import java.util.*;
+import java.util.ArrayList;
+import java.util.Arrays;
+import java.util.Collection;
+import java.util.HashMap;
 import java.util.function.Function;
 import java.util.stream.Collectors;
 
@@ -30,8 +33,7 @@ public class Folder
 	 * @param parent The parent folder.
 	 * @param name   The name of the folder.
 	 */
-	@SuppressWarnings("WeakerAccess")
-	public Folder(Folder parent, String name)
+	Folder(final Folder parent, final String name)
 	{
 		this.name = name;
 		this.parent = parent;
@@ -47,13 +49,13 @@ public class Folder
 	 *
 	 * @return The Folder object representing the given path.
 	 */
-	public Folder getFolderAt(@NotNull Path path)
+	public Folder getFolderAt(@NotNull final Path path)
 	{
 		if(path.getParent() == null)
 		{
 			return getFolder(path.getRoot().toString());
 		}
-		Folder parent = getFolderAt(path.getParent());
+		final var parent = getFolderAt(path.getParent());
 		return parent.getFolder(path.getFileName().toString());
 	}
 	
@@ -64,8 +66,7 @@ public class Folder
 	 *
 	 * @return The Folder.
 	 */
-	@SuppressWarnings("WeakerAccess")
-	public Folder getFolder(@NotNull String name)
+	Folder getFolder(@NotNull final String name)
 	{
 		if(!folders.containsKey(name))
 			folders.put(name, new Folder(this, name));
@@ -79,27 +80,16 @@ public class Folder
 	{
 		if(!explored)
 		{
-			File[] filesArray = getPath().toFile().listFiles();
+			final var filesArray = getPath().toFile().listFiles();
 			if(filesArray != null)
 			{
-				List<File> files = Arrays.asList(filesArray);
+				final var files = Arrays.asList(filesArray);
 				this.files.addAll(files.stream().filter(File::isFile).map(File::getName).distinct().filter(n -> !n.equals(".dropbox")).collect(Collectors.toList()));
 				files.stream().filter(File::isDirectory).forEach(f -> folders.put(f.getName(), new Folder(this, f.getName())));
 			}
 			explored = true;
 		}
 		folders.values().forEach(Folder::explore);
-	}
-	
-	/**
-	 * Clears the file list of this folder and its children.
-	 */
-	@SuppressWarnings("unused")
-	private void resetFiles()
-	{
-		explored = false;
-		files.clear();
-		folders.values().forEach(Folder::resetFiles);
 	}
 	
 	/**
@@ -110,7 +100,7 @@ public class Folder
 	 *
 	 * @return The difference.
 	 */
-	public FolderDifference getMissingWith(@NotNull Folder folder, Function<File, String> renameStrategy)
+	public FolderDifference getMissingWith(@NotNull final Folder folder, final Function<File, String> renameStrategy)
 	{
 		return new FolderDifference(this, folder, renameStrategy);
 	}
@@ -122,8 +112,7 @@ public class Folder
 	 *
 	 * @return True if contained, false otherwise.
 	 */
-	@SuppressWarnings("WeakerAccess")
-	public boolean containsFile(String name)
+	boolean containsFile(final String name)
 	{
 		return getFiles().contains(name);
 	}
@@ -133,23 +122,9 @@ public class Folder
 	 *
 	 * @return The files.
 	 */
-	@SuppressWarnings("WeakerAccess")
 	public ArrayList<String> getFiles()
 	{
 		return files;
-	}
-	
-	/**
-	 * Tells if this folders contains a folder.
-	 *
-	 * @param name The folder to check.
-	 *
-	 * @return True if contained, false otherwise.
-	 */
-	@SuppressWarnings("unused")
-	public boolean containsFolder(String name)
-	{
-		return folders.containsKey(name);
 	}
 	
 	@Override
@@ -159,25 +134,22 @@ public class Folder
 	}
 	
 	/**
-	 * Get the name of the folder.
-	 *
-	 * @return The folder's name.
-	 */
-	@SuppressWarnings("WeakerAccess")
-	public String getName()
-	{
-		return name;
-	}
-	
-	/**
 	 * Get all the folders of this folder.
 	 *
 	 * @return The files.
 	 */
-	@SuppressWarnings("WeakerAccess")
-	public Collection<Folder> getFolders()
+	Collection<Folder> getFolders()
 	{
 		return folders.values();
+	}
+	
+	/**
+	 * Get the name of the folder.
+	 *
+	 * @return The folder's name.
+	 */
+	String getName(){
+		return name;
 	}
 	
 	/**
@@ -185,8 +157,7 @@ public class Folder
 	 *
 	 * @return The folder path.
 	 */
-	@SuppressWarnings("WeakerAccess")
-	public Path getPath()
+	Path getPath()
 	{
 		return (parent == null || parent instanceof RootFolder) ? Paths.get(getName()) : parent.getPath().resolve(getName());
 	}

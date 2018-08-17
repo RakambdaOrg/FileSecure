@@ -6,7 +6,7 @@
 
     <groupId>mrcraftcod</groupId>
     <artifactId>FileSecure</artifactId>
-    <version>5.2</version>
+    <version>5.3</version>
 
     <properties>
         <project.build.sourceEncoding>UTF-8</project.build.sourceEncoding>
@@ -66,7 +66,7 @@
             <plugin>
                 <groupId>org.apache.maven.plugins</groupId>
                 <artifactId>maven-compiler-plugin</artifactId>
-                <version>3.7.0</version>
+                <version>3.8.0</version>
                 <configuration>
                     <source>${java.version}</source>
                     <target>${java.version}</target>
@@ -78,7 +78,7 @@
                     <dependency>
                         <groupId>org.ow2.asm</groupId>
                         <artifactId>asm</artifactId>
-                        <version>6.1</version>
+                        <version>6.2.1</version>
                     </dependency>
                 </dependencies>
             </plugin>
@@ -119,12 +119,12 @@
         <dependency>
             <groupId>fr.mrcraftcod</groupId>
             <artifactId>utils.base</artifactId>
-            <version>3.0.0</version>
+            <version>4.1.0</version>
         </dependency>
         <dependency>
             <groupId>fr.mrcraftcod</groupId>
-            <artifactId>NAS</artifactId>
-            <version>5.0</version>
+            <artifactId>NameAsCreated</artifactId>
+            <version>6.0</version>
         </dependency>
         <dependency>
             <groupId>org.json</groupId>

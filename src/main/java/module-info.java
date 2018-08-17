@@ -8,4 +8,5 @@ module fr.mrcraftcod.thasecure {
 	requires fr.mrcraftcod.nameascreated;
 	requires json;
 	requires annotations;
+	requires slf4j.api;
 }
