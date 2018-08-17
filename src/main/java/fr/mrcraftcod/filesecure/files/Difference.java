@@ -86,6 +86,10 @@ class Difference{
 		}
 	}
 	
+	public Path getBasePath(){
+		return base;
+	}
+	
 	public Path getTargetFolder(){
 		return target;
 	}

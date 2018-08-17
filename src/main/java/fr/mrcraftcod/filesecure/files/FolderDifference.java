@@ -76,6 +76,6 @@ public class FolderDifference{
 	 * @param excludes       The filters of the files not to keep. If empty, all files will be kept.
 	 */
 	public void applyStrategy(final Processor.BackupStrategy backupStrategy, final List<Pattern> filters, final List<Pattern> excludes){
-		differences.stream().filter(difference -> !excludes.stream().map(f -> f.matcher(difference.getBaseFileName()).matches()).findAny().orElse(false)).filter(difference -> filters.stream().map(f -> f.matcher(difference.getBaseFileName()).matches()).findAny().orElse(true)).forEach(difference -> difference.applyStrategy(backupStrategy));
+		differences.stream().filter(difference -> !excludes.stream().map(f -> f.matcher(difference.getBasePath().getFileName().toString()).matches()).findAny().orElse(false)).filter(difference -> filters.stream().map(f -> f.matcher(difference.getBasePath().getFileName().toString()).matches()).findAny().orElse(true)).forEach(difference -> difference.applyStrategy(backupStrategy));
 	}
 }
