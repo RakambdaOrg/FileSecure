@@ -13,6 +13,7 @@ import java.nio.file.Path;
 public class MissingFolderException extends IllegalStateException
 {
 	private static final long serialVersionUID = -2933870594840515527L;
+	private final Path path;
 	
 	/**
 	 * Constructor.
@@ -22,5 +23,10 @@ public class MissingFolderException extends IllegalStateException
 	MissingFolderException(final Path path)
 	{
 		super("The input folder " + path + " doesn't exists");
+		this.path = path;
+	}
+	
+	public Path getPath(){
+		return path;
 	}
 }

@@ -61,7 +61,7 @@ public class Main{
 								Processor.getInstance().process(Paths.get(map.getString("input")), Paths.get(map.getString("output")), defaultRenameStrategy, map.has("strategy") ? Processor.BackupStrategy.getByName(map.getString("strategy")) : null, map.has("filters") ? Arrays.stream(map.getString("filters").split(",")).map(Pattern::compile).collect(Collectors.toList()) : Collections.emptyList(), map.has("excludes") ? Arrays.stream(map.getString("excludes").split(",")).map(Pattern::compile).collect(Collectors.toList()) : Collections.emptyList());
 							}
 							catch(final MissingFolderException e){
-								LOGGER.warn("One of the folders doesn't exists", e);
+								LOGGER.warn("Folder {} doesn't exists", e.getPath());
 							}
 						}
 					}
