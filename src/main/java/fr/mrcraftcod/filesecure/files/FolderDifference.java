@@ -49,7 +49,7 @@ public class FolderDifference{
 	 */
 	private List<Difference> processInputs(final Path base, final Path target, final Function<File, String> renameStrategy){
 		getDifference(base, target, renameStrategy);
-		return Arrays.stream(Objects.requireNonNull(base.toFile().listFiles())).flatMap(f -> getDifference(Paths.get(f.toURI()), target.resolve(".."), renameStrategy)).collect(Collectors.toList());
+		return Arrays.stream(Objects.requireNonNull(base.toFile().listFiles())).flatMap(f -> getDifference(Paths.get(f.toURI()), target.resolve(f.getName()), renameStrategy)).collect(Collectors.toList());
 	}
 	
 	/**

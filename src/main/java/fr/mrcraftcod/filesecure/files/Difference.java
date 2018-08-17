@@ -73,7 +73,7 @@ class Difference{
 		final var ext = name.lastIndexOf(".");
 		while(getTargetFolder().resolve(file.getValue()).toFile().exists()){
 			final var newName = name.substring(0, ext) + " (" + ++i + ")" + name.substring(ext);
-			LOGGER.info("File '{}' in '{}' already exists in '{}' as '{}', trying with suffix {}", file.getKey(), getBaseFileName(), getTargetFolder(), name, i);
+			LOGGER.debug("File '{}' in '{}' already exists in '{}' as '{}', trying with suffix {}", file.getKey(), getBaseFileName(), getTargetFolder(), name, i);
 			file.setValue(newName);
 		}
 		
