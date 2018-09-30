@@ -1,9 +1,6 @@
 package fr.mrcraftcod.filesecure;
 
-import fr.mrcraftcod.filesecure.files.Folder;
 import fr.mrcraftcod.filesecure.files.FolderDifference;
-import fr.mrcraftcod.filesecure.files.MissingFolderException;
-import fr.mrcraftcod.filesecure.files.RootFolder;
 import org.jetbrains.annotations.NotNull;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
@@ -22,17 +19,14 @@ import java.util.regex.Pattern;
  * @author Thomas Couchoud
  * @since 2018-02-02
  */
-public class Processor
-{
+public class Processor{
 	private static final Logger LOGGER = LoggerFactory.getLogger(Processor.class);
-	private final RootFolder rootFolder;
 	private static Processor INSTANCE;
 	
 	/**
 	 * The strategies available to do the backup.
 	 */
-	public enum BackupStrategy
-	{
+	public enum BackupStrategy{
 		COPY, MOVE, NONE;
 		
 		/**
@@ -42,10 +36,8 @@ public class Processor
 		 *
 		 * @return The strategy, or the default strategy if no strategies were found.
 		 */
-		public static BackupStrategy getByName(String name)
-		{
-			switch(name.toLowerCase())
-			{
+		public static BackupStrategy getByName(final String name){
+			switch(name.toLowerCase()){
 				case "copy":
 					return COPY;
 				case "move":
@@ -60,12 +52,8 @@ public class Processor
 		/**
 		 * @return The default strategy to use.
 		 */
-		@SuppressWarnings({
-				"WeakerAccess",
-				"SameReturnValue"
-		})
-		public static BackupStrategy getDefault()
-		{
+		@SuppressWarnings("SameReturnValue")
+		public static BackupStrategy getDefault(){
 			return MOVE;
 		}
 	}
@@ -73,9 +61,7 @@ public class Processor
 	/**
 	 * Constructor.
 	 */
-	private Processor()
-	{
-		this.rootFolder = new RootFolder();
+	private Processor(){
 	}
 	
 	/**
@@ -109,27 +95,21 @@ public class Processor
 	 *
 	 * @throws MissingFolderException If one of the folders doesn't exists.
 	 */
-	@SuppressWarnings("WeakerAccess")
-	public void process(@NotNull Path input, @NotNull Path output, Function<File, String> renameStrategy, BackupStrategy backupStrategy, List<Pattern> filters, List<Pattern> excludes) throws MissingFolderException
-	{
+	void process(@NotNull final Path input, @NotNull final Path output, Function<File, String> renameStrategy, BackupStrategy backupStrategy, final List<Pattern> filters, final List<Pattern> excludes) throws MissingFolderException{
 		backupStrategy = backupStrategy == null ? BackupStrategy.getDefault() : backupStrategy;
 		LOGGER.info(String.format("Processing (%s) %s ==> %s", backupStrategy.name(), input, output));
-		if(renameStrategy == null)
+		if(renameStrategy == null){
 			renameStrategy = File::getName;
-		if(!input.toFile().exists())
+		}
+		if(!input.toFile().exists()){
 			throw new MissingFolderException(input);
-		if(!output.toFile().exists())
+		}
+		if(!output.toFile().exists()){
 			throw new MissingFolderException(output);
-		
-		LOGGER.info("Building input folder...");
-		Folder inputFolder = rootFolder.getFolderAt(input);
-		inputFolder.explore();
-		LOGGER.info("Building output folder...");
-		Folder outputFolder = rootFolder.getFolderAt(output);
-		outputFolder.explore();
+		}
 		
 		LOGGER.info("Building differences...");
-		FolderDifference fd = outputFolder.getMissingWith(inputFolder, renameStrategy);
+		final var fd = new FolderDifference(output, input, renameStrategy);
 		fd.applyStrategy(backupStrategy, filters, excludes);
 	}
 	
@@ -138,11 +118,10 @@ public class Processor
 	 *
 	 * @return The instance.
 	 */
-	@SuppressWarnings("WeakerAccess")
-	public static Processor getInstance()
-	{
-		if(INSTANCE == null)
+	static Processor getInstance(){
+		if(INSTANCE == null){
 			INSTANCE = new Processor();
+		}
 		return INSTANCE;
 	}
 }

@@ -6,34 +6,45 @@ package fr.mrcraftcod.filesecure.files;
  * @author Thomas Couchoud
  * @since 2018-03-26
  */
-public class Pair<K, V>
-{
-	private K key;
+class Pair<K, V>{
+	private final K key;
 	private V value;
 	
-	public Pair(K key, V value)
-	{
+	/**
+	 * Constructor.
+	 *
+	 * @param key   The key.
+	 * @param value The value.
+	 */
+	Pair(final K key, final V value){
 		this.key = key;
 		this.value = value;
 	}
 	
-	public K getKey()
-	{
+	/**
+	 * Get the key.
+	 *
+	 * @return The key.
+	 */
+	K getKey(){
 		return key;
 	}
 	
-	public void setKey(K key)
-	{
-		this.key = key;
-	}
-	
-	public V getValue()
-	{
+	/**
+	 * Get the value.
+	 *
+	 * @return The value.
+	 */
+	V getValue(){
 		return value;
 	}
 	
-	public void setValue(V value)
-	{
+	/**
+	 * Set the value.
+	 *
+	 * @param value The value to set.
+	 */
+	void setValue(final V value){
 		this.value = value;
 	}
 }

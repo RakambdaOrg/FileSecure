@@ -16,26 +16,25 @@ import java.nio.file.StandardCopyOption;
  * @author Thomas Couchoud
  * @since 2018-02-08
  */
-@SuppressWarnings("WeakerAccess")
-public class Difference
-{
-	private static final Logger LOGGER = LoggerFactory.getLogger(Difference.class);
-	private final Folder base;
-	private final Folder target;
-	private final Pair<String, String> file;
+class Difference{
+	private final static Logger LOGGER = LoggerFactory.getLogger(Difference.class);
+	private final Path base;
+	private final Path target;
+	private final String desiredNamed;
+	private String finalName;
 	
 	/**
 	 * Constructor.
 	 *
-	 * @param target The target folder (where to copy/move/...).
-	 * @param base   The source folder.
-	 * @param file   A pair describing the file name in the base (key) and un the target (value).
+	 * @param target       The target folder (where to copy/move/...).
+	 * @param base         The source folder.
+	 * @param desiredNamed A pair describing the file name in the base (key) and in the target (value).
 	 */
-	public Difference(Folder base, Folder target, Pair<String, String> file)
-	{
+	Difference(final Path base, final Path target, final String desiredNamed){
 		this.target = target;
 		this.base = base;
-		this.file = file;
+		this.desiredNamed = desiredNamed;
+		this.finalName = null;
 	}
 	
 	/**
@@ -43,46 +42,59 @@ public class Difference
 	 *
 	 * @param backupStrategy The strategy to apply.
 	 */
-	@SuppressWarnings("WeakerAccess")
-	public void applyStrategy(Processor.BackupStrategy backupStrategy)
-	{
-		Path basePath = base.getPath().resolve(file.getKey());
-		Path targetPath = target.getPath().resolve(file.getValue());
-		//noinspection ResultOfMethodCallIgnored
-		LOGGER.info(backupStrategy.name() + " file " + basePath + " to " + targetPath);
-		try
-		{
-			switch(backupStrategy)
-			{
+	void applyStrategy(final Processor.BackupStrategy backupStrategy){
+		generateUniqueName();
+		
+		final var targetPath = target.resolve(finalName);
+		LOGGER.info("{} file {} to {}", backupStrategy.name(), base, targetPath);
+		try{
+			switch(backupStrategy){
 				case MOVE:
 					targetPath.getParent().toFile().mkdirs();
-					if(!targetPath.toFile().exists() && Files.move(basePath, targetPath, StandardCopyOption.REPLACE_EXISTING).toFile().exists())
-					{
-						base.getFiles().remove(basePath.getFileName().toString());
-						target.getFiles().add(targetPath.getFileName().toString());
+					if(targetPath.toFile().exists() || !Files.move(base, targetPath, StandardCopyOption.REPLACE_EXISTING).toFile().exists()){
+						LOGGER.info("File {} not {}", base, backupStrategy.name());
 					}
 					else
 						LOGGER.info("File " + basePath + " not " + backupStrategy.name());
 					break;
 				case COPY:
 					targetPath.getParent().toFile().mkdirs();
-					if(!targetPath.toFile().exists() && Files.copy(basePath, targetPath, StandardCopyOption.REPLACE_EXISTING).toFile().exists())
-					{
-						target.getFiles().add(targetPath.getFileName().toString());
+					if(targetPath.toFile().exists() || !Files.copy(base, targetPath, StandardCopyOption.REPLACE_EXISTING).toFile().exists()){
+						LOGGER.info("File {} not {}", base, backupStrategy.name());
 					}
 					else
 						LOGGER.info("File " + basePath + " not " + backupStrategy.name());
 					break;
 			}
 		}
-		catch(IOException e)
-		{
-			LOGGER.warn("", e);
+		catch(final IOException e){
+			LOGGER.warn("Error applying strategy on file", e);
 		}
 	}
 	
-	public String getBaseFileName()
-	{
-		return file.getKey();
+	private void generateUniqueName(){
+		var i = 0;
+		final var desiredPath = base.getParent().resolve(desiredNamed);
+		final var extIndex = desiredNamed.lastIndexOf(".");
+		final var prefix = desiredNamed.substring(0, extIndex);
+		final var ext = desiredNamed.substring(extIndex);
+		finalName = desiredNamed;
+		while(getTargetFolder().resolve(finalName).toFile().exists()){
+			final var newName = String.format("%s (%d)%s", prefix, ++i, ext);
+			LOGGER.debug("File '{}' already exists in target, trying with suffix {}", desiredPath, i);
+			finalName = newName;
+		}
+		
+		if(i > 0){
+			LOGGER.info("File {} was renamed to {}", desiredPath, finalName);
+		}
+	}
+	
+	public Path getBasePath(){
+		return base;
+	}
+	
+	public Path getTargetFolder(){
+		return target;
 	}
 }
