@@ -4,8 +4,9 @@ import fr.mrcraftcod.filesecure.files.Folder;
 import fr.mrcraftcod.filesecure.files.FolderDifference;
 import fr.mrcraftcod.filesecure.files.MissingFolderException;
 import fr.mrcraftcod.filesecure.files.RootFolder;
-import fr.mrcraftcod.utils.base.Log;
 import org.jetbrains.annotations.NotNull;
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
 import java.io.File;
 import java.nio.file.Path;
 import java.util.List;
@@ -23,6 +24,7 @@ import java.util.regex.Pattern;
  */
 public class Processor
 {
+	private static final Logger LOGGER = LoggerFactory.getLogger(Processor.class);
 	private final RootFolder rootFolder;
 	private static Processor INSTANCE;
 	
@@ -111,7 +113,7 @@ public class Processor
 	public void process(@NotNull Path input, @NotNull Path output, Function<File, String> renameStrategy, BackupStrategy backupStrategy, List<Pattern> filters, List<Pattern> excludes) throws MissingFolderException
 	{
 		backupStrategy = backupStrategy == null ? BackupStrategy.getDefault() : backupStrategy;
-		Log.info(String.format("Processing (%s) %s ==> %s", backupStrategy.name(), input, output));
+		LOGGER.info(String.format("Processing (%s) %s ==> %s", backupStrategy.name(), input, output));
 		if(renameStrategy == null)
 			renameStrategy = File::getName;
 		if(!input.toFile().exists())
@@ -119,14 +121,14 @@ public class Processor
 		if(!output.toFile().exists())
 			throw new MissingFolderException(output);
 		
-		Log.info("Building input folder...");
+		LOGGER.info("Building input folder...");
 		Folder inputFolder = rootFolder.getFolderAt(input);
 		inputFolder.explore();
-		Log.info("Building output folder...");
+		LOGGER.info("Building output folder...");
 		Folder outputFolder = rootFolder.getFolderAt(output);
 		outputFolder.explore();
 		
-		Log.info("Building differences...");
+		LOGGER.info("Building differences...");
 		FolderDifference fd = outputFolder.getMissingWith(inputFolder, renameStrategy);
 		fd.applyStrategy(backupStrategy, filters, excludes);
 	}

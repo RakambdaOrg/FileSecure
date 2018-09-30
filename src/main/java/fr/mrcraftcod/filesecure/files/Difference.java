@@ -1,7 +1,8 @@
 package fr.mrcraftcod.filesecure.files;
 
 import fr.mrcraftcod.filesecure.Processor;
-import fr.mrcraftcod.utils.base.Log;
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
 import java.io.IOException;
 import java.nio.file.Files;
 import java.nio.file.Path;
@@ -18,6 +19,7 @@ import java.nio.file.StandardCopyOption;
 @SuppressWarnings("WeakerAccess")
 public class Difference
 {
+	private static final Logger LOGGER = LoggerFactory.getLogger(Difference.class);
 	private final Folder base;
 	private final Folder target;
 	private final Pair<String, String> file;
@@ -47,7 +49,7 @@ public class Difference
 		Path basePath = base.getPath().resolve(file.getKey());
 		Path targetPath = target.getPath().resolve(file.getValue());
 		//noinspection ResultOfMethodCallIgnored
-		Log.info(backupStrategy.name() + " file " + basePath + " to " + targetPath);
+		LOGGER.info(backupStrategy.name() + " file " + basePath + " to " + targetPath);
 		try
 		{
 			switch(backupStrategy)
@@ -60,7 +62,7 @@ public class Difference
 						target.getFiles().add(targetPath.getFileName().toString());
 					}
 					else
-						Log.info("File " + basePath + " not " + backupStrategy.name());
+						LOGGER.info("File " + basePath + " not " + backupStrategy.name());
 					break;
 				case COPY:
 					targetPath.getParent().toFile().mkdirs();
@@ -69,13 +71,13 @@ public class Difference
 						target.getFiles().add(targetPath.getFileName().toString());
 					}
 					else
-						Log.info("File " + basePath + " not " + backupStrategy.name());
+						LOGGER.info("File " + basePath + " not " + backupStrategy.name());
 					break;
 			}
 		}
 		catch(IOException e)
 		{
-			Log.warning("", e);
+			LOGGER.warn("", e);
 		}
 	}
 	

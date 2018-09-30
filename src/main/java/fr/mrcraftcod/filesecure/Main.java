@@ -2,9 +2,10 @@ package fr.mrcraftcod.filesecure;
 
 import fr.mrcraftcod.filesecure.files.MissingFolderException;
 import fr.mrcraftcod.nameascreated.NameAsCreated;
-import fr.mrcraftcod.utils.base.Log;
 import org.json.JSONArray;
 import org.json.JSONObject;
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
 import java.io.File;
 import java.io.IOException;
 import java.nio.file.Files;
@@ -26,6 +27,8 @@ import java.util.stream.Collectors;
  */
 public class Main
 {
+	private static final Logger LOGGER = LoggerFactory.getLogger(Main.class);
+	
 	/**
 	 * Default renaming strategy.
 	 * Rename the file with a date & time.
@@ -35,11 +38,11 @@ public class Main
 	private static final Function<File, String> defaultRenameStrategy = f -> {
 		try
 		{
-			return NameAsCreated.buildName(f, false).getName(f);
+			return NameAsCreated.buildName(f).getName(f);
 		}
 		catch(IOException e)
 		{
-			Log.warning("Error renaming file " + f.getAbsolutePath());
+			LOGGER.warn("Error renaming file {}", f.getAbsolutePath(), e);
 		}
 		return f.getName();
 	};
@@ -52,7 +55,14 @@ public class Main
 	 */
 	public static void main(String[] args)
 	{
-		Log.setAppName("FileSecure");
+		try
+		{
+			System.in.read();
+		}
+		catch(IOException e)
+		{
+			LOGGER.error("", e);
+		}
 		
 		if(args.length > 0)
 		{
@@ -61,7 +71,7 @@ public class Main
 			{
 				try
 				{
-					JSONObject json = new JSONObject(Files.readAllLines(path).stream().collect(Collectors.joining("\n")));
+					JSONObject json = new JSONObject(String.join("\n", Files.readAllLines(path)));
 					if(json.has("mappings"))
 					{
 						JSONArray mappings = json.getJSONArray("mappings");
@@ -74,28 +84,28 @@ public class Main
 							}
 							catch(MissingFolderException e)
 							{
-								Log.warning("One of the folders doesn't exists", e);
+								LOGGER.warn("One of the folders doesn't exists", e);
 							}
 						}
 					}
 					else
 					{
-						Log.error("The config file doesn't contains the mappings key");
+						LOGGER.error("The config file doesn't contains the mappings key");
 					}
 				}
 				catch(IOException e)
 				{
-					Log.warning("Couldn't read the configuration file", e);
+					LOGGER.warn("Couldn't read the configuration file", e);
 				}
 			}
 			else
 			{
-				Log.error("The specified config file doesn't exists");
+				LOGGER.error("The specified config file doesn't exists");
 			}
 		}
 		else
 		{
-			Log.error("No config file given");
+			LOGGER.error("No config file given");
 		}
 	}
 }

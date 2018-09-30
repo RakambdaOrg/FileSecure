@@ -1,7 +1,8 @@
 package fr.mrcraftcod.filesecure.files;
 
 import fr.mrcraftcod.filesecure.Processor;
-import fr.mrcraftcod.utils.base.Log;
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
 import java.io.File;
 import java.nio.file.Path;
 import java.util.List;
@@ -20,6 +21,7 @@ import java.util.stream.Stream;
  */
 public class FolderDifference
 {
+	private static final Logger LOGGER = LoggerFactory.getLogger(FolderDifference.class);
 	private final List<Difference> differences;
 	
 	/**
@@ -55,7 +57,7 @@ public class FolderDifference
 			while(target.containsFile(pair.getValue()))
 			{
 				String newName = name.substring(0, ext) + " (" + ++i + ")" + name.substring(ext);
-				Log.info("File '" + pair.getKey() + "' in '" + base.getPath() + "' already exists in '" + target.getPath() + "' as '" + name + "', trying with suffix " + i);
+				LOGGER.info("File '" + pair.getKey() + "' in '" + base.getPath() + "' already exists in '" + target.getPath() + "' as '" + name + "', trying with suffix " + i);
 				pair.setValue(newName);
 			}
 			return true;
