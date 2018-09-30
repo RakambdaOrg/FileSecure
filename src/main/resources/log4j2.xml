@@ -18,6 +18,10 @@
             <AppenderRef ref="Console"/>
             <AppenderRef ref="RollingFile"/>
         </Logger>
+        <Logger name="fr.mrcraftcod.nameascreated" level="info">
+            <AppenderRef ref="Console"/>
+            <AppenderRef ref="RollingFile"/>
+        </Logger>
         <Logger name="fr.mrcraftcod.filesecure" level="info">
             <AppenderRef ref="Console"/>
             <AppenderRef ref="RollingFile"/>

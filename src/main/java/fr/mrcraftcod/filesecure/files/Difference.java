@@ -54,16 +54,12 @@ class Difference{
 					if(targetPath.toFile().exists() || !Files.move(base, targetPath, StandardCopyOption.REPLACE_EXISTING).toFile().exists()){
 						LOGGER.info("File {} not {}", base, backupStrategy.name());
 					}
-					else
-						LOGGER.info("File " + basePath + " not " + backupStrategy.name());
 					break;
 				case COPY:
 					targetPath.getParent().toFile().mkdirs();
 					if(targetPath.toFile().exists() || !Files.copy(base, targetPath, StandardCopyOption.REPLACE_EXISTING).toFile().exists()){
 						LOGGER.info("File {} not {}", base, backupStrategy.name());
 					}
-					else
-						LOGGER.info("File " + basePath + " not " + backupStrategy.name());
 					break;
 			}
 		}
