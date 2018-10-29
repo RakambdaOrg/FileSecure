@@ -13,7 +13,7 @@
         <java.version>11</java.version>
         <main.class>fr.mrcraftcod.filesecure.Main</main.class>
         <mrcraftcod.utils>5.1.1</mrcraftcod.utils>
-        <log4j.version>2.11.0</log4j.version>
+        <log4j.version>2.11.1</log4j.version>
     </properties>
     <packaging>jar</packaging>
 
