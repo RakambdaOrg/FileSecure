@@ -12,7 +12,7 @@
         <project.build.sourceEncoding>UTF-8</project.build.sourceEncoding>
         <java.version>11</java.version>
         <main.class>fr.mrcraftcod.filesecure.Main</main.class>
-        <mrcraftcod.utils>5.1.1</mrcraftcod.utils>
+        <mrcraftcod.utils>5.1.2</mrcraftcod.utils>
         <log4j.version>2.11.1</log4j.version>
     </properties>
     <packaging>jar</packaging>
@@ -146,17 +146,7 @@
         </dependency>
         <dependency>
             <groupId>org.apache.logging.log4j</groupId>
-            <artifactId>log4j-api</artifactId>
-            <version>${log4j.version}</version>
-        </dependency>
-        <dependency>
-            <groupId>org.apache.logging.log4j</groupId>
-            <artifactId>log4j-core</artifactId>
-            <version>${log4j.version}</version>
-        </dependency>
-        <dependency>
-            <groupId>org.apache.logging.log4j</groupId>
-            <artifactId>log4j-slf4j-impl</artifactId>
+            <artifactId>log4j-slf4j18-impl</artifactId>
             <version>${log4j.version}</version>
         </dependency>
     </dependencies>
