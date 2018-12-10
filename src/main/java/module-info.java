@@ -7,6 +7,6 @@ module fr.mrcraftcod.thasecure {
 	requires fr.mrcraftcod.utils.base;
 	requires fr.mrcraftcod.nameascreated;
 	requires json;
-	requires slf4j.api;
+	requires org.slf4j;
 	requires org.jetbrains.annotations;
 }

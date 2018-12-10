@@ -95,7 +95,7 @@ public class Processor{
 	 *
 	 * @throws MissingFolderException If one of the folders doesn't exists.
 	 */
-	void process(@NotNull final Path input, @NotNull final Path output, Function<File, String> renameStrategy, BackupStrategy backupStrategy, final List<Pattern> filters, final List<Pattern> excludes) throws MissingFolderException{
+	void process(@NotNull final Path input, @NotNull final Path output, Function<File, String> renameStrategy, BackupStrategy backupStrategy, final List<Pattern> filters, final List<Pattern> excludes, final List<Flags> flags) throws MissingFolderException{
 		backupStrategy = backupStrategy == null ? BackupStrategy.getDefault() : backupStrategy;
 		LOGGER.info(String.format("Processing (%s) %s ==> %s", backupStrategy.name(), input, output));
 		if(renameStrategy == null){
@@ -109,7 +109,7 @@ public class Processor{
 		}
 		
 		LOGGER.info("Building differences...");
-		final var fd = new FolderDifference(output, input, renameStrategy);
+		final var fd = new FolderDifference(output, input, renameStrategy, flags);
 		fd.applyStrategy(backupStrategy, filters, excludes);
 	}
 	

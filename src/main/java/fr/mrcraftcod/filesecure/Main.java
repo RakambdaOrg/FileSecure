@@ -10,6 +10,7 @@ import java.nio.file.Files;
 import java.nio.file.Paths;
 import java.util.Arrays;
 import java.util.Collections;
+import java.util.Objects;
 import java.util.function.Function;
 import java.util.regex.Pattern;
 import java.util.stream.Collectors;
@@ -58,7 +59,14 @@ public class Main{
 						for(var i = 0; i < mappings.length(); i++){
 							final var map = mappings.getJSONObject(i);
 							try{
-								Processor.getInstance().process(Paths.get(map.getString("input")), Paths.get(map.getString("output")), defaultRenameStrategy, map.has("strategy") ? Processor.BackupStrategy.getByName(map.getString("strategy")) : null, map.has("filters") ? Arrays.stream(map.getString("filters").split(",")).map(Pattern::compile).collect(Collectors.toList()) : Collections.emptyList(), map.has("excludes") ? Arrays.stream(map.getString("excludes").split(",")).map(Pattern::compile).collect(Collectors.toList()) : Collections.emptyList());
+								Processor.getInstance().process(Paths.get(map.getString("input")), Paths.get(map.getString("output")), defaultRenameStrategy, map.has("strategy") ? Processor.BackupStrategy.getByName(map.getString("strategy")) : null, map.has("filters") ? Arrays.stream(map.getString("filters").split(",")).map(Pattern::compile).collect(Collectors.toList()) : Collections.emptyList(), map.has("excludes") ? Arrays.stream(map.getString("excludes").split(",")).map(Pattern::compile).collect(Collectors.toList()) : Collections.emptyList(), map.has("flags") ? map.getJSONArray("flags").toList().stream().map(Object::toString).map(n -> {
+									try{
+										return Flags.valueOf(n);
+									}
+									catch(IllegalArgumentException ignored){
+									}
+									return null;
+								}).filter(Objects::nonNull).collect(Collectors.toList()) : Collections.emptyList());
 							}
 							catch(final MissingFolderException e){
 								LOGGER.warn("Folder {} doesn't exists", e.getPath());
