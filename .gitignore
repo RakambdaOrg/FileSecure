@@ -3,3 +3,5 @@ FileSecure.iml
 .idea
 target
 FileSecure.json
+
+logs/

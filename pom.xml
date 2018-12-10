@@ -6,7 +6,7 @@
 
     <groupId>mrcraftcod</groupId>
     <artifactId>FileSecure</artifactId>
-    <version>6.1.1</version>
+    <version>6.2</version>
 
     <properties>
         <project.build.sourceEncoding>UTF-8</project.build.sourceEncoding>
@@ -116,6 +116,11 @@
             <id>mrcraftcod.read</id>
             <url>https://maven.mrcraftcod.fr/</url>
         </repository>
+        <repository>
+            <id>apache</id>
+            <name>Apache</name>
+            <url>https://repository.apache.org/snapshots</url>
+        </repository>
     </repositories>
     <dependencies>
         <dependency>
@@ -126,7 +131,7 @@
         <dependency>
             <groupId>fr.mrcraftcod</groupId>
             <artifactId>NameAsCreated</artifactId>
-            <version>6.1</version>
+            <version>6.2</version>
         </dependency>
         <dependency>
             <groupId>org.json</groupId>
@@ -141,17 +146,7 @@
         </dependency>
         <dependency>
             <groupId>org.apache.logging.log4j</groupId>
-            <artifactId>log4j-api</artifactId>
-            <version>${log4j.version}</version>
-        </dependency>
-        <dependency>
-            <groupId>org.apache.logging.log4j</groupId>
-            <artifactId>log4j-core</artifactId>
-            <version>${log4j.version}</version>
-        </dependency>
-        <dependency>
-            <groupId>org.apache.logging.log4j</groupId>
-            <artifactId>log4j-slf4j-impl</artifactId>
+            <artifactId>log4j-slf4j18-impl</artifactId>
             <version>${log4j.version}</version>
         </dependency>
     </dependencies>

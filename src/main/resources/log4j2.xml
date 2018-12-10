@@ -10,23 +10,22 @@
                 <TimeBasedTriggeringPolicy/>
                 <SizeBasedTriggeringPolicy size="10 MB"/>
             </Policies>
-            <DefaultRolloverStrategy max="150"/>
+            <DefaultRolloverStrategy>
+                <Delete basePath="log/" maxDepth="1">
+                    <IfFileName glob="log-*"/>
+                    <IfLastModified age="4d"/>
+                </Delete>
+            </DefaultRolloverStrategy>
         </RollingFile>
     </Appenders>
     <Loggers>
-        <Logger name="fr.mrcraftcod.utils" level="info">
-            <AppenderRef ref="Console"/>
-            <AppenderRef ref="RollingFile"/>
-        </Logger>
-        <Logger name="fr.mrcraftcod.nameascreated" level="info">
-            <AppenderRef ref="Console"/>
-            <AppenderRef ref="RollingFile"/>
-        </Logger>
-        <Logger name="fr.mrcraftcod.filesecure" level="info">
+        <Logger name="fr.mrcraftcod" level="info">
             <AppenderRef ref="Console"/>
             <AppenderRef ref="RollingFile"/>
         </Logger>
         <Root level="error">
+            <AppenderRef ref="Console"/>
+            <AppenderRef ref="RollingFile"/>
         </Root>
     </Loggers>
 </Configuration>
