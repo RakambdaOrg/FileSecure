@@ -9,6 +9,7 @@ module fr.mrcraftcod.thasecure {
 	requires json;
 	requires org.slf4j;
 	requires org.apache.logging.log4j;
+	requires java.scripting;
 
 	requires org.jetbrains.annotations;
 }

@@ -11,9 +11,9 @@
                 <SizeBasedTriggeringPolicy size="10 MB"/>
             </Policies>
             <DefaultRolloverStrategy>
-                <Delete basePath="log/" maxDepth="1">
-                    <IfFileName glob="log-*"/>
-                    <IfLastModified age="4d"/>
+                <Delete basePath="logs/" maxDepth="1">
+                    <IfFileName glob="FileSecure-*"/>
+                    <IfAccumulatedFileCount exceeds="10"/>
                 </Delete>
             </DefaultRolloverStrategy>
         </RollingFile>

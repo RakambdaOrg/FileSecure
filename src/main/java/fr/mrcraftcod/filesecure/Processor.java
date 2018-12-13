@@ -97,7 +97,7 @@ public class Processor{
 	 */
 	void process(@NotNull final Path input, @NotNull final Path output, Function<File, String> renameStrategy, BackupStrategy backupStrategy, final List<Pattern> filters, final List<Pattern> excludes, final List<Flags> flags) throws MissingFolderException{
 		backupStrategy = backupStrategy == null ? BackupStrategy.getDefault() : backupStrategy;
-		LOGGER.info(String.format("Processing (%s) %s ==> %s", backupStrategy.name(), input, output));
+		LOGGER.info("Processing ({}) {} ==> {}", backupStrategy.name(), input, output);
 		if(renameStrategy == null){
 			renameStrategy = File::getName;
 		}
