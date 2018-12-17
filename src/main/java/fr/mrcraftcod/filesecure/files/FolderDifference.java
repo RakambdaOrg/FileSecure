@@ -80,7 +80,7 @@ public class FolderDifference{
 		try{
 			final var cal = Calendar.getInstance();
 			cal.setTime(SDF.parse(fileName.substring(0, fileName.lastIndexOf("."))));
-			return folder.resolve("" + cal.get(Calendar.YEAR)).resolve("" + cal.get(Calendar.MONTH));
+			return folder.resolve(String.format("%4d", cal.get(Calendar.YEAR))).resolve(String.format("%2d", cal.get(Calendar.MONTH) + 1));
 		}
 		catch(final ParseException e){
 			LOGGER.error("Failed to build month folder for {} in {}", fileName, folder, e);
