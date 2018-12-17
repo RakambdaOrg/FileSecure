@@ -22,10 +22,12 @@
             <extension>
                 <groupId>org.apache.maven.wagon</groupId>
                 <artifactId>wagon-ftp</artifactId>
+                <version>3.2.0</version>
             </extension>
             <extension>
                 <groupId>org.apache.maven.wagon</groupId>
                 <artifactId>wagon-ssh</artifactId>
+                <version>3.2.0</version>
             </extension>
         </extensions>
         <plugins>
@@ -107,7 +109,7 @@
 
     <distributionManagement>
         <repository>
-            <id>mrcraftcod.write</id>
+            <id>mrcraftcod.write.ftp</id>
             <url>${mrcraftcod.write.url.ftp}</url>
         </repository>
     </distributionManagement>
