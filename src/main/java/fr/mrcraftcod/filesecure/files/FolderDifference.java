@@ -71,9 +71,19 @@ public class FolderDifference{
 	private Stream<Difference> getDifference(final Path input, final Path output, final Function<File, String> renameStrategy, final List<Flags> flags){
 		if(input.toFile().isFile()){
 			final var newFileName = renameStrategy.apply(input.toFile());
-			return Stream.of(new Difference(input, flags.contains(Flags.FOLDER_PER_MONTH) ? getMonthFolder(newFileName, output.getParent()) : output.getParent(), newFileName));
+			return Stream.of(new Difference(input, applyFlags(flags, newFileName, output.getParent()), newFileName));
 		}
 		return Arrays.stream(Objects.requireNonNull(input.toFile().listFiles())).flatMap(f -> getDifference(Paths.get(f.toURI()), output.resolve(f.getName()), renameStrategy, flags));
+	}
+	
+	private Path applyFlags(final List<Flags> flags, final String newFileName, final Path parent){
+		if(flags.contains(Flags.FOLDER_PER_MONTH)){
+			return getMonthFolder(newFileName, parent);
+		}
+		else if(flags.contains(Flags.FOLDER_PER_YEAR)){
+			return getYearFolder(newFileName, parent);
+		}
+		return parent;
 	}
 	
 	private Path getMonthFolder(final String fileName, final Path folder){
@@ -84,6 +94,18 @@ public class FolderDifference{
 		}
 		catch(final ParseException e){
 			LOGGER.error("Failed to build month folder for {} in {}", fileName, folder, e);
+		}
+		return folder;
+	}
+	
+	private Path getYearFolder(final String fileName, final Path folder){
+		try{
+			final var cal = Calendar.getInstance();
+			cal.setTime(SDF.parse(fileName.substring(0, fileName.lastIndexOf("."))));
+			return folder.resolve(String.format("%4d", cal.get(Calendar.YEAR)));
+		}
+		catch(final ParseException e){
+			LOGGER.error("Failed to build year folder for {} in {}", fileName, folder, e);
 		}
 		return folder;
 	}
