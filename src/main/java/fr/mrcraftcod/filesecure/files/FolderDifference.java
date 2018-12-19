@@ -55,7 +55,7 @@ public class FolderDifference{
 	 */
 	private List<Difference> processInputs(final Path base, final Path target, final Function<File, String> renameStrategy, final List<Flags> flags){
 		getDifference(base, target, renameStrategy, flags);
-		return Arrays.stream(Objects.requireNonNull(base.toFile().listFiles())).flatMap(f -> getDifference(Paths.get(f.toURI()), target.resolve(f.getName()), renameStrategy, flags)).collect(Collectors.toList());
+		return Arrays.stream(Objects.requireNonNull(base.toFile().listFiles())).parallel().flatMap(f -> getDifference(Paths.get(f.toURI()), target.resolve(f.getName()), renameStrategy, flags)).collect(Collectors.toList());
 	}
 	
 	/**
@@ -73,7 +73,7 @@ public class FolderDifference{
 			final var newFileName = renameStrategy.apply(input.toFile());
 			return Stream.of(new Difference(input, applyFlags(flags, newFileName, output.getParent()), newFileName));
 		}
-		return Arrays.stream(Objects.requireNonNull(input.toFile().listFiles())).flatMap(f -> getDifference(Paths.get(f.toURI()), output.resolve(f.getName()), renameStrategy, flags));
+		return Arrays.stream(Objects.requireNonNull(input.toFile().listFiles())).parallel().flatMap(f -> getDifference(Paths.get(f.toURI()), output.resolve(f.getName()), renameStrategy, flags));
 	}
 	
 	private Path applyFlags(final List<Flags> flags, final String newFileName, final Path parent){
@@ -90,7 +90,7 @@ public class FolderDifference{
 		try{
 			final var cal = Calendar.getInstance();
 			cal.setTime(SDF.parse(fileName.substring(0, fileName.lastIndexOf("."))));
-			return folder.resolve(String.format("%4d", cal.get(Calendar.YEAR))).resolve(String.format("%2d", cal.get(Calendar.MONTH) + 1));
+			return folder.resolve(String.format("%4d", cal.get(Calendar.YEAR))).resolve(String.format("%02d", cal.get(Calendar.MONTH) + 1));
 		}
 		catch(final ParseException e){
 			LOGGER.error("Failed to build month folder for {} in {}", fileName, folder, e);
