@@ -20,7 +20,7 @@ test:
     - mvn $MAVEN_CLI_OPTS test
 
 package:
-  stage: deploy
+  stage: build
   only:
     - master
   script:
