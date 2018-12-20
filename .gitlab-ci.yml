@@ -8,6 +8,7 @@ cache:
   paths:
     - .m2/repository/
     - target/
+    - builds/
 
 build:
   stage: build
