@@ -26,6 +26,8 @@ package:
     - master
   script:
     - mvn $MAVEN_CLI_OPTS package
+    - ls
+    - ls ~/builds/
 
 deploy_dropbox:
   stage: deploy
