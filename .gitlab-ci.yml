@@ -27,6 +27,13 @@ package:
   script:
     - mvn $MAVEN_CLI_OPTS package
 
+deploy_maven:
+  stage: deploy
+  only:
+    - master
+  script:
+    - mvn $MAVEN_CLI_OPTS deploy
+
 deploy_dropbox:
   stage: deploy
   only:
