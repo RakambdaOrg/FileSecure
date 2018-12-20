@@ -20,13 +20,6 @@ test:
   script:
     - mvn $MAVEN_CLI_OPTS test
 
-package:
-  stage: build
-  only:
-    - master
-  script:
-    - mvn $MAVEN_CLI_OPTS package
-
 deploy_maven:
   stage: deploy
   only:
@@ -48,6 +41,7 @@ deploy_dropbox:
   before_script:
     - curl "${UPLOADER_FETCH_URL}" -o "${UPLOADER}"
     - echo "OAUTH_ACCESS_TOKEN=${DROPBOX_DEPLOY_TOKEN}" > "${UPLOADER_CONFIG}"
+    - mvn $MAVEN_CLI_OPTS package
   script:
     - bash "${UPLOADER}" -f "${UPLOADER_CONFIG}" mkdir "${TARGET_FOLDER}" &>/dev/null || echo "Target folder exists"
     - bash "${UPLOADER}" -f "${UPLOADER_CONFIG}" upload builds/*.jar "${TARGET_FOLDER}"
