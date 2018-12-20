@@ -41,6 +41,8 @@ deploy_dropbox:
     - curl "${UPLOADER_FETCH_URL}" -o "${UPLOADER}"
     - echo "OAUTH_ACCESS_TOKEN=${DROPBOX_DEPLOY_TOKEN}" > "${UPLOADER_CONFIG}"
   script:
+    - ls ~/
+    - ls ~/builds
     - bash "${UPLOADER}" -f "${UPLOADER_CONFIG}" mkdir "${TARGET_FOLDER}" &>/dev/null || echo "Target folder exists"
     - bash "${UPLOADER}" -f "${UPLOADER_CONFIG}" upload ~/builds/*.jar "${TARGET_FOLDER}"
   after_script:
