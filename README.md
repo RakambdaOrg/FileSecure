@@ -30,4 +30,4 @@ Other fields are optionals:
 * strategy: define the strategy to copy files. Can be "copy", "move" or "none" (just displays in standard output). Default is move.
 * filters: filters to apply to determine which files to keep. By default all files are kept.
 
-When the files are moved, they are renamed with a date name "yyyy-mm-dd hh.mm.ss". This one is determined by its current name or its creation date. (Maybe one day this will be configurable).
+When the files are moved, they are renamed with a date name "yyyy-MM-dd hh.mm.ss". This one is determined by its current name or its creation date. (Maybe one day this will be configurable).
