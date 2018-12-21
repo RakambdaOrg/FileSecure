@@ -4,13 +4,11 @@ import fr.mrcraftcod.filesecure.Flags;
 import fr.mrcraftcod.filesecure.Processor;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
-import java.io.File;
 import java.nio.file.Path;
 import java.nio.file.Paths;
-import java.text.ParseException;
-import java.text.SimpleDateFormat;
+import java.time.LocalDateTime;
+import java.time.format.DateTimeFormatter;
 import java.util.Arrays;
-import java.util.Calendar;
 import java.util.List;
 import java.util.Objects;
 import java.util.function.Function;
@@ -27,7 +25,7 @@ import java.util.stream.Stream;
  * @since 2017-07-14
  */
 public class FolderDifference{
-	private static final SimpleDateFormat SDF = new SimpleDateFormat("yyyy-MM-dd HH.mm.ss");
+	private static final DateTimeFormatter DATE_TIME_FORMATTER = DateTimeFormatter.ofPattern("yyyy-MM-dd HH.mm.ss");
 	private static final Logger LOGGER = LoggerFactory.getLogger(FolderDifference.class);
 	private final List<Difference> differences;
 	
@@ -39,7 +37,7 @@ public class FolderDifference{
 	 * @param base           The base path (where to get the files from).
 	 * @param renameStrategy The rename strategy to use when we'll apply out backup strategy later.
 	 */
-	public FolderDifference(final Path target, final Path base, final Function<File, String> renameStrategy, final List<Flags> flags){
+	public FolderDifference(final Path target, final Path base, final Function<Path, String> renameStrategy, final List<Flags> flags){
 		differences = processInputs(base, target, renameStrategy, flags);
 	}
 	
@@ -53,7 +51,7 @@ public class FolderDifference{
 	 *
 	 * @return The list of differences.
 	 */
-	private List<Difference> processInputs(final Path base, final Path target, final Function<File, String> renameStrategy, final List<Flags> flags){
+	private List<Difference> processInputs(final Path base, final Path target, final Function<Path, String> renameStrategy, final List<Flags> flags){
 		getDifference(base, target, renameStrategy, flags);
 		return Arrays.stream(Objects.requireNonNull(base.toFile().listFiles())).parallel().flatMap(f -> getDifference(Paths.get(f.toURI()), target.resolve(f.getName()), renameStrategy, flags)).collect(Collectors.toList());
 	}
@@ -68,31 +66,37 @@ public class FolderDifference{
 	 *
 	 * @return A stream of differences.
 	 */
-	private Stream<Difference> getDifference(final Path input, final Path output, final Function<File, String> renameStrategy, final List<Flags> flags){
+	private Stream<Difference> getDifference(final Path input, final Path output, final Function<Path, String> renameStrategy, final List<Flags> flags){
 		if(input.toFile().isFile()){
-			final var newFileName = renameStrategy.apply(input.toFile());
+			final var newFileName = renameStrategy.apply(input);
 			return Stream.of(new Difference(input, applyFlags(flags, newFileName, output.getParent()), newFileName));
 		}
 		return Arrays.stream(Objects.requireNonNull(input.toFile().listFiles())).parallel().flatMap(f -> getDifference(Paths.get(f.toURI()), output.resolve(f.getName()), renameStrategy, flags));
 	}
 	
 	private Path applyFlags(final List<Flags> flags, final String newFileName, final Path parent){
-		if(flags.contains(Flags.FOLDER_PER_MONTH)){
-			return getMonthFolder(newFileName, parent);
+		try{
+			
+			if(flags.contains(Flags.FOLDER_PER_MONTH)){
+				return getMonthFolder(newFileName, parent);
+			}
+			else if(flags.contains(Flags.FOLDER_PER_YEAR)){
+				return getYearFolder(newFileName, parent);
+			}
 		}
-		else if(flags.contains(Flags.FOLDER_PER_YEAR)){
-			return getYearFolder(newFileName, parent);
+		catch(Exception e)
+		{
+			LOGGER.error("Error applying strategy to file {} in {}", newFileName, parent, e);
 		}
 		return parent;
 	}
 	
 	private Path getMonthFolder(final String fileName, final Path folder){
 		try{
-			final var cal = Calendar.getInstance();
-			cal.setTime(SDF.parse(fileName.substring(0, fileName.lastIndexOf("."))));
-			return folder.resolve(String.format("%4d", cal.get(Calendar.YEAR))).resolve(String.format("%02d", cal.get(Calendar.MONTH) + 1));
+			final var date = LocalDateTime.parse(fileName.substring(0, fileName.lastIndexOf(".")), DATE_TIME_FORMATTER);
+			return folder.resolve(String.format("%4d", date.getYear())).resolve(String.format("%02d", date.getMonthValue()));
 		}
-		catch(final ParseException e){
+		catch(final Exception e){
 			LOGGER.error("Failed to build month folder for {} in {}", fileName, folder, e);
 		}
 		return folder;
@@ -100,11 +104,10 @@ public class FolderDifference{
 	
 	private Path getYearFolder(final String fileName, final Path folder){
 		try{
-			final var cal = Calendar.getInstance();
-			cal.setTime(SDF.parse(fileName.substring(0, fileName.lastIndexOf("."))));
-			return folder.resolve(String.format("%4d", cal.get(Calendar.YEAR)));
+			final var date = LocalDateTime.parse(fileName.substring(0, fileName.lastIndexOf(".")), DATE_TIME_FORMATTER);
+			return folder.resolve(String.format("%4d", date.getYear()));
 		}
-		catch(final ParseException e){
+		catch(final Exception e){
 			LOGGER.error("Failed to build year folder for {} in {}", fileName, folder, e);
 		}
 		return folder;

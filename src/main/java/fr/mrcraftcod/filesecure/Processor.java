@@ -4,7 +4,6 @@ import fr.mrcraftcod.filesecure.files.FolderDifference;
 import org.jetbrains.annotations.NotNull;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
-import java.io.File;
 import java.nio.file.Path;
 import java.util.List;
 import java.util.function.Function;
@@ -95,11 +94,11 @@ public class Processor{
 	 *
 	 * @throws MissingFolderException If one of the folders doesn't exists.
 	 */
-	void process(@NotNull final Path input, @NotNull final Path output, Function<File, String> renameStrategy, BackupStrategy backupStrategy, final List<Pattern> filters, final List<Pattern> excludes, final List<Flags> flags) throws MissingFolderException{
+	void process(@NotNull final Path input, @NotNull final Path output, Function<Path, String> renameStrategy, BackupStrategy backupStrategy, final List<Pattern> filters, final List<Pattern> excludes, final List<Flags> flags) throws MissingFolderException{
 		backupStrategy = backupStrategy == null ? BackupStrategy.getDefault() : backupStrategy;
 		LOGGER.info("Processing ({}) {} ==> {}", backupStrategy.name(), input, output);
 		if(renameStrategy == null){
-			renameStrategy = File::getName;
+			renameStrategy = f -> f.toFile().getName();
 		}
 		if(!input.toFile().exists()){
 			throw new MissingFolderException(input);

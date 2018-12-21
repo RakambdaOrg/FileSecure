@@ -1,12 +1,12 @@
 package fr.mrcraftcod.filesecure;
 
-import fr.mrcraftcod.nameascreated.NameAsCreated;
+import fr.mrcraftcod.nameascreated.strategy.ByDateRenaming;
 import org.json.JSONObject;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
-import java.io.File;
 import java.io.IOException;
 import java.nio.file.Files;
+import java.nio.file.Path;
 import java.nio.file.Paths;
 import java.util.Arrays;
 import java.util.Collections;
@@ -25,6 +25,7 @@ import java.util.stream.Collectors;
  */
 public class Main{
 	private final static Logger LOGGER = LoggerFactory.getLogger(Main.class);
+	private final static ByDateRenaming defaultRenaming = new ByDateRenaming();
 	
 	/**
 	 * Default renaming strategy.
@@ -32,14 +33,14 @@ public class Main{
 	 * <p>
 	 * See https://github.com/MrCraftCod/NameAsCreated
 	 */
-	private static final Function<File, String> defaultRenameStrategy = f -> {
+	private static final Function<Path, String> defaultRenameStrategy = f -> {
 		try{
-			return NameAsCreated.buildName(f).getName(f);
+			return defaultRenaming.renameFile(f).getName(f.toFile());
 		}
-		catch(IOException e){
-			LOGGER.warn("Error renaming file {}", f.getAbsolutePath());
+		catch(Exception e){
+			LOGGER.warn("Error renaming file {}", f);
 		}
-		return f.getName();
+		return f.toFile().getName();
 	};
 	
 	/**
