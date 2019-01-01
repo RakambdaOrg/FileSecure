@@ -6,4 +6,9 @@ package fr.mrcraftcod.filesecure;
  * @author Thomas Couchoud
  * @since 2018-12-10
  */
-public enum Flags{FOLDER_PER_MONTH, FOLDER_PER_YEAR}
+public enum Flags{
+	UNIQUE_FOLDER_PER_DAY,
+	FOLDER_PER_DAY,
+	FOLDER_PER_MONTH,
+	FOLDER_PER_YEAR
+}

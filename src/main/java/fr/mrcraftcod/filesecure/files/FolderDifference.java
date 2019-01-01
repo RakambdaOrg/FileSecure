@@ -62,7 +62,7 @@ public class FolderDifference{
 	 * @param input          The input path.
 	 * @param output         The output path.
 	 * @param renameStrategy The rename strategy to use when we'll apply our backup strategy later.
-	 * @param flags
+	 * @param flags          The flags to apply to the strategy.
 	 *
 	 * @return A stream of differences.
 	 */
@@ -74,23 +74,82 @@ public class FolderDifference{
 		return Arrays.stream(Objects.requireNonNull(input.toFile().listFiles())).parallel().flatMap(f -> getDifference(Paths.get(f.toURI()), output.resolve(f.getName()), renameStrategy, flags));
 	}
 	
+	/**
+	 * Apply the flags on the strategy.
+	 *
+	 * @param flags       The flags to apply.
+	 * @param newFileName The name of the file after moving it.
+	 * @param parent      The path where the file will end up.
+	 *
+	 * @return The new path where the file will end up.
+	 */
 	private Path applyFlags(final List<Flags> flags, final String newFileName, final Path parent){
 		try{
-			
-			if(flags.contains(Flags.FOLDER_PER_MONTH)){
+			if(flags.contains(Flags.UNIQUE_FOLDER_PER_DAY)){
+				return getUniqueDayFolder(newFileName, parent);
+			}
+			else if(flags.contains(Flags.FOLDER_PER_DAY)){
+				return getDayFolder(newFileName, parent);
+			}
+			else if(flags.contains(Flags.FOLDER_PER_MONTH)){
 				return getMonthFolder(newFileName, parent);
 			}
 			else if(flags.contains(Flags.FOLDER_PER_YEAR)){
 				return getYearFolder(newFileName, parent);
 			}
 		}
-		catch(Exception e)
-		{
+		catch(Exception e){
 			LOGGER.error("Error applying strategy to file {} in {}", newFileName, parent, e);
 		}
 		return parent;
 	}
 	
+	/**
+	 * Move a file into a folder yyyy-mm-dd.
+	 *
+	 * @param fileName The name of the file.
+	 * @param folder   The original destination.
+	 *
+	 * @return The new destination.
+	 */
+	private Path getUniqueDayFolder(final String fileName, final Path folder){
+		try{
+			final var date = LocalDateTime.parse(fileName.substring(0, fileName.lastIndexOf(".")), DATE_TIME_FORMATTER);
+			return folder.resolve(String.format("%4d-%02d-%02d", date.getYear(), date.getMonthValue(), date.getDayOfMonth()));
+		}
+		catch(final Exception e){
+			LOGGER.error("Failed to build unique day folder for {} in {}", fileName, folder, e);
+		}
+		return folder;
+	}
+	
+	/**
+	 * Move a file into a folder yyyy/mm/dd.
+	 *
+	 * @param fileName The name of the file.
+	 * @param folder   The original destination.
+	 *
+	 * @return The new destination.
+	 */
+	private Path getDayFolder(final String fileName, final Path folder){
+		try{
+			final var date = LocalDateTime.parse(fileName.substring(0, fileName.lastIndexOf(".")), DATE_TIME_FORMATTER);
+			return folder.resolve(String.format("%4d", date.getYear())).resolve(String.format("%02d", date.getMonthValue())).resolve(String.format("%02d", date.getDayOfMonth()));
+		}
+		catch(final Exception e){
+			LOGGER.error("Failed to build day folder for {} in {}", fileName, folder, e);
+		}
+		return folder;
+	}
+	
+	/**
+	 * Move a file into a folder yyyy/mm.
+	 *
+	 * @param fileName The name of the file.
+	 * @param folder   The original destination.
+	 *
+	 * @return The new destination.
+	 */
 	private Path getMonthFolder(final String fileName, final Path folder){
 		try{
 			final var date = LocalDateTime.parse(fileName.substring(0, fileName.lastIndexOf(".")), DATE_TIME_FORMATTER);
@@ -102,6 +161,14 @@ public class FolderDifference{
 		return folder;
 	}
 	
+	/**
+	 * Move a file into a folder yyyy.
+	 *
+	 * @param fileName The name of the file.
+	 * @param folder   The original destination.
+	 *
+	 * @return The new destination.
+	 */
 	private Path getYearFolder(final String fileName, final Path folder){
 		try{
 			final var date = LocalDateTime.parse(fileName.substring(0, fileName.lastIndexOf(".")), DATE_TIME_FORMATTER);
