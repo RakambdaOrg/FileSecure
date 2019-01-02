@@ -13,7 +13,6 @@ import java.util.List;
 import java.util.Objects;
 import java.util.function.Function;
 import java.util.regex.Pattern;
-import java.util.stream.Collectors;
 import java.util.stream.Stream;
 
 /**
@@ -27,7 +26,7 @@ import java.util.stream.Stream;
 public class FolderDifference{
 	private static final DateTimeFormatter DATE_TIME_FORMATTER = DateTimeFormatter.ofPattern("yyyy-MM-dd HH.mm.ss");
 	private static final Logger LOGGER = LoggerFactory.getLogger(FolderDifference.class);
-	private final List<Difference> differences;
+	private final Stream<Difference> differences;
 	
 	/**
 	 * Constructor.
@@ -36,24 +35,11 @@ public class FolderDifference{
 	 * @param target         The target path (where files will be copies/moves/...).
 	 * @param base           The base path (where to get the files from).
 	 * @param renameStrategy The rename strategy to use when we'll apply out backup strategy later.
+	 * @param flags          The flags to apply to the strategy.
 	 */
 	public FolderDifference(final Path target, final Path base, final Function<Path, String> renameStrategy, final List<Flags> flags){
-		differences = processInputs(base, target, renameStrategy, flags);
-	}
-	
-	/**
-	 * Build the difference between these two folders recursively.
-	 *
-	 * @param base           The base path (where to get the files from).
-	 * @param target         The target path (where files will be copies/moves/...).
-	 * @param renameStrategy The rename strategy to use when we'll apply out backup strategy later.
-	 * @param flags
-	 *
-	 * @return The list of differences.
-	 */
-	private List<Difference> processInputs(final Path base, final Path target, final Function<Path, String> renameStrategy, final List<Flags> flags){
 		getDifference(base, target, renameStrategy, flags);
-		return Arrays.stream(Objects.requireNonNull(base.toFile().listFiles())).parallel().flatMap(f -> getDifference(Paths.get(f.toURI()), target.resolve(f.getName()), renameStrategy, flags)).collect(Collectors.toList());
+		differences = Arrays.stream(Objects.requireNonNull(base.toFile().listFiles())).parallel().flatMap(f -> getDifference(Paths.get(f.toURI()), target.resolve(f.getName()), renameStrategy, flags));
 	}
 	
 	/**
@@ -188,6 +174,6 @@ public class FolderDifference{
 	 * @param excludes       The filters of the files not to keep. If empty, all files will be kept.
 	 */
 	public void applyStrategy(final Processor.BackupStrategy backupStrategy, final List<Pattern> filters, final List<Pattern> excludes){
-		differences.stream().filter(difference -> !excludes.stream().map(f -> f.matcher(difference.getBasePath().getFileName().toString()).matches()).findAny().orElse(false)).filter(difference -> filters.stream().map(f -> f.matcher(difference.getBasePath().getFileName().toString()).matches()).findAny().orElse(true)).forEach(difference -> difference.applyStrategy(backupStrategy));
+		differences.filter(difference -> !excludes.stream().map(f -> f.matcher(difference.getBasePath().getFileName().toString()).matches()).findAny().orElse(false)).filter(difference -> filters.stream().map(f -> f.matcher(difference.getBasePath().getFileName().toString()).matches()).findAny().orElse(true)).forEach(difference -> difference.applyStrategy(backupStrategy));
 	}
 }
