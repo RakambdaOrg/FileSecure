@@ -19,21 +19,18 @@ import java.nio.file.StandardCopyOption;
 class Difference{
 	private final static Logger LOGGER = LoggerFactory.getLogger(Difference.class);
 	private final Path base;
-	private final Path target;
-	private final String desiredNamed;
+	private final DesiredTarget target;
 	private String finalName;
 	
 	/**
 	 * Constructor.
 	 *
-	 * @param target       The target folder (where to copy/move/...).
 	 * @param base         The source folder.
-	 * @param desiredNamed A pair describing the file name in the base (key) and in the target (value).
+	 * @param target       The target folder (where to copy/move/...).
 	 */
-	Difference(final Path base, final Path target, final String desiredNamed){
+	Difference(final Path base, final DesiredTarget target){
 		this.target = target;
 		this.base = base;
-		this.desiredNamed = desiredNamed;
 		this.finalName = null;
 	}
 	
@@ -45,7 +42,7 @@ class Difference{
 	void applyStrategy(final Processor.BackupStrategy backupStrategy){
 		generateUniqueName();
 		
-		final var targetPath = target.resolve(finalName);
+		final var targetPath = target.getTargetFolder().resolve(finalName);
 		LOGGER.info("{} file {} to {}", backupStrategy.name(), base, targetPath);
 		try{
 			switch(backupStrategy){
@@ -70,12 +67,12 @@ class Difference{
 	
 	private void generateUniqueName(){
 		var i = 0;
-		final var desiredPath = base.getParent().resolve(desiredNamed);
-		final var extIndex = desiredNamed.lastIndexOf(".");
-		final var prefix = desiredNamed.substring(0, extIndex);
-		final var ext = desiredNamed.substring(extIndex);
-		finalName = desiredNamed;
-		while(getTargetFolder().resolve(finalName).toFile().exists()){
+		final var desiredPath = base.getParent().resolve(getDesiredTarget().getDesiredName());
+		final var extIndex = getDesiredTarget().getDesiredName().lastIndexOf(".");
+		final var prefix = getDesiredTarget().getDesiredName().substring(0, extIndex);
+		final var ext = getDesiredTarget().getDesiredName().substring(extIndex);
+		finalName = getDesiredTarget().getDesiredName();
+		while(getDesiredTarget().getTargetFolder().resolve(finalName).toFile().exists()){
 			final var newName = String.format("%s (%d)%s", prefix, ++i, ext);
 			LOGGER.debug("File '{}' already exists in target, trying with suffix {}", desiredPath, i);
 			finalName = newName;
@@ -86,11 +83,11 @@ class Difference{
 		}
 	}
 	
-	public Path getBasePath(){
-		return base;
+	public DesiredTarget getDesiredTarget(){
+		return target;
 	}
 	
-	public Path getTargetFolder(){
-		return target;
+	public Path getBasePath(){
+		return base;
 	}
 }

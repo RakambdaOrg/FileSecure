@@ -9,6 +9,5 @@ package fr.mrcraftcod.filesecure;
 public enum Flags{
 	UNIQUE_FOLDER_PER_DAY,
 	FOLDER_PER_DAY,
-	FOLDER_PER_MONTH,
-	FOLDER_PER_YEAR
+	FOLDER_PER_MONTH, FOLDER_PER_YEAR, NO_RENAME
 }
