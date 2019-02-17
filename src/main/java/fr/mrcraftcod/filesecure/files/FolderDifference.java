@@ -2,6 +2,7 @@ package fr.mrcraftcod.filesecure.files;
 
 import fr.mrcraftcod.filesecure.Flags;
 import fr.mrcraftcod.filesecure.Processor;
+import fr.mrcraftcod.filesecure.exceptions.FlagsProcessingException;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 import java.nio.file.Path;
@@ -55,7 +56,13 @@ public class FolderDifference{
 	private Stream<Difference> getDifference(final Path input, final Path output, final Function<Path, String> renameStrategy, final List<Flags> flags){
 		if(input.toFile().isFile()){
 			final var newFileName = renameStrategy.apply(input);
-			return Stream.of(new Difference(input, applyFlags(flags, newFileName, output.getParent()), newFileName));
+			try{
+				return Stream.of(new Difference(input, applyFlags(flags, input, newFileName, output.getParent())));
+			}
+			catch(final FlagsProcessingException e){
+				LOGGER.error("Failed to apply flags", e);
+			}
+			return Stream.empty();
 		}
 		return Arrays.stream(Objects.requireNonNull(input.toFile().listFiles())).parallel().flatMap(f -> getDifference(Paths.get(f.toURI()), output.resolve(f.getName()), renameStrategy, flags));
 	}
@@ -63,31 +70,37 @@ public class FolderDifference{
 	/**
 	 * Apply the flags on the strategy.
 	 *
-	 * @param flags       The flags to apply.
-	 * @param newFileName The name of the file after moving it.
-	 * @param parent      The path where the file will end up.
+	 * @param flags        The flags to apply.
+	 * @param originFile   The path to the file before moving it.
+	 * @param newFileName  The name of the file after moving it.
+	 * @param outputFolder The path where the file will end up.
 	 *
 	 * @return The new path where the file will end up.
 	 */
-	private Path applyFlags(final List<Flags> flags, final String newFileName, final Path parent){
+	private DesiredTarget applyFlags(final List<Flags> flags, final Path originFile, final String newFileName, final Path outputFolder) throws FlagsProcessingException{
+		final var desiredTarget = new DesiredTarget(outputFolder, newFileName);
 		try{
 			if(flags.contains(Flags.UNIQUE_FOLDER_PER_DAY)){
-				return getUniqueDayFolder(newFileName, parent);
+				desiredTarget.setTargetFolder(getUniqueDayFolder(newFileName, outputFolder));
 			}
 			else if(flags.contains(Flags.FOLDER_PER_DAY)){
-				return getDayFolder(newFileName, parent);
+				desiredTarget.setTargetFolder(getDayFolder(newFileName, outputFolder));
 			}
 			else if(flags.contains(Flags.FOLDER_PER_MONTH)){
-				return getMonthFolder(newFileName, parent);
+				desiredTarget.setTargetFolder(getMonthFolder(newFileName, outputFolder));
 			}
 			else if(flags.contains(Flags.FOLDER_PER_YEAR)){
-				return getYearFolder(newFileName, parent);
+				desiredTarget.setTargetFolder(getYearFolder(newFileName, outputFolder));
+			}
+			if(flags.contains(Flags.NO_RENAME)){
+				desiredTarget.setDesiredName(originFile.getFileName().toString());
 			}
 		}
-		catch(Exception e){
-			LOGGER.error("Error applying strategy to file {} in {}", newFileName, parent, e);
+		catch(final Exception e){
+			LOGGER.error("Error applying strategy to file {} in {}", newFileName, outputFolder, e);
+			throw new FlagsProcessingException("Error applying strategy to file " + newFileName + " in " + outputFolder.toFile().getAbsolutePath());
 		}
-		return parent;
+		return desiredTarget;
 	}
 	
 	/**
