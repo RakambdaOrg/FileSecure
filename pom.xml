@@ -6,14 +6,14 @@
 
     <groupId>mrcraftcod</groupId>
     <artifactId>FileSecure</artifactId>
-    <version>7.3</version>
+    <version>7.4</version>
 
     <properties>
         <project.build.sourceEncoding>UTF-8</project.build.sourceEncoding>
         <java.version>11</java.version>
         <main.class>fr.mrcraftcod.filesecure.Main</main.class>
         <mrcraftcod.utils>5.1.3</mrcraftcod.utils>
-        <log4j.version>2.11.1</log4j.version>
+        <log4j.version>2.11.2</log4j.version>
     </properties>
     <packaging>jar</packaging>
 
@@ -78,13 +78,6 @@
                     <showWarnings>true</showWarnings>
                     <showDeprecation>true</showDeprecation>
                 </configuration>
-                <dependencies>
-                    <dependency>
-                        <groupId>org.ow2.asm</groupId>
-                        <artifactId>asm</artifactId>
-                        <version>6.2.1</version>
-                    </dependency>
-                </dependencies>
             </plugin>
             <plugin>
                 <groupId>org.apache.maven.plugins</groupId>
@@ -133,17 +126,17 @@
         <dependency>
             <groupId>fr.mrcraftcod</groupId>
             <artifactId>NameAsCreated</artifactId>
-            <version>7.0</version>
+            <version>7.1</version>
         </dependency>
         <dependency>
             <groupId>org.json</groupId>
             <artifactId>json</artifactId>
-            <version>20171018</version>
+            <version>20180813</version>
         </dependency>
         <dependency>
             <groupId>org.jetbrains</groupId>
             <artifactId>annotations</artifactId>
-            <version>RELEASE</version>
+            <version>17.0.0</version>
             <scope>compile</scope>
         </dependency>
         <dependency>
