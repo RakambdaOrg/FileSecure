@@ -6,7 +6,7 @@
 module fr.mrcraftcod.thasecure {
 	requires fr.mrcraftcod.utils.base;
 	requires fr.mrcraftcod.nameascreated;
-	requires json;
+	requires org.json;
 	requires org.slf4j;
 	requires org.apache.logging.log4j;
 	requires java.scripting;
