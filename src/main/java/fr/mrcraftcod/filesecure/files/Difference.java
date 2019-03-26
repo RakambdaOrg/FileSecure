@@ -1,6 +1,6 @@
 package fr.mrcraftcod.filesecure.files;
 
-import fr.mrcraftcod.filesecure.Processor;
+import fr.mrcraftcod.filesecure.config.BackupStrategy;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 import java.io.IOException;
@@ -16,6 +16,7 @@ import java.nio.file.StandardCopyOption;
  * @author Thomas Couchoud
  * @since 2018-02-08
  */
+@SuppressWarnings("WeakerAccess")
 class Difference{
 	private final static Logger LOGGER = LoggerFactory.getLogger(Difference.class);
 	private final Path base;
@@ -39,7 +40,7 @@ class Difference{
 	 *
 	 * @param backupStrategy The strategy to apply.
 	 */
-	void applyStrategy(final Processor.BackupStrategy backupStrategy){
+	void applyStrategy(final BackupStrategy backupStrategy){
 		generateUniqueName();
 		
 		final var targetPath = target.getTargetFolder().resolve(finalName);
