@@ -8,6 +8,7 @@ import java.nio.file.Path;
  * @author Thomas Couchoud
  * @since 2019-02-17
  */
+@SuppressWarnings("WeakerAccess")
 public class DesiredTarget{
 	private Path targetFolder;
 	private String desiredName;
