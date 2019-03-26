@@ -2,6 +2,7 @@ package fr.mrcraftcod.filesecure.config.options;
 
 import fr.mrcraftcod.filesecure.config.Option;
 import fr.mrcraftcod.filesecure.files.DesiredTarget;
+import org.json.JSONObject;
 import java.nio.file.Path;
 
 /**
@@ -11,6 +12,10 @@ import java.nio.file.Path;
  * @since 2019-03-26
  */
 public class NoRenameOption implements Option{
+	public NoRenameOption(final JSONObject json){
+	
+	}
+	
 	@Override
 	public void apply(final Path originFile, final DesiredTarget desiredTarget, final String fileName, final Path folder){
 		desiredTarget.setDesiredName(originFile.getFileName().toString());
