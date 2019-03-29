@@ -59,7 +59,7 @@ public class FolderDifference{
 				LOGGER.error("Failed to apply flags", e);
 			}
 			catch(final AbandonBackupException e){
-				LOGGER.warn("Did not backup file {}", input, e);
+				LOGGER.warn("Did not backup file {} => {}", input, e.getMessage());
 			}
 			return Stream.empty();
 		}
