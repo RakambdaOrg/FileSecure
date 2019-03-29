@@ -2,15 +2,13 @@ package fr.mrcraftcod.filesecure.files;
 
 import fr.mrcraftcod.filesecure.config.BackupStrategy;
 import fr.mrcraftcod.filesecure.config.Option;
+import fr.mrcraftcod.filesecure.exceptions.AbandonBackupException;
 import fr.mrcraftcod.filesecure.exceptions.FlagsProcessingException;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 import java.nio.file.Path;
 import java.nio.file.Paths;
-import java.util.Arrays;
-import java.util.Collection;
-import java.util.Comparator;
-import java.util.Objects;
+import java.util.*;
 import java.util.function.Function;
 import java.util.regex.Pattern;
 import java.util.stream.Stream;
@@ -36,7 +34,7 @@ public class FolderDifference{
 	 * @param renameStrategy The rename strategy to use when we'll apply out backup strategy later.
 	 * @param flags          The flags to apply to the strategy.
 	 */
-	public FolderDifference(final Path target, final Path base, final Function<Path, String> renameStrategy, final Collection<Option> flags){
+	public FolderDifference(final Path target, final Path base, final Function<Path, String> renameStrategy, final List<Option> flags){
 		getDifference(base, target, renameStrategy, flags);
 		differences = Arrays.stream(Objects.requireNonNull(base.toFile().listFiles())).parallel().flatMap(f -> getDifference(Paths.get(f.toURI()), target.resolve(f.getName()), renameStrategy, flags));
 	}
@@ -51,7 +49,7 @@ public class FolderDifference{
 	 *
 	 * @return A stream of differences.
 	 */
-	private Stream<Difference> getDifference(final Path input, final Path output, final Function<Path, String> renameStrategy, final Collection<Option> flags){
+	private Stream<Difference> getDifference(final Path input, final Path output, final Function<Path, String> renameStrategy, final List<Option> flags){
 		if(input.toFile().isFile()){
 			final var newFileName = renameStrategy.apply(input);
 			try{
@@ -59,6 +57,9 @@ public class FolderDifference{
 			}
 			catch(final FlagsProcessingException e){
 				LOGGER.error("Failed to apply flags", e);
+			}
+			catch(final AbandonBackupException e){
+				LOGGER.warn("Did not backup file {}", input, e);
 			}
 			return Stream.empty();
 		}
@@ -76,11 +77,18 @@ public class FolderDifference{
 	 * @return The new path where the file will end up.
 	 *
 	 * @throws FlagsProcessingException If an error occurred while applying a flag.
+	 * @throws AbandonBackupException If the file shouldn't be backed up.
 	 */
-	private DesiredTarget applyFlags(final Collection<Option> flags, final Path originFile, final String newFileName, final Path outputFolder) throws FlagsProcessingException{
+	private DesiredTarget applyFlags(final List<Option> flags, final Path originFile, final String newFileName, final Path outputFolder) throws FlagsProcessingException, AbandonBackupException{
 		final var desiredTarget = new DesiredTarget(outputFolder, newFileName);
 		try{
-			flags.stream().sorted(Comparator.comparing(Option::getPriority)).forEachOrdered(o -> o.apply(originFile, desiredTarget, newFileName, outputFolder));
+			flags.sort(Comparator.comparing(Option::getPriority));
+			for(final var flag : flags){
+				flag.apply(originFile, desiredTarget, newFileName, outputFolder);
+			}
+		}
+		catch(final AbandonBackupException e){
+			throw e;
 		}
 		catch(final Exception e){
 			LOGGER.error("Error applying strategy to file {} in {}", newFileName, outputFolder, e);
@@ -88,7 +96,6 @@ public class FolderDifference{
 		}
 		return desiredTarget;
 	}
-	
 	
 	/**
 	 * Apply the given strategy (copy/move/...) to all differences.

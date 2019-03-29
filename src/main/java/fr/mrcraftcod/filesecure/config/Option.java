@@ -1,7 +1,9 @@
 package fr.mrcraftcod.filesecure.config;
 
 import fr.mrcraftcod.filesecure.Utils;
+import fr.mrcraftcod.filesecure.exceptions.AbandonBackupException;
 import fr.mrcraftcod.filesecure.files.DesiredTarget;
+import org.jetbrains.annotations.NotNull;
 import org.json.JSONObject;
 import java.lang.reflect.InvocationTargetException;
 import java.nio.file.Path;
@@ -13,7 +15,7 @@ import java.util.Optional;
  * @author Thomas Couchoud
  * @since 2019-03-26
  */
-public interface Option{
+public interface Option extends Comparable<Option>{
 	static Option parse(final JSONObject json) throws ClassNotFoundException, NoSuchMethodException, IllegalAccessException, InvocationTargetException, InstantiationException{
 		final var klazz = Class.forName(Optional.of(json.optString("name")).filter(s -> !s.isBlank()).orElseThrow(() -> new IllegalStateException("No class name provided")));
 		if(!Utils.getAllExtendedOrImplementedTypesRecursively(klazz).contains(Option.class)){
@@ -30,7 +32,12 @@ public interface Option{
 	 * @param fileName      The name of the file.
 	 * @param folder        The original destination.
 	 */
-	void apply(Path originFile, DesiredTarget desiredTarget, final String fileName, final Path folder);
+	void apply(Path originFile, DesiredTarget desiredTarget, final String fileName, final Path folder) throws AbandonBackupException;
 	
 	int getPriority();
+	
+	@Override
+	default int compareTo(@NotNull final Option o){
+		return Integer.compare(getPriority(), o.getPriority());
+	}
 }

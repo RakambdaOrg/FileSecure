@@ -9,6 +9,7 @@ import java.nio.file.Path;
 import java.nio.file.Paths;
 import java.util.ArrayList;
 import java.util.Collection;
+import java.util.List;
 import java.util.function.Function;
 import java.util.regex.Pattern;
 
@@ -141,7 +142,7 @@ public class Mapping{
 		return input;
 	}
 	
-	public Collection<Option> getOptions(){
+	public List<Option> getOptions(){
 		return this.options;
 	}
 	
