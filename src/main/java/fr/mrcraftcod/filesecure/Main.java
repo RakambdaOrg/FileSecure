@@ -1,6 +1,7 @@
 package fr.mrcraftcod.filesecure;
 
 import fr.mrcraftcod.filesecure.config.Configuration;
+import fr.mrcraftcod.filesecure.exceptions.MissingFolderException;
 import org.json.JSONObject;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
@@ -49,6 +50,9 @@ public class Main{
 				try{
 					final var processor = new Processor(mapping);
 					processor.process();
+				}
+				catch(final MissingFolderException e){
+					LOGGER.warn("Didn't run, {}", e.getMessage());
 				}
 				catch(final Exception e){
 					LOGGER.error("Failed to run processor", e);
