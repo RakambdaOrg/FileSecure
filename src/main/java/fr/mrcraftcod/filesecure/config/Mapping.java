@@ -7,9 +7,7 @@ import org.slf4j.LoggerFactory;
 import java.lang.reflect.InvocationTargetException;
 import java.nio.file.Path;
 import java.nio.file.Paths;
-import java.util.ArrayList;
-import java.util.Collection;
-import java.util.List;
+import java.util.*;
 import java.util.function.Function;
 import java.util.regex.Pattern;
 
@@ -35,7 +33,7 @@ public class Mapping{
 			return defaultRenaming.renameFile(f).getName(f.toFile());
 		}
 		catch(Exception e){
-			LOGGER.warn("Error renaming file {}", f);
+			LOGGER.warn("Error renaming file {} => {}", f, e.getMessage());
 		}
 		return f.toFile().getName();
 	};
@@ -63,7 +61,7 @@ public class Mapping{
 	/**
 	 * The options to pass to the processor.
 	 */
-	private final ArrayList<Option> options;
+	private final TreeSet<Option> options;
 	
 	/**
 	 * The strategy used to rename files when executing the backup. If null the original name is kept.
@@ -81,7 +79,7 @@ public class Mapping{
 		this.backupStrategy = BackupStrategy.getDefault();
 		this.filters = new ArrayList<>();
 		this.exclusions = new ArrayList<>();
-		this.options = new ArrayList<>();
+		this.options = new TreeSet<>(Comparator.comparing(Option::getPriority));
 	}
 	
 	static Mapping parse(final JSONObject json) throws ClassNotFoundException, NoSuchMethodException, InvocationTargetException, InstantiationException, IllegalAccessException{
@@ -142,7 +140,7 @@ public class Mapping{
 		return input;
 	}
 	
-	public List<Option> getOptions(){
+	public Set<Option> getOptions(){
 		return this.options;
 	}
 	
