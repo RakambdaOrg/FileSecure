@@ -56,14 +56,16 @@ public class FolderDifference{
 	private Stream<Difference> getDifference(final Path input, final Path output, final Function<Path, NewFile> renameStrategy, final Set<Option> flags){
 		if(input.toFile().isFile()){
 			final var newFile = renameStrategy.apply(input);
-			try{
-				return Stream.of(new Difference(input, applyFlags(flags, input, newFile, output.getParent())));
-			}
-			catch(final FlagsProcessingException e){
-				LOGGER.error("Failed to apply flags", e);
-			}
-			catch(final AbandonBackupException e){
-				LOGGER.warn("Did not backup file {} => {}", input, e.getMessage());
+			if(Objects.nonNull(newFile)){
+				try{
+					return Stream.of(new Difference(input, applyFlags(flags, input, newFile, output.getParent())));
+				}
+				catch(final FlagsProcessingException e){
+					LOGGER.error("Failed to apply flags", e);
+				}
+				catch(final AbandonBackupException e){
+					LOGGER.warn("Did not backup file {} => {}", input, e.getMessage());
+				}
 			}
 			return Stream.empty();
 		}
@@ -75,13 +77,13 @@ public class FolderDifference{
 	 *
 	 * @param flags        The flags to apply.
 	 * @param originFile   The path to the file before moving it.
-	 * @param newFile  The name of the file after moving it.
+	 * @param newFile      The name of the file after moving it.
 	 * @param outputFolder The path where the file will end up.
 	 *
 	 * @return The new path where the file will end up.
 	 *
 	 * @throws FlagsProcessingException If an error occurred while applying a flag.
-	 * @throws AbandonBackupException If the file shouldn't be backed up.
+	 * @throws AbandonBackupException   If the file shouldn't be backed up.
 	 */
 	private DesiredTarget applyFlags(final Set<Option> flags, final Path originFile, final NewFile newFile, final Path outputFolder) throws FlagsProcessingException, AbandonBackupException{
 		final var desiredTarget = new DesiredTarget(outputFolder, newFile, newFile.getName(originFile.toFile()));
