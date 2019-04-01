@@ -3,6 +3,7 @@ package fr.mrcraftcod.filesecure.config;
 import fr.mrcraftcod.filesecure.Utils;
 import fr.mrcraftcod.filesecure.exceptions.AbandonBackupException;
 import fr.mrcraftcod.filesecure.files.DesiredTarget;
+import fr.mrcraftcod.nameascreated.NewFile;
 import org.jetbrains.annotations.NotNull;
 import org.json.JSONObject;
 import java.lang.reflect.InvocationTargetException;
@@ -32,7 +33,7 @@ public interface Option extends Comparable<Option>{
 	 * @param fileName      The name of the file.
 	 * @param folder        The original destination.
 	 */
-	void apply(Path originFile, DesiredTarget desiredTarget, final String fileName, final Path folder) throws AbandonBackupException;
+	void apply(Path originFile, DesiredTarget desiredTarget, final NewFile fileName, final Path folder) throws AbandonBackupException;
 	
 	int getPriority();
 	

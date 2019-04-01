@@ -1,5 +1,6 @@
 package fr.mrcraftcod.filesecure.config;
 
+import fr.mrcraftcod.nameascreated.NewFile;
 import fr.mrcraftcod.nameascreated.strategy.ByDateRenaming;
 import org.json.JSONObject;
 import org.slf4j.Logger;
@@ -28,14 +29,14 @@ public class Mapping{
 	 * <p>
 	 * See https://github.com/MrCraftCod/NameAsCreated
 	 */
-	private static final Function<Path, String> defaultRenameStrategy = f -> {
+	private static final Function<Path, NewFile> defaultRenameStrategy = f -> {
 		try{
-			return defaultRenaming.renameFile(f).getName(f.toFile());
+			return defaultRenaming.renameFile(f);
 		}
 		catch(Exception e){
 			LOGGER.warn("Error renaming file {} => {}", f, e.getMessage());
 		}
-		return f.toFile().getName();
+		return null;
 	};
 	
 	/**
@@ -66,7 +67,7 @@ public class Mapping{
 	/**
 	 * The strategy used to rename files when executing the backup. If null the original name is kept.
 	 */
-	private Function<Path, String> renameStrategy;
+	private Function<Path, NewFile> renameStrategy;
 	/**
 	 * The backup strategy to use (copy/move/...). If null BackupStrategy.getDefault() will be used.
 	 */
@@ -148,11 +149,11 @@ public class Mapping{
 		return output;
 	}
 	
-	public Function<Path, String> getRenameStrategy(){
+	public Function<Path, NewFile> getRenameStrategy(){
 		return renameStrategy;
 	}
 	
-	public void setRenameStrategy(final Function<Path, String> renameStrategy){
+	public void setRenameStrategy(final Function<Path, NewFile> renameStrategy){
 		this.renameStrategy = renameStrategy;
 	}
 }
