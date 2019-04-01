@@ -2,12 +2,11 @@ package fr.mrcraftcod.filesecure.config.options;
 
 import fr.mrcraftcod.filesecure.config.Option;
 import fr.mrcraftcod.filesecure.files.DesiredTarget;
+import fr.mrcraftcod.nameascreated.NewFile;
 import org.json.JSONObject;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 import java.nio.file.Path;
-import java.time.LocalDateTime;
-import java.time.format.DateTimeFormatter;
 
 /**
  * Move a file into a folder yyyy-mm-dd.
@@ -19,16 +18,15 @@ import java.time.format.DateTimeFormatter;
  */
 public class UniqueFolderPerDayOption implements Option{
 	private static final Logger LOGGER = LoggerFactory.getLogger(UniqueFolderPerDayOption.class);
-	private static final DateTimeFormatter DATE_TIME_FORMATTER = DateTimeFormatter.ofPattern("yyyy-MM-dd HH.mm.ss");
 	
 	public UniqueFolderPerDayOption(final JSONObject json){
 	
 	}
 	
 	@Override
-	public void apply(final Path originFile, final DesiredTarget desiredTarget, final String fileName, final Path folder){
+	public void apply(final Path originFile, final DesiredTarget desiredTarget, final NewFile fileName, final Path folder){
 		try{
-			final var date = LocalDateTime.parse(fileName.substring(0, fileName.lastIndexOf(".")), DATE_TIME_FORMATTER);
+			final var date = fileName.getDate();
 			desiredTarget.setTargetFolder(folder.resolve(String.format("%4d-%02d-%02d", date.getYear(), date.getMonthValue(), date.getDayOfMonth())));
 		}
 		catch(final Exception e){

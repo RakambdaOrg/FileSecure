@@ -1,5 +1,6 @@
 package fr.mrcraftcod.filesecure.files;
 
+import fr.mrcraftcod.nameascreated.NewFile;
 import java.nio.file.Path;
 
 /**
@@ -10,6 +11,7 @@ import java.nio.file.Path;
  */
 @SuppressWarnings("WeakerAccess")
 public class DesiredTarget{
+	private final NewFile newFileInfos;
 	private Path targetFolder;
 	private String desiredName;
 	
@@ -19,13 +21,18 @@ public class DesiredTarget{
 	 * @param targetFolder The target folder (where to copy/move/...).
 	 * @param desiredName  A pair describing the file name in the base (key) and in the target (value).
 	 */
-	public DesiredTarget(final Path targetFolder, final String desiredName){
+	public DesiredTarget(final Path targetFolder, final NewFile newFileInfos, final String desiredName){
 		this.targetFolder = targetFolder;
 		this.desiredName = desiredName;
+		this.newFileInfos = newFileInfos;
 	}
 	
 	public String getDesiredName(){
 		return desiredName;
+	}
+	
+	public NewFile getNewFileInfos(){
+		return newFileInfos;
 	}
 	
 	public void setDesiredName(final String desiredName){
