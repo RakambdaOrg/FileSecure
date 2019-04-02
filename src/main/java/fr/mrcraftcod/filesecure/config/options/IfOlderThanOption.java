@@ -9,7 +9,6 @@ import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 import java.nio.file.Path;
 import java.time.ZonedDateTime;
-import java.time.format.DateTimeFormatter;
 import java.time.temporal.ChronoUnit;
 
 /**
@@ -20,7 +19,6 @@ import java.time.temporal.ChronoUnit;
  */
 public class IfOlderThanOption implements Option{
 	private static final Logger LOGGER = LoggerFactory.getLogger(IfOlderThanOption.class);
-	private static final DateTimeFormatter DATE_TIME_FORMATTER = DateTimeFormatter.ofPattern("yyyy-MM-dd HH.mm.ss");
 	private final int dayOffset;
 	
 	public IfOlderThanOption(final JSONObject json){
@@ -36,6 +34,9 @@ public class IfOlderThanOption implements Option{
 			}
 		}
 		catch(final Exception e){
+			if(e instanceof AbandonBackupException){
+				throw e;
+			}
 			LOGGER.error("Failed to determine if {} should be backed up, it will be by default", originFile, e);
 		}
 	}
