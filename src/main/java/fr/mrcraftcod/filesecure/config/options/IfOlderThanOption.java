@@ -36,6 +36,9 @@ public class IfOlderThanOption implements Option{
 			}
 		}
 		catch(final Exception e){
+			if(e instanceof AbandonBackupException){
+				throw e;
+			}
 			LOGGER.error("Failed to determine if {} should be backed up, it will be by default", originFile, e);
 		}
 	}
