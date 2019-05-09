@@ -8,7 +8,7 @@ module fr.mrcraftcod.thasecure {
 	requires fr.mrcraftcod.nameascreated;
 	requires org.json;
 	requires org.slf4j;
-	requires org.apache.logging.log4j;
+	requires ch.qos.logback.classic;
 	requires java.scripting;
 
 	requires org.jetbrains.annotations;
