@@ -7,14 +7,14 @@
     <name>FileSecure</name>
     <groupId>fr.mrcraftcod</groupId>
     <artifactId>filesecure</artifactId>
-    <version>8.9</version>
+    <version>8.10</version>
 
     <properties>
         <project.build.sourceEncoding>UTF-8</project.build.sourceEncoding>
         <java.version>12</java.version>
         <main.class>fr.mrcraftcod.filesecure.Main</main.class>
         <final.name>FileSecure</final.name>
-        <mrcraftcod.utils>12.0.3</mrcraftcod.utils>
+        <mrcraftcod.utils>12.0.5</mrcraftcod.utils>
     </properties>
     <packaging>jar</packaging>
 
@@ -71,7 +71,7 @@
                             <goal>shade</goal>
                         </goals>
                         <configuration>
-                            <shadedArtifactAttached>true</shadedArtifactAttached>
+                            <shadedArtifactAttached>false</shadedArtifactAttached>
                             <shadedClassifierName>jar-with-dependencies</shadedClassifierName>
                             <finalName>${final.name}</finalName>
                             <transformers>
@@ -155,7 +155,7 @@
         <dependency>
             <groupId>fr.mrcraftcod</groupId>
             <artifactId>nameascreated</artifactId>
-            <version>7.9</version>
+            <version>7.10</version>
         </dependency>
         <dependency>
             <groupId>org.json</groupId>
