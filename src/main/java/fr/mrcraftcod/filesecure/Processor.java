@@ -31,7 +31,7 @@ public class Processor{
 			throw new MissingFolderException(config.getInput());
 		}
 		if(!config.getOutput().toFile().exists()){
-			throw new MissingFolderException(config.getOutput());
+			throw new MissingFolderException(config.getOutput(), "output");
 		}
 		this.config = config;
 	}

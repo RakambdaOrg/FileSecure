@@ -22,7 +22,16 @@ public class MissingFolderException extends IllegalStateException
 	 */
 	public MissingFolderException(final Path path)
 	{
-		super("The input folder " + path + " doesn't exists");
+		this(path, "input");
+	}
+	
+	/**
+	 * Constructor.
+	 *
+	 * @param path The path of the folder that doesn't exists.
+	 */
+	public MissingFolderException(final Path path, final String kind){
+		super("The " + kind + " folder " + path + " doesn't exists");
 		this.path = path;
 	}
 	
