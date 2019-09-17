@@ -34,3 +34,4 @@ jobs:
           UPLOADER: "dropbox_uploader.sh"
           UPLOADER_CONFIG: "dropbox_uploader.cfg"
           DROPBOX_DEPLOY_TOKEN: ${{ secrets.DROPBOX_DEPLOY_TOKEN }}
+          GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
