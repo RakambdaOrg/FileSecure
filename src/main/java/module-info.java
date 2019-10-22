@@ -3,13 +3,14 @@
  *
  * @since 2018-01-23
  */
-module fr.mrcraftcod.thasecure {
-	requires fr.mrcraftcod.utils.base;
-	requires fr.mrcraftcod.nameascreated;
-	requires org.json;
-	
+open module fr.raksrinana.filesecure {
+	requires fr.mrcraftcod.utils.http;
+	requires fr.raksrinana.nameascreated;
+	requires jsr305;
+	requires com.fasterxml.jackson.core;
+	requires com.fasterxml.jackson.annotation;
+	requires com.fasterxml.jackson.databind;
 	requires org.slf4j;
 	requires ch.qos.logback.classic;
-
-	requires org.jetbrains.annotations;
+	requires jcommander;
 }

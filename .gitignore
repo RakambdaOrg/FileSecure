@@ -1,7 +1,10 @@
-config.json
-FileSecure.iml
-.idea
-target
-FileSecure.json
-
+.gradle/
+.idea/
+build/
 logs/
+out/
+target/
+
+*.iml
+config.json
+FileSecure.json
