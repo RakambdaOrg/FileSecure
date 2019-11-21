@@ -14,7 +14,13 @@ To work this program needs a configuration file that will be passed as a paramet
       "input": "/Input2",
       "output": "/Output2",
       "strategy": "move",
-      "filters": ".*\\.png,.*\\.jpg"
+      "filters": [
+        ".*\\.png",
+        ".*\\.jpg"     
+      ],
+      "excludes": [
+        ".*\\.ini"
+      ]
     }
   ]
 }
@@ -28,6 +34,7 @@ The input folder is backed up recursively. (Maybe one day this will be configura
 
 Other fields are optionals:
 * strategy: define the strategy to copy files. Can be "copy", "move" or "none" (just displays in standard output). Default is move.
-* filters: filters to apply to determine which files to keep. By default all files are kept.
+* filters: regexs to apply to determine which files to keep. By default all files are kept.
+* excludes: Regex to apply to determine which files to not process.
 
 When the files are moved, they are renamed with a date name "yyyy-MM-dd hh.mm.ss". This one is determined by its current name or its creation date. (Maybe one day this will be configurable).
