@@ -21,7 +21,7 @@ jobs:
         with:
           args: build
         env:
-          - GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+          GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
       - name: Deploy on Dropbox
         run: |
           curl "${UPLOADER_FETCH_URL}" -o "${UPLOADER}" &&
