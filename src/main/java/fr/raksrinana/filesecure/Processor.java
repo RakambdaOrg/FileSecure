@@ -11,23 +11,23 @@ import lombok.extern.slf4j.Slf4j;
  */
 @Slf4j
 public class Processor{
-	private final FolderMapping config;
+	private final FolderMapping mapping;
 	
 	/**
 	 * Constructor.
 	 *
-	 * @param config The configuration.
+	 * @param mapping The configuration.
 	 *
 	 * @throws MissingFolderException If one of the folders doesn't exists.
 	 */
-	public Processor(final FolderMapping config) throws MissingFolderException{
-		if(!config.getInput().toFile().exists()){
-			throw new MissingFolderException(config.getInput());
+	public Processor(final FolderMapping mapping) throws MissingFolderException{
+		if(!mapping.getInput().toFile().exists()){
+			throw new MissingFolderException(mapping.getInput());
 		}
-		if(!config.getOutput().toFile().exists()){
-			throw new MissingFolderException(config.getOutput(), "output");
+		if(!mapping.getOutput().toFile().exists()){
+			throw new MissingFolderException(mapping.getOutput(), "output");
 		}
-		this.config = config;
+		this.mapping = mapping;
 	}
 	
 	/**
@@ -53,9 +53,9 @@ public class Processor{
 	 * |-4.txt
 	 */
 	void process(){
-		log.info("Processing ({}) {} ==> {}", config.getStrategy().name(), config.getInput(), config.getOutput());
+		log.info("Processing ({}) {} ==> {}", mapping.getStrategy().name(), mapping.getInput(), mapping.getOutput());
 		log.info("Building differences...");
-		final var fd = new FolderDifference(config.getOutput(), config.getInput(), config.getRenameStrategy(), config.getOptions());
-		fd.applyStrategy(config.getStrategy(), config.getFilters(), config.getExcludes());
+		final var fd = new FolderDifference(mapping.getOutput(), mapping.getInput(), mapping.getRenameStrategy(), mapping.getOptions(), mapping.isRecursive());
+		fd.applyStrategy(mapping.getStrategy(), mapping.getFilters(), mapping.getExcludes());
 	}
 }
