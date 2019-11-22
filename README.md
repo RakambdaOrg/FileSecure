@@ -14,7 +14,7 @@ To work this program needs a configuration file that will be passed as a paramet
       "input": "/Input2",
       "output": "/Output2",
       "strategy": "move",
-      "recursive": true,
+      "depth": 2,
       "filters": [
         ".*\\.png",
         ".*\\.jpg"     
@@ -35,7 +35,7 @@ The input folder is backed up recursively. (Maybe one day this will be configura
 
 Other fields are optionals:
 * strategy: define the strategy to copy files. Can be "copy", "move" or "none" (just displays in standard output). Default is none.
-* recursive: Flag to indicate if processing folders recursively.
+* depth: The number of subfolder to visit. A negative value mean an infinite number of subfolder.
 * filters: regexs to apply to determine which files to keep. By default all files are kept.
 * excludes: Regex to apply to determine which files to not process. Default excludes none.
 

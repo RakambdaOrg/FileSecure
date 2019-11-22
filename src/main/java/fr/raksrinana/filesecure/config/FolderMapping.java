@@ -62,9 +62,9 @@ public class FolderMapping{
 	@JsonProperty("options")
 	@Getter
 	private Set<Option> options = new HashSet<>();
-	@JsonProperty("recursive")
+	@JsonProperty("depth")
 	@Getter
-	private boolean recursive = false;
+	private int depth = -1;
 	
 	@Override
 	public String toString(){

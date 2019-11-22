@@ -31,14 +31,14 @@ public class FolderDifference{
 	 * @param base           The base path (where to get the files from).
 	 * @param renameStrategy The rename strategy to use when we'll apply out backup strategy later.
 	 * @param flags          The flags to apply to the strategy.
-	 * @param recursive      Indicate if we should search recursively (inside folders that we encounter).
+	 * @param depth          The number of subfolder to visit. A negative value is infinite.
 	 */
-	public FolderDifference(final Path target, final Path base, final Function<Path, NewFile> renameStrategy, final Set<Option> flags, final boolean recursive){
+	public FolderDifference(final Path target, final Path base, final Function<Path, NewFile> renameStrategy, final Set<Option> flags, final int depth){
 		if(base.toFile().isFile()){
-			differences = getDifference(base, target, renameStrategy, flags, false);
+			differences = getDifference(base, target, renameStrategy, flags, 0);
 		}
 		else{
-			differences = Arrays.stream(Objects.requireNonNull(base.toFile().listFiles())).parallel().flatMap(f -> getDifference(Paths.get(f.toURI()), target.resolve(f.getName()), renameStrategy, flags, recursive));
+			differences = Arrays.stream(Objects.requireNonNull(base.toFile().listFiles())).parallel().flatMap(f -> getDifference(Paths.get(f.toURI()), target.resolve(f.getName()), renameStrategy, flags, depth));
 		}
 	}
 	
@@ -49,11 +49,11 @@ public class FolderDifference{
 	 * @param output         The output path.
 	 * @param renameStrategy The rename strategy to use when we'll apply our backup strategy later.
 	 * @param flags          The flags to apply to the strategy.
-	 * @param recursive      Indicate if we should search recursively (inside folders that we encounter).
+	 * @param depth          The number of subfolder to visit. A negative value is infinite.
 	 *
 	 * @return A stream of differences.
 	 */
-	private Stream<Difference> getDifference(final Path input, final Path output, final Function<Path, NewFile> renameStrategy, final Set<Option> flags, final boolean recursive){
+	private Stream<Difference> getDifference(final Path input, final Path output, final Function<Path, NewFile> renameStrategy, final Set<Option> flags, final int depth){
 		if(input.toFile().isFile()){
 			final var newFile = renameStrategy.apply(input);
 			if(Objects.nonNull(newFile)){
@@ -69,10 +69,10 @@ public class FolderDifference{
 			}
 			return Stream.empty();
 		}
-		if(!recursive){
+		if(depth == 0){
 			return Stream.empty();
 		}
-		return Arrays.stream(Objects.requireNonNull(input.toFile().listFiles())).parallel().flatMap(f -> getDifference(Paths.get(f.toURI()), output.resolve(f.getName()), renameStrategy, flags, recursive));
+		return Arrays.stream(Objects.requireNonNull(input.toFile().listFiles())).parallel().flatMap(f -> getDifference(Paths.get(f.toURI()), output.resolve(f.getName()), renameStrategy, flags, depth - 1));
 	}
 	
 	/**
