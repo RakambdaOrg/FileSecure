@@ -10,8 +10,14 @@ jobs:
     runs-on: ubuntu-latest
     steps:
       - uses: actions/checkout@v1
+      - uses: actions/cache@v1
+        with:
+          path: ~/.gradle/caches
+          key: ${{ runner.os }}-gradle-${{ hashFiles('**/*.gradle') }}
+          restore-keys: |
+            ${{ runner.os }}-gradle-
       - name: Build with gradle
-        uses: MrRamych/gradle-actions/openjdk-12@3.0
+        uses: MrRamych/gradle-actions/openjdk-13@3.1
         with:
           args: build
       - name: Deploy on Dropbox
@@ -26,3 +32,4 @@ jobs:
           UPLOADER: "dropbox_uploader.sh"
           UPLOADER_CONFIG: "dropbox_uploader.cfg"
           DROPBOX_DEPLOY_TOKEN: ${{ secrets.DROPBOX_DEPLOY_TOKEN }}
+          GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}

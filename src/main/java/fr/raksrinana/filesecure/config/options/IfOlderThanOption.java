@@ -8,28 +8,22 @@ import fr.raksrinana.filesecure.config.Option;
 import fr.raksrinana.filesecure.exceptions.AbandonBackupException;
 import fr.raksrinana.filesecure.files.DesiredTarget;
 import fr.raksrinana.nameascreated.NewFile;
-import org.slf4j.Logger;
-import org.slf4j.LoggerFactory;
+import lombok.Getter;
+import lombok.NoArgsConstructor;
+import lombok.extern.slf4j.Slf4j;
 import java.nio.file.Path;
 import java.time.ZonedDateTime;
 import java.time.temporal.ChronoUnit;
 
-/**
- * Created by mrcraftcod (MrCraftCod - zerderr@gmail.com) on 2019-03-29.
- *
- * @author Thomas Couchoud
- * @since 2019-03-29
- */
 @JsonIgnoreProperties(ignoreUnknown = true)
 @JsonInclude(JsonInclude.Include.NON_NULL)
 @JsonTypeName("IfOlderThanOption")
+@Slf4j
+@NoArgsConstructor
 public class IfOlderThanOption implements Option{
-	private static final Logger LOGGER = LoggerFactory.getLogger(IfOlderThanOption.class);
 	@JsonProperty(value = "dayOffset", required = true)
+	@Getter
 	private int dayOffset = Integer.MAX_VALUE;
-	
-	public IfOlderThanOption(){
-	}
 	
 	@Override
 	public void apply(final Path originFile, final DesiredTarget desiredTarget, final NewFile fileName, final Path folder) throws AbandonBackupException{
@@ -43,12 +37,8 @@ public class IfOlderThanOption implements Option{
 			if(e instanceof AbandonBackupException){
 				throw e;
 			}
-			LOGGER.error("Failed to determine if {} should be backed up, it will be by default", originFile, e);
+			log.error("Failed to determine if {} should be backed up, it will be by default", originFile, e);
 		}
-	}
-	
-	private int getDayOffset(){
-		return this.dayOffset;
 	}
 	
 	@Override

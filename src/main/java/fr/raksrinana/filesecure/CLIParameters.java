@@ -1,19 +1,14 @@
 package fr.raksrinana.filesecure;
 
 import com.beust.jcommander.Parameter;
-import java.nio.file.Path;
-import java.nio.file.Paths;
+import lombok.AccessLevel;
+import lombok.Getter;
+import lombok.NoArgsConstructor;
 
-@SuppressWarnings("FieldMayBeFinal")
+@NoArgsConstructor(access = AccessLevel.PACKAGE)
 public class CLIParameters{
 	@Parameter(description = "The path to the configuration file", /*converter = PathConverter.class,*/ required = true)
+	@Getter
 	private String configurationFile;
-	
-	CLIParameters(){
-	}
-	
-	public Path getConfigurationFile(){
-		return Paths.get(configurationFile);
-	}
 }
 

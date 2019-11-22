@@ -9,8 +9,9 @@ import com.fasterxml.jackson.databind.ext.NioPathDeserializer;
 import fr.raksrinana.filesecure.utils.json.PatternDeserializer;
 import fr.raksrinana.nameascreated.NewFile;
 import fr.raksrinana.nameascreated.strategy.ByDateRenaming;
-import org.slf4j.Logger;
-import org.slf4j.LoggerFactory;
+import lombok.Getter;
+import lombok.NoArgsConstructor;
+import lombok.extern.slf4j.Slf4j;
 import java.nio.file.Path;
 import java.util.ArrayList;
 import java.util.HashSet;
@@ -21,69 +22,52 @@ import java.util.regex.Pattern;
 
 @JsonIgnoreProperties(ignoreUnknown = true)
 @JsonInclude(JsonInclude.Include.NON_NULL)
+@NoArgsConstructor
+@Slf4j
 public class FolderMapping{
-	private static final Logger LOGGER = LoggerFactory.getLogger(FolderMapping.class);
 	private final static ByDateRenaming defaultRenaming = new ByDateRenaming();
 	/**
 	 * The strategy used to rename files when executing the backup. If null the original name is kept.
 	 */
 	@JsonIgnore
+	@Getter
 	private Function<Path, NewFile> renameStrategy = f -> {
 		try{
 			return defaultRenaming.renameFile(f);
 		}
 		catch(Exception e){
-			LOGGER.warn("Error renaming file {} => {}", f, e.getMessage());
+			log.warn("Error renaming file {} => {}", f, e.getMessage());
 		}
 		return null;
 	};
 	@JsonProperty("input")
+	@Getter
 	@JsonDeserialize(using = NioPathDeserializer.class)
 	private Path input;
 	@JsonProperty("output")
+	@Getter
 	@JsonDeserialize(using = NioPathDeserializer.class)
 	private Path output;
 	@JsonProperty("strategy")
+	@Getter
 	private BackupStrategy strategy = BackupStrategy.getDefault();
 	@JsonProperty("filters")
+	@Getter
 	@JsonDeserialize(contentUsing = PatternDeserializer.class)
 	private List<Pattern> filters = new ArrayList<>();
 	@JsonProperty("excludes")
+	@Getter
 	@JsonDeserialize(contentUsing = PatternDeserializer.class)
 	private List<Pattern> excludes = new ArrayList<>();
 	@JsonProperty("options")
+	@Getter
 	private Set<Option> options = new HashSet<>();
+	@JsonProperty("recursive")
+	@Getter
+	private boolean recursive = false;
 	
 	@Override
 	public String toString(){
 		return getInput() + " ==> " + getOutput() + '[' + getStrategy() + " / " + getFilters().size() + " filters / " + getExcludes().size() + " excludes / " + getOptions().size() + " options" + ']';
-	}
-	
-	public Path getInput(){
-		return input;
-	}
-	
-	public Path getOutput(){
-		return output;
-	}
-	
-	public BackupStrategy getStrategy(){
-		return strategy;
-	}
-	
-	public List<Pattern> getFilters(){
-		return filters;
-	}
-	
-	public List<Pattern> getExcludes(){
-		return excludes;
-	}
-	
-	public Set<Option> getOptions(){
-		return options;
-	}
-	
-	public Function<Path, NewFile> getRenameStrategy(){
-		return renameStrategy;
 	}
 }

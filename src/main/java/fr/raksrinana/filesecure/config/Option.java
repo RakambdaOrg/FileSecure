@@ -8,15 +8,9 @@ import fr.raksrinana.filesecure.config.options.*;
 import fr.raksrinana.filesecure.exceptions.AbandonBackupException;
 import fr.raksrinana.filesecure.files.DesiredTarget;
 import fr.raksrinana.nameascreated.NewFile;
-import javax.annotation.Nonnull;
+import lombok.NonNull;
 import java.nio.file.Path;
 
-/**
- * Created by mrcraftcod (MrCraftCod - zerderr@gmail.com) on 2019-03-26.
- *
- * @author Thomas Couchoud
- * @since 2019-03-26
- */
 @JsonIgnoreProperties(ignoreUnknown = true)
 @JsonInclude(JsonInclude.Include.NON_NULL)
 @JsonTypeInfo(use = JsonTypeInfo.Id.NAME, property = "name")
@@ -38,7 +32,7 @@ public interface Option extends Comparable<Option>{
 	void apply(Path originFile, DesiredTarget desiredTarget, final NewFile fileName, final Path folder) throws AbandonBackupException;
 	
 	@Override
-	default int compareTo(@Nonnull final Option o){
+	default int compareTo(@NonNull final Option o){
 		return Integer.compare(getPriority(), o.getPriority());
 	}
 	

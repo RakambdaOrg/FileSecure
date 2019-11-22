@@ -5,8 +5,7 @@ import fr.raksrinana.filesecure.config.Option;
 import fr.raksrinana.filesecure.exceptions.AbandonBackupException;
 import fr.raksrinana.filesecure.exceptions.FlagsProcessingException;
 import fr.raksrinana.nameascreated.NewFile;
-import org.slf4j.Logger;
-import org.slf4j.LoggerFactory;
+import lombok.extern.slf4j.Slf4j;
 import java.nio.file.Path;
 import java.nio.file.Paths;
 import java.util.Arrays;
@@ -19,14 +18,9 @@ import java.util.stream.Stream;
 
 /**
  * List all the differences between two folders.
- * <p>
- * Created by Thomas Couchoud (MrCraftCod - zerderr@gmail.com) on 14/07/2017.
- *
- * @author Thomas Couchoud
- * @since 2017-07-14
  */
+@Slf4j
 public class FolderDifference{
-	private static final Logger LOGGER = LoggerFactory.getLogger(FolderDifference.class);
 	private final Stream<Difference> differences;
 	
 	/**
@@ -37,10 +31,15 @@ public class FolderDifference{
 	 * @param base           The base path (where to get the files from).
 	 * @param renameStrategy The rename strategy to use when we'll apply out backup strategy later.
 	 * @param flags          The flags to apply to the strategy.
+	 * @param recursive      Indicate if we should search recursively (inside folders that we encounter).
 	 */
-	public FolderDifference(final Path target, final Path base, final Function<Path, NewFile> renameStrategy, final Set<Option> flags){
-		getDifference(base, target, renameStrategy, flags);
-		differences = Arrays.stream(Objects.requireNonNull(base.toFile().listFiles())).parallel().flatMap(f -> getDifference(Paths.get(f.toURI()), target.resolve(f.getName()), renameStrategy, flags));
+	public FolderDifference(final Path target, final Path base, final Function<Path, NewFile> renameStrategy, final Set<Option> flags, final boolean recursive){
+		if(base.toFile().isFile()){
+			differences = getDifference(base, target, renameStrategy, flags, false);
+		}
+		else{
+			differences = Arrays.stream(Objects.requireNonNull(base.toFile().listFiles())).parallel().flatMap(f -> getDifference(Paths.get(f.toURI()), target.resolve(f.getName()), renameStrategy, flags, recursive));
+		}
 	}
 	
 	/**
@@ -50,10 +49,11 @@ public class FolderDifference{
 	 * @param output         The output path.
 	 * @param renameStrategy The rename strategy to use when we'll apply our backup strategy later.
 	 * @param flags          The flags to apply to the strategy.
+	 * @param recursive      Indicate if we should search recursively (inside folders that we encounter).
 	 *
 	 * @return A stream of differences.
 	 */
-	private Stream<Difference> getDifference(final Path input, final Path output, final Function<Path, NewFile> renameStrategy, final Set<Option> flags){
+	private Stream<Difference> getDifference(final Path input, final Path output, final Function<Path, NewFile> renameStrategy, final Set<Option> flags, final boolean recursive){
 		if(input.toFile().isFile()){
 			final var newFile = renameStrategy.apply(input);
 			if(Objects.nonNull(newFile)){
@@ -61,15 +61,18 @@ public class FolderDifference{
 					return Stream.of(new Difference(input, applyFlags(flags, input, newFile, output.getParent())));
 				}
 				catch(final FlagsProcessingException e){
-					LOGGER.error("Failed to apply flags", e);
+					log.error("Failed to apply flags", e);
 				}
 				catch(final AbandonBackupException e){
-					LOGGER.warn("Did not backup file {} => {}", input, e.getMessage());
+					log.warn("Did not backup file {} => {}", input, e.getMessage());
 				}
 			}
 			return Stream.empty();
 		}
-		return Arrays.stream(Objects.requireNonNull(input.toFile().listFiles())).parallel().flatMap(f -> getDifference(Paths.get(f.toURI()), output.resolve(f.getName()), renameStrategy, flags));
+		if(!recursive){
+			return Stream.empty();
+		}
+		return Arrays.stream(Objects.requireNonNull(input.toFile().listFiles())).parallel().flatMap(f -> getDifference(Paths.get(f.toURI()), output.resolve(f.getName()), renameStrategy, flags, recursive));
 	}
 	
 	/**
@@ -96,7 +99,7 @@ public class FolderDifference{
 			throw e;
 		}
 		catch(final Exception e){
-			LOGGER.error("Error applying strategy to file {} in {}", newFile, outputFolder, e);
+			log.error("Error applying strategy to file {} in {}", newFile, outputFolder, e);
 			throw new FlagsProcessingException("Error applying strategy to file " + newFile + " in " + outputFolder.toFile().getAbsolutePath());
 		}
 		return desiredTarget;

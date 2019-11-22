@@ -14,6 +14,7 @@ To work this program needs a configuration file that will be passed as a paramet
       "input": "/Input2",
       "output": "/Output2",
       "strategy": "move",
+      "recursive": true,
       "filters": [
         ".*\\.png",
         ".*\\.jpg"     
@@ -33,8 +34,9 @@ Each backup to do is an object in the array called "mappings". Two fields are ma
 The input folder is backed up recursively. (Maybe one day this will be configurable).
 
 Other fields are optionals:
-* strategy: define the strategy to copy files. Can be "copy", "move" or "none" (just displays in standard output). Default is move.
+* strategy: define the strategy to copy files. Can be "copy", "move" or "none" (just displays in standard output). Default is none.
+* recursive: Flag to indicate if processing folders recursively.
 * filters: regexs to apply to determine which files to keep. By default all files are kept.
-* excludes: Regex to apply to determine which files to not process.
+* excludes: Regex to apply to determine which files to not process. Default excludes none.
 
 When the files are moved, they are renamed with a date name "yyyy-MM-dd hh.mm.ss". This one is determined by its current name or its creation date. (Maybe one day this will be configurable).

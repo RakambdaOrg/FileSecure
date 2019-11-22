@@ -1,8 +1,8 @@
 package fr.raksrinana.filesecure.files;
 
 import fr.raksrinana.filesecure.config.BackupStrategy;
-import org.slf4j.Logger;
-import org.slf4j.LoggerFactory;
+import lombok.Getter;
+import lombok.extern.slf4j.Slf4j;
 import java.io.IOException;
 import java.nio.file.Files;
 import java.nio.file.Path;
@@ -10,28 +10,24 @@ import java.nio.file.StandardCopyOption;
 
 /**
  * Represent a file difference.
- * <p>
- * Created by Thomas Couchoud (MrCraftCod - zerderr@gmail.com) on 08/02/18.
- *
- * @author Thomas Couchoud
- * @since 2018-02-08
  */
-@SuppressWarnings("WeakerAccess")
+@Slf4j
 class Difference{
-	private final static Logger LOGGER = LoggerFactory.getLogger(Difference.class);
-	private final Path base;
-	private final DesiredTarget target;
+	@Getter
+	private final Path basePath;
+	@Getter
+	private final DesiredTarget desiredTarget;
 	private String finalName;
 	
 	/**
 	 * Constructor.
 	 *
-	 * @param base         The source folder.
-	 * @param target       The target folder (where to copy/move/...).
+	 * @param basePath      The source folder.
+	 * @param desiredTarget The target folder (where to copy/move/...).
 	 */
-	Difference(final Path base, final DesiredTarget target){
-		this.target = target;
-		this.base = base;
+	Difference(final Path basePath, final DesiredTarget desiredTarget){
+		this.desiredTarget = desiredTarget;
+		this.basePath = basePath;
 		this.finalName = null;
 	}
 	
@@ -42,53 +38,43 @@ class Difference{
 	 */
 	void applyStrategy(final BackupStrategy backupStrategy){
 		generateUniqueName();
-		
-		final var targetPath = target.getTargetFolder().resolve(finalName);
-		LOGGER.info("{} file {} to {}", backupStrategy.name(), base, targetPath);
+		final var targetPath = desiredTarget.getTargetFolder().resolve(finalName);
+		log.info("{} file {} to {}", backupStrategy.name(), basePath, targetPath);
 		try{
 			switch(backupStrategy){
 				case MOVE:
 					targetPath.getParent().toFile().mkdirs();
-					if(targetPath.toFile().exists() || !Files.move(base, targetPath, StandardCopyOption.REPLACE_EXISTING).toFile().exists()){
-						LOGGER.info("File {} not {}", base, backupStrategy.name());
+					if(targetPath.toFile().exists() || !Files.move(basePath, targetPath, StandardCopyOption.REPLACE_EXISTING).toFile().exists()){
+						log.info("File {} not {}", basePath, backupStrategy.name());
 					}
 					break;
 				case COPY:
 					targetPath.getParent().toFile().mkdirs();
-					if(targetPath.toFile().exists() || !Files.copy(base, targetPath, StandardCopyOption.REPLACE_EXISTING).toFile().exists()){
-						LOGGER.info("File {} not {}", base, backupStrategy.name());
+					if(targetPath.toFile().exists() || !Files.copy(basePath, targetPath, StandardCopyOption.REPLACE_EXISTING).toFile().exists()){
+						log.info("File {} not {}", basePath, backupStrategy.name());
 					}
 					break;
 			}
 		}
 		catch(final IOException e){
-			LOGGER.warn("Error applying strategy on file", e);
+			log.warn("Error applying strategy on file", e);
 		}
 	}
 	
 	private void generateUniqueName(){
 		var i = 0;
-		final var desiredPath = base.getParent().resolve(getDesiredTarget().getDesiredName());
+		final var desiredPath = basePath.getParent().resolve(getDesiredTarget().getDesiredName());
 		final var extIndex = getDesiredTarget().getDesiredName().lastIndexOf(".");
 		final var prefix = getDesiredTarget().getDesiredName().substring(0, extIndex);
 		final var ext = getDesiredTarget().getDesiredName().substring(extIndex);
 		finalName = getDesiredTarget().getDesiredName();
 		while(getDesiredTarget().getTargetFolder().resolve(finalName).toFile().exists()){
 			final var newName = String.format("%s (%d)%s", prefix, ++i, ext);
-			LOGGER.debug("File '{}' already exists in target, trying with suffix {}", desiredPath, i);
+			log.debug("File '{}' already exists in target, trying with suffix {}", desiredPath, i);
 			finalName = newName;
 		}
-		
 		if(i > 0){
-			LOGGER.info("File {} was renamed to {}", desiredPath, finalName);
+			log.info("File {} was renamed to {}", desiredPath, finalName);
 		}
-	}
-	
-	public DesiredTarget getDesiredTarget(){
-		return target;
-	}
-	
-	public Path getBasePath(){
-		return base;
 	}
 }

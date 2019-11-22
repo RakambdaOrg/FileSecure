@@ -3,20 +3,14 @@ package fr.raksrinana.filesecure;
 import fr.raksrinana.filesecure.config.FolderMapping;
 import fr.raksrinana.filesecure.exceptions.MissingFolderException;
 import fr.raksrinana.filesecure.files.FolderDifference;
-import org.slf4j.Logger;
-import org.slf4j.LoggerFactory;
+import lombok.extern.slf4j.Slf4j;
 
 /**
  * Process a pair of folder, one being the source of the backup, and the other the destination.
  * Singleton.
- * <p>
- * Created by Thomas Couchoud (MrCraftCod - zerderr@gmail.com) on 02/02/2018.
- *
- * @author Thomas Couchoud
- * @since 2018-02-02
  */
+@Slf4j
 public class Processor{
-	private static final Logger LOGGER = LoggerFactory.getLogger(Processor.class);
 	private final FolderMapping config;
 	
 	/**
@@ -59,8 +53,8 @@ public class Processor{
 	 * |-4.txt
 	 */
 	void process(){
-		LOGGER.info("Processing ({}) {} ==> {}", config.getStrategy().name(), config.getInput(), config.getOutput());
-		LOGGER.info("Building differences...");
+		log.info("Processing ({}) {} ==> {}", config.getStrategy().name(), config.getInput(), config.getOutput());
+		log.info("Building differences...");
 		final var fd = new FolderDifference(config.getOutput(), config.getInput(), config.getRenameStrategy(), config.getOptions());
 		fd.applyStrategy(config.getStrategy(), config.getFilters(), config.getExcludes());
 	}

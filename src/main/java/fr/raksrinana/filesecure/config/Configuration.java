@@ -7,47 +7,37 @@ import com.fasterxml.jackson.annotation.JsonProperty;
 import com.fasterxml.jackson.databind.ObjectMapper;
 import com.fasterxml.jackson.databind.ObjectReader;
 import com.fasterxml.jackson.databind.SerializationFeature;
-import org.slf4j.Logger;
-import org.slf4j.LoggerFactory;
-import javax.annotation.Nonnull;
+import lombok.Getter;
+import lombok.NoArgsConstructor;
+import lombok.NonNull;
+import lombok.extern.slf4j.Slf4j;
 import java.io.IOException;
 import java.nio.file.Files;
 import java.nio.file.Path;
 import java.util.List;
 import java.util.Optional;
 
-/**
- * Created by mrcraftcod (MrCraftCod - zerderr@gmail.com) on 2019-03-26.
- *
- * @author Thomas Couchoud
- * @since 2019-03-26
- */
 @JsonIgnoreProperties(ignoreUnknown = true)
 @JsonInclude(JsonInclude.Include.NON_NULL)
+@Slf4j
+@NoArgsConstructor
 public class Configuration{
-	private static final Logger LOGGER = LoggerFactory.getLogger(Configuration.class);
 	private static final ObjectReader objectReader;
 	@JsonProperty("mappings")
+	@Getter
 	private List<FolderMapping> mappings;
 	
-	public Configuration(){
-	}
-	
-	@Nonnull
+	@NonNull
 	public static Optional<Configuration> loadConfiguration(final Path path){
 		if(path.toFile().exists()){
 			try(final var fis = Files.newBufferedReader(path)){
 				return Optional.ofNullable(objectReader.readValue(fis));
 			}
 			catch(final IOException e){
-				LOGGER.error("Failed to read settings in {}", path, e);
+				log.error("Failed to read settings in {}", path, e);
 			}
 		}
 		return Optional.empty();
-	}
-	
-	public List<FolderMapping> getMappings(){
-		return mappings;
 	}
 	
 	static{
