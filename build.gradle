@@ -41,7 +41,7 @@ dependencies {
         exclude group: 'edu.washington.cs.types.checker', module: 'checker-framework'
     }
 
-    implementation("fr.mrcraftcod:utils.http:${project.raksrinana_utils_version}")
+    implementation("fr.raksrinana:utils.http:${project.raksrinana_utils_version}")
     implementation("fr.raksrinana:nameascreated:${project.nameascreated_version}")
 
     implementation("com.fasterxml.jackson.core:jackson-core:${project.jackson_version}")
@@ -59,7 +59,11 @@ repositories {
         url = 'https://jcenter.bintray.com'
     }
     maven {
-        url = 'https://maven.mrcraftcod.fr'
+        url = 'https://maven.pkg.github.com/RakSrinaNa/JavaUtils/'
+        credentials {
+            username buildProperties.secrets['GITHUB_USER'].string
+            password buildProperties.secrets['GITHUB_TOKEN'].string
+        }
     }
     maven {
         url = 'https://maven.pkg.github.com/RakSrinaNa/NameAsCreated/'
