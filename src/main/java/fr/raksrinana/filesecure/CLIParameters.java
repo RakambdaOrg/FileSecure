@@ -9,6 +9,6 @@ import lombok.NoArgsConstructor;
 public class CLIParameters{
 	@Parameter(description = "The path to the configuration file", /*converter = PathConverter.class,*/ required = true)
 	@Getter
-	private String configurationFile;
+	public String configurationFile;
 }
 
