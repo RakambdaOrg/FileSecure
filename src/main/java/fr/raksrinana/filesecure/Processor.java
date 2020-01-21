@@ -57,7 +57,7 @@ public class Processor{
 	void process(){
 		log.info("Processing ({}) {} ==> {}", mapping.getStrategy().name(), mapping.getInput(), mapping.getOutput());
 		log.info("Building differences...");
-		final var fd = new FolderDifference(mapping.getOutput(), mapping.getInput(), mapping.getRenameStrategy(), mapping.getOptions(), mapping.getDepth());
-		fd.applyStrategy(mapping.getStrategy(), mapping.getFilters(), mapping.getExcludes());
+		final var fd = new FolderDifference(mapping.getInput(), mapping.getOutput(), mapping.getRenameStrategy(), mapping.getInputFolderOptions(), mapping.getFileOptions(), mapping.getDepth(), mapping.getFilters(), mapping.getExcludes());
+		fd.applyStrategy(mapping.getStrategy());
 	}
 }

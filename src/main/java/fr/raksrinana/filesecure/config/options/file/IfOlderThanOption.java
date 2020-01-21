@@ -1,10 +1,10 @@
-package fr.raksrinana.filesecure.config.options;
+package fr.raksrinana.filesecure.config.options.file;
 
 import com.fasterxml.jackson.annotation.JsonIgnoreProperties;
 import com.fasterxml.jackson.annotation.JsonInclude;
 import com.fasterxml.jackson.annotation.JsonProperty;
 import com.fasterxml.jackson.annotation.JsonTypeName;
-import fr.raksrinana.filesecure.config.Option;
+import fr.raksrinana.filesecure.config.FileOption;
 import fr.raksrinana.filesecure.exceptions.AbandonBackupException;
 import fr.raksrinana.filesecure.files.DesiredTarget;
 import fr.raksrinana.nameascreated.NewFile;
@@ -14,14 +14,13 @@ import lombok.NonNull;
 import lombok.extern.slf4j.Slf4j;
 import java.nio.file.Path;
 import java.time.ZonedDateTime;
-import java.time.temporal.ChronoUnit;
 
 @JsonIgnoreProperties(ignoreUnknown = true)
 @JsonInclude(JsonInclude.Include.NON_NULL)
 @JsonTypeName("IfOlderThanOption")
 @Slf4j
 @NoArgsConstructor
-public class IfOlderThanOption implements Option{
+public class IfOlderThanOption implements FileOption{
 	@JsonProperty(value = "dayOffset", required = true)
 	@Getter
 	private int dayOffset = Integer.MAX_VALUE;
@@ -30,7 +29,7 @@ public class IfOlderThanOption implements Option{
 	public void apply(@NonNull final Path originFile, @NonNull final DesiredTarget desiredTarget, @NonNull final NewFile fileName, @NonNull final Path folder) throws AbandonBackupException{
 		try{
 			final var date = fileName.getDate();
-			if(date.isAfter(ZonedDateTime.now().minus(this.getDayOffset(), ChronoUnit.DAYS))){
+			if(date.isAfter(ZonedDateTime.now().minusDays(this.getDayOffset()))){
 				throw new AbandonBackupException(originFile);
 			}
 		}

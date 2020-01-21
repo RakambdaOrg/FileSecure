@@ -61,13 +61,16 @@ public class FolderMapping{
 	private List<Pattern> excludes = new ArrayList<>();
 	@JsonProperty("options")
 	@Getter
-	private Set<Option> options = new HashSet<>();
+	private Set<FileOption> fileOptions = new HashSet<>();
 	@JsonProperty("depth")
 	@Getter
 	private int depth = -1;
+	@JsonProperty("inputFolderOptions")
+	@Getter
+	private Set<FolderOption> inputFolderOptions = new HashSet<>();
 	
 	@Override
 	public String toString(){
-		return getInput() + " ==> " + getOutput() + '[' + getStrategy() + " / " + getFilters().size() + " filters / " + getExcludes().size() + " excludes / " + getOptions().size() + " options" + ']';
+		return getInput() + " ==> " + getOutput() + '[' + getStrategy() + " / " + getFilters().size() + " filters / " + getExcludes().size() + " excludes / " + getFileOptions().size() + " fileOptions" + ']';
 	}
 }
