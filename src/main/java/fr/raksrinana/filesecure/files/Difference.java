@@ -2,6 +2,7 @@ package fr.raksrinana.filesecure.files;
 
 import fr.raksrinana.filesecure.config.BackupStrategy;
 import lombok.Getter;
+import lombok.NonNull;
 import lombok.extern.slf4j.Slf4j;
 import java.io.IOException;
 import java.nio.file.Files;
@@ -25,7 +26,7 @@ class Difference{
 	 * @param basePath      The source folder.
 	 * @param desiredTarget The target folder (where to copy/move/...).
 	 */
-	Difference(final Path basePath, final DesiredTarget desiredTarget){
+	Difference(@NonNull final Path basePath, @NonNull final DesiredTarget desiredTarget){
 		this.desiredTarget = desiredTarget;
 		this.basePath = basePath;
 		this.finalName = null;
@@ -36,21 +37,21 @@ class Difference{
 	 *
 	 * @param backupStrategy The strategy to apply.
 	 */
-	void applyStrategy(final BackupStrategy backupStrategy){
+	void applyStrategy(@NonNull final BackupStrategy backupStrategy){
 		generateUniqueName();
 		final var targetPath = desiredTarget.getTargetFolder().resolve(finalName);
 		log.info("{} file {} to {}", backupStrategy.name(), basePath, targetPath);
 		try{
 			switch(backupStrategy){
 				case MOVE:
-					targetPath.getParent().toFile().mkdirs();
-					if(targetPath.toFile().exists() || !Files.move(basePath, targetPath, StandardCopyOption.REPLACE_EXISTING).toFile().exists()){
+					Files.createDirectories(desiredTarget.getTargetFolder());
+					if(Files.isDirectory(desiredTarget.getTargetFolder()) || !Files.move(basePath, targetPath, StandardCopyOption.REPLACE_EXISTING).toFile().exists()){
 						log.info("File {} not {}", basePath, backupStrategy.name());
 					}
 					break;
 				case COPY:
-					targetPath.getParent().toFile().mkdirs();
-					if(targetPath.toFile().exists() || !Files.copy(basePath, targetPath, StandardCopyOption.REPLACE_EXISTING).toFile().exists()){
+					Files.createDirectories(desiredTarget.getTargetFolder());
+					if(Files.isDirectory(desiredTarget.getTargetFolder()) || !Files.copy(basePath, targetPath, StandardCopyOption.REPLACE_EXISTING).toFile().exists()){
 						log.info("File {} not {}", basePath, backupStrategy.name());
 					}
 					break;
@@ -68,7 +69,7 @@ class Difference{
 		final var prefix = getDesiredTarget().getDesiredName().substring(0, extIndex);
 		final var ext = getDesiredTarget().getDesiredName().substring(extIndex);
 		finalName = getDesiredTarget().getDesiredName();
-		while(getDesiredTarget().getTargetFolder().resolve(finalName).toFile().exists()){
+		while(Files.exists(getDesiredTarget().getTargetFolder().resolve(finalName))){
 			final var newName = String.format("%s (%d)%s", prefix, ++i, ext);
 			log.debug("File '{}' already exists in target, trying with suffix {}", desiredPath, i);
 			finalName = newName;

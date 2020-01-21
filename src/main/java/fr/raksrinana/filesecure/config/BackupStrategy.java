@@ -3,6 +3,7 @@ package fr.raksrinana.filesecure.config;
 import com.fasterxml.jackson.annotation.JsonCreator;
 import com.fasterxml.jackson.annotation.JsonIgnoreProperties;
 import com.fasterxml.jackson.annotation.JsonInclude;
+import lombok.NonNull;
 
 /**
  * The strategies available to do the backup.
@@ -20,7 +21,7 @@ public enum BackupStrategy{
 	 * @return The strategy, or the default strategy if no strategies were found.
 	 */
 	@JsonCreator
-	public static BackupStrategy getByName(final String name){
+	public static BackupStrategy getByName(@NonNull final String name){
 		return BackupStrategy.valueOf(name);
 	}
 	

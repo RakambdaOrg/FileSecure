@@ -5,15 +5,17 @@ import fr.raksrinana.filesecure.config.Option;
 import fr.raksrinana.filesecure.exceptions.AbandonBackupException;
 import fr.raksrinana.filesecure.exceptions.FlagsProcessingException;
 import fr.raksrinana.nameascreated.NewFile;
+import lombok.NonNull;
 import lombok.extern.slf4j.Slf4j;
+import java.io.IOException;
+import java.nio.file.Files;
 import java.nio.file.Path;
-import java.nio.file.Paths;
-import java.util.Arrays;
 import java.util.Collection;
 import java.util.Objects;
 import java.util.Set;
 import java.util.function.Function;
 import java.util.regex.Pattern;
+import java.util.stream.Collectors;
 import java.util.stream.Stream;
 
 /**
@@ -21,7 +23,7 @@ import java.util.stream.Stream;
  */
 @Slf4j
 public class FolderDifference{
-	private final Stream<Difference> differences;
+	private final Set<Difference> differences;
 	
 	/**
 	 * Constructor.
@@ -33,13 +35,8 @@ public class FolderDifference{
 	 * @param flags          The flags to apply to the strategy.
 	 * @param depth          The number of subfolder to visit. A negative value is infinite.
 	 */
-	public FolderDifference(final Path target, final Path base, final Function<Path, NewFile> renameStrategy, final Set<Option> flags, final int depth){
-		if(base.toFile().isFile()){
-			differences = getDifference(base, target, renameStrategy, flags, 0);
-		}
-		else{
-			differences = Arrays.stream(Objects.requireNonNull(base.toFile().listFiles())).parallel().flatMap(f -> getDifference(Paths.get(f.toURI()), target.resolve(f.getName()), renameStrategy, flags, depth));
-		}
+	public FolderDifference(@NonNull final Path target, @NonNull final Path base, @NonNull final Function<Path, NewFile> renameStrategy, @NonNull final Set<Option> flags, final int depth){
+		differences = getDifference(base, target, renameStrategy, flags, depth).collect(Collectors.toSet());
 	}
 	
 	/**
@@ -53,8 +50,9 @@ public class FolderDifference{
 	 *
 	 * @return A stream of differences.
 	 */
-	private Stream<Difference> getDifference(final Path input, final Path output, final Function<Path, NewFile> renameStrategy, final Set<Option> flags, final int depth){
-		if(input.toFile().isFile()){
+	@NonNull
+	private Stream<Difference> getDifference(@NonNull final Path input, @NonNull final Path output, @NonNull final Function<Path, NewFile> renameStrategy, @NonNull final Set<Option> flags, final int depth){
+		if(Files.isRegularFile(input)){
 			final var newFile = renameStrategy.apply(input);
 			if(Objects.nonNull(newFile)){
 				try{
@@ -72,7 +70,13 @@ public class FolderDifference{
 		if(depth == 0){
 			return Stream.empty();
 		}
-		return Arrays.stream(Objects.requireNonNull(input.toFile().listFiles())).parallel().flatMap(f -> getDifference(Paths.get(f.toURI()), output.resolve(f.getName()), renameStrategy, flags, depth - 1));
+		try{
+			return Files.list(input).parallel().flatMap(f -> getDifference(f, output.resolve(f.getFileName()), renameStrategy, flags, depth - 1));
+		}
+		catch(IOException e){
+			log.error("Failed to list directory {}", input, e);
+		}
+		return Stream.empty();
 	}
 	
 	/**
@@ -88,8 +92,9 @@ public class FolderDifference{
 	 * @throws FlagsProcessingException If an error occurred while applying a flag.
 	 * @throws AbandonBackupException   If the file shouldn't be backed up.
 	 */
-	private DesiredTarget applyFlags(final Set<Option> flags, final Path originFile, final NewFile newFile, final Path outputFolder) throws FlagsProcessingException, AbandonBackupException{
-		final var desiredTarget = new DesiredTarget(outputFolder, newFile, newFile.getName(originFile.toFile()));
+	@NonNull
+	private DesiredTarget applyFlags(@NonNull final Set<Option> flags, @NonNull final Path originFile, @NonNull final NewFile newFile, @NonNull final Path outputFolder) throws FlagsProcessingException, AbandonBackupException{
+		final var desiredTarget = new DesiredTarget(outputFolder, newFile, newFile.getName(originFile));
 		try{
 			for(final var flag : flags){
 				flag.apply(originFile, desiredTarget, newFile, outputFolder);
@@ -112,7 +117,7 @@ public class FolderDifference{
 	 * @param filters        The filters of the files to keep. If empty, all files will be kept.
 	 * @param excludes       The filters of the files not to keep. If empty, all files will be kept.
 	 */
-	public void applyStrategy(final BackupStrategy backupStrategy, final Collection<Pattern> filters, final Collection<Pattern> excludes){
-		differences.filter(difference -> !excludes.stream().map(f -> f.matcher(difference.getBasePath().getFileName().toString()).matches()).findAny().orElse(false)).filter(difference -> filters.stream().map(f -> f.matcher(difference.getBasePath().getFileName().toString()).matches()).findAny().orElse(true)).forEach(difference -> difference.applyStrategy(backupStrategy));
+	public void applyStrategy(@NonNull final BackupStrategy backupStrategy, @NonNull final Collection<Pattern> filters, @NonNull final Collection<Pattern> excludes){
+		differences.stream().filter(difference -> !excludes.stream().map(f -> f.matcher(difference.getBasePath().getFileName().toString()).matches()).findAny().orElse(false)).filter(difference -> filters.stream().map(f -> f.matcher(difference.getBasePath().getFileName().toString()).matches()).findAny().orElse(true)).forEach(difference -> difference.applyStrategy(backupStrategy));
 	}
 }

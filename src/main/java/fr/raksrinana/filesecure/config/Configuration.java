@@ -28,8 +28,8 @@ public class Configuration{
 	private List<FolderMapping> mappings;
 	
 	@NonNull
-	public static Optional<Configuration> loadConfiguration(final Path path){
-		if(path.toFile().exists()){
+	public static Optional<Configuration> loadConfiguration(@NonNull final Path path){
+		if(Files.isRegularFile(path)){
 			try(final var fis = Files.newBufferedReader(path)){
 				return Optional.ofNullable(objectReader.readValue(fis));
 			}

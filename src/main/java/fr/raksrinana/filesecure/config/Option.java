@@ -29,7 +29,7 @@ public interface Option extends Comparable<Option>{
 	 * @param fileName      The name of the file.
 	 * @param folder        The original destination.
 	 */
-	void apply(Path originFile, DesiredTarget desiredTarget, final NewFile fileName, final Path folder) throws AbandonBackupException;
+	void apply(@NonNull Path originFile, @NonNull DesiredTarget desiredTarget, @NonNull final NewFile fileName, @NonNull final Path folder) throws AbandonBackupException;
 	
 	@Override
 	default int compareTo(@NonNull final Option o){

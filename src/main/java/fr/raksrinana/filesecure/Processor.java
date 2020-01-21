@@ -3,7 +3,9 @@ package fr.raksrinana.filesecure;
 import fr.raksrinana.filesecure.config.FolderMapping;
 import fr.raksrinana.filesecure.exceptions.MissingFolderException;
 import fr.raksrinana.filesecure.files.FolderDifference;
+import lombok.NonNull;
 import lombok.extern.slf4j.Slf4j;
+import java.nio.file.Files;
 
 /**
  * Process a pair of folder, one being the source of the backup, and the other the destination.
@@ -20,11 +22,11 @@ public class Processor{
 	 *
 	 * @throws MissingFolderException If one of the folders doesn't exists.
 	 */
-	public Processor(final FolderMapping mapping) throws MissingFolderException{
-		if(!mapping.getInput().toFile().exists()){
+	public Processor(@NonNull final FolderMapping mapping) throws MissingFolderException{
+		if(!Files.exists(mapping.getInput())){
 			throw new MissingFolderException(mapping.getInput());
 		}
-		if(!mapping.getOutput().toFile().exists()){
+		if(!Files.exists(mapping.getOutput())){
 			throw new MissingFolderException(mapping.getOutput(), "output");
 		}
 		this.mapping = mapping;

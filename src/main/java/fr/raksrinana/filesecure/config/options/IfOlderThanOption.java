@@ -10,6 +10,7 @@ import fr.raksrinana.filesecure.files.DesiredTarget;
 import fr.raksrinana.nameascreated.NewFile;
 import lombok.Getter;
 import lombok.NoArgsConstructor;
+import lombok.NonNull;
 import lombok.extern.slf4j.Slf4j;
 import java.nio.file.Path;
 import java.time.ZonedDateTime;
@@ -26,7 +27,7 @@ public class IfOlderThanOption implements Option{
 	private int dayOffset = Integer.MAX_VALUE;
 	
 	@Override
-	public void apply(final Path originFile, final DesiredTarget desiredTarget, final NewFile fileName, final Path folder) throws AbandonBackupException{
+	public void apply(@NonNull final Path originFile, @NonNull final DesiredTarget desiredTarget, @NonNull final NewFile fileName, @NonNull final Path folder) throws AbandonBackupException{
 		try{
 			final var date = fileName.getDate();
 			if(date.isAfter(ZonedDateTime.now().minus(this.getDayOffset(), ChronoUnit.DAYS))){

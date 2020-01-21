@@ -7,6 +7,7 @@ import fr.raksrinana.filesecure.config.Option;
 import fr.raksrinana.filesecure.files.DesiredTarget;
 import fr.raksrinana.nameascreated.NewFile;
 import lombok.NoArgsConstructor;
+import lombok.NonNull;
 import lombok.extern.slf4j.Slf4j;
 import java.nio.file.Path;
 
@@ -20,7 +21,7 @@ import java.nio.file.Path;
 @NoArgsConstructor
 public class FolderPerMonthOption implements Option{
 	@Override
-	public void apply(final Path originFile, final DesiredTarget desiredTarget, final NewFile fileName, final Path folder){
+	public void apply(@NonNull final Path originFile, @NonNull final DesiredTarget desiredTarget, @NonNull final NewFile fileName, @NonNull final Path folder){
 		try{
 			final var date = fileName.getDate();
 			desiredTarget.setTargetFolder(folder.resolve(String.format("%4d", date.getYear())).resolve(String.format("%02d", date.getMonthValue())));
