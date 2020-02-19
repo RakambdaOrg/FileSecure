@@ -87,7 +87,7 @@ public class FolderDifference implements DifferenceElement{
 	@NonNull
 	private Stream<DifferenceElement> getChildrenElements(@NonNull final Path input, @NonNull final Path output, @NonNull final Function<Path, NewFile> renameStrategy, @NonNull final Set<FolderOption> folderOptions, @NonNull final Set<FileOption> fileOptions, final int maxDepth, @NonNull final Collection<Pattern> filters, @NonNull final Collection<Pattern> excludes){
 		try{
-			return Files.list(input).parallel().filter(child -> !excludes.stream().map(f -> f.matcher(child.getFileName().toString()).matches()).findAny().orElse(false)).filter(child -> filters.stream().map(f -> f.matcher(child.getFileName().toString()).matches()).findAny().orElse(true)).map(child -> {
+			return Files.list(input).parallel().filter(child -> Files.isDirectory(child) || !excludes.stream().map(f -> f.matcher(child.getFileName().toString()).matches()).findAny().orElse(false)).filter(child -> Files.isDirectory(child) || filters.stream().map(f -> f.matcher(child.getFileName().toString()).matches()).findAny().orElse(true)).map(child -> {
 				if(Files.isRegularFile(child)){
 					final var newFile = renameStrategy.apply(child);
 					if(Objects.nonNull(newFile)){
