@@ -8,4 +8,5 @@ open module fr.raksrinana.filesecure {
 	requires ch.qos.logback.classic;
 	requires jcommander;
 	requires static lombok;
+	requires unirest.java;
 }
