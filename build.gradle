@@ -2,9 +2,10 @@ plugins {
     id 'com.github.johnrengelman.shadow' version '5.2.0'
     id "com.github.ben-manes.versions" version '0.28.0'
     id 'com.novoda.build-properties' version '0.4.1'
+    id 'idea'
     id 'java'
     id 'application'
-    id 'io.freefair.lombok' version '4.1.6'
+    id 'io.freefair.lombok' version '5.0.1'
 }
 
 def secretsFile = new File(".", "secrets.properties")
@@ -32,7 +33,6 @@ group = 'fr.raksrinana'
 description = 'FileSecure'
 sourceCompatibility = targetCompatibility = JavaVersion.VERSION_14
 
-ext.moduleName = project.moduleName
 mainClassName = project.mainClass
 
 dependencies {
@@ -78,8 +78,17 @@ repositories {
 import org.apache.tools.ant.filters.ReplaceTokens
 
 processResources {
-    from 'src/main/resources'
+    from sourceSets.main.resources
     filter(ReplaceTokens, tokens: [project_version: project.version, project_name: project.name])
+}
+
+application {
+    mainModule = project.moduleName
+    mainClass = project.mainClass
+}
+
+java {
+    modularity.inferModulePath.set(true)
 }
 
 compileJava {
@@ -89,12 +98,6 @@ compileJava {
                 '--module-path', classpath.asPath,
         ]
         classpath = files()
-    }
-}
-
-jar {
-    manifest {
-        attributes 'Main-Class': project.mainClass
     }
 }
 
