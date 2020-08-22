@@ -1,3 +1,14 @@
+buildscript {
+    ext {
+        slf4j_version = '2.0.0-alpha1'
+        logback_version = '1.3.0-alpha4'
+        raksrinana_utils_version = '14.0.15'
+        nameascreated_version = '8.6'
+        jcommander_version = '1.72'
+        jackson_version = '2.11.0'
+    }
+}
+
 plugins {
     id 'com.github.johnrengelman.shadow' version '5.2.0'
     id "com.github.ben-manes.versions" version '0.28.0'
@@ -36,28 +47,22 @@ sourceCompatibility = targetCompatibility = JavaVersion.VERSION_14
 mainClassName = project.mainClass
 
 dependencies {
-    implementation("org.slf4j:slf4j-api:${project.slf4j_version}")
-    implementation("ch.qos.logback:logback-classic:${project.logback_version}") {
+    implementation("org.slf4j:slf4j-api:${slf4j_version}")
+    implementation("ch.qos.logback:logback-classic:${logback_version}") {
         exclude group: 'edu.washington.cs.types.checker', module: 'checker-framework'
     }
 
-    implementation("fr.raksrinana:utils.http:${project.raksrinana_utils_version}")
-    implementation("fr.raksrinana:nameascreated:${project.nameascreated_version}")
+    implementation("fr.raksrinana:utils.http:${raksrinana_utils_version}")
+    implementation("fr.raksrinana:nameascreated:${nameascreated_version}")
 
-    implementation("com.fasterxml.jackson.core:jackson-core:${project.jackson_version}")
-    implementation("com.fasterxml.jackson.core:jackson-annotations:${project.jackson_version}")
-    implementation("com.fasterxml.jackson.core:jackson-databind:${project.jackson_version}")
+    implementation("com.fasterxml.jackson.core:jackson-core:${jackson_version}")
+    implementation("com.fasterxml.jackson.core:jackson-annotations:${jackson_version}")
+    implementation("com.fasterxml.jackson.core:jackson-databind:${jackson_version}")
 
-    implementation("com.beust:jcommander:${project.jcommander_version}")
+    implementation("com.beust:jcommander:${jcommander_version}")
 }
 
 repositories {
-    maven {
-        url = 'https://repo.maven.apache.org/maven2'
-    }
-    maven {
-        url = 'https://jcenter.bintray.com'
-    }
     maven {
         url = 'https://maven.pkg.github.com/RakSrinaNa/JavaUtils/'
         credentials {
@@ -72,13 +77,12 @@ repositories {
             password buildProperties.secrets['GITHUB_TOKEN'].string
         }
     }
+    jcenter()
+    mavenCentral()
 }
 
-import org.apache.tools.ant.filters.ReplaceTokens
-
 processResources {
-    from sourceSets.main.resources
-    filter(ReplaceTokens, tokens: [project_version: project.version, project_name: project.name])
+    expand project.properties
 }
 
 application {
@@ -107,6 +111,7 @@ shadowJar {
 
 tasks.withType(JavaCompile) {
     options.encoding = 'UTF-8'
+    options.deprecation = true
 }
 
 tasks.withType(Wrapper) {
