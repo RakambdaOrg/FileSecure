@@ -6,6 +6,6 @@ open module fr.raksrinana.filesecure {
 	requires com.fasterxml.jackson.databind;
 	requires org.slf4j;
 	requires ch.qos.logback.classic;
-	requires jcommander;
+	requires info.picocli;
 	requires static lombok;
 }
