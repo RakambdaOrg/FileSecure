@@ -24,7 +24,9 @@ public class FolderPerDayOption implements FileOption{
 	public void apply(@NonNull final Path originFile, @NonNull final DesiredTarget desiredTarget, @NonNull final NewFile fileName, @NonNull final Path folder){
 		try{
 			final var date = fileName.getDate();
-			desiredTarget.setTargetFolder(folder.resolve(String.format("%4d", date.getYear())).resolve(String.format("%02d", date.getMonthValue())).resolve(String.format("%02d", date.getDayOfMonth())));
+			desiredTarget.setTargetFolder(folder.resolve(String.format("%4d", date.getYear()))
+					.resolve(String.format("%02d", date.getMonthValue()))
+					.resolve(String.format("%02d", date.getDayOfMonth())));
 		}
 		catch(final Exception e){
 			log.error("Failed to build day folder for {} in {}", fileName, folder, e);

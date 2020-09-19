@@ -87,24 +87,29 @@ public class FolderDifference implements DifferenceElement{
 	@NonNull
 	private Stream<DifferenceElement> getChildrenElements(@NonNull final Path input, @NonNull final Path output, @NonNull final Function<Path, NewFile> renameStrategy, @NonNull final Set<FolderOption> folderOptions, @NonNull final Set<FileOption> fileOptions, final int maxDepth, @NonNull final Collection<Pattern> filters, @NonNull final Collection<Pattern> excludes){
 		try{
-			return Files.list(input).parallel().filter(child -> Files.isDirectory(child) || !excludes.stream().map(f -> f.matcher(child.getFileName().toString()).matches()).findAny().orElse(false)).filter(child -> Files.isDirectory(child) || filters.stream().map(f -> f.matcher(child.getFileName().toString()).matches()).findAny().orElse(true)).map(child -> {
-				if(Files.isRegularFile(child)){
-					final var newFile = renameStrategy.apply(child);
-					if(Objects.nonNull(newFile)){
-						try{
-							return new FileDifference(child, FileOption.applyFlags(fileOptions, child, newFile, output));
+			return Files.list(input).parallel()
+					.filter(child -> Files.isDirectory(child)
+							|| !excludes.stream().map(f -> f.matcher(child.getFileName().toString()).matches()).findAny().orElse(false))
+					.filter(child -> Files.isDirectory(child)
+							|| filters.stream().map(f -> f.matcher(child.getFileName().toString()).matches()).findAny().orElse(true))
+					.map(child -> {
+						if(Files.isRegularFile(child)){
+							final var newFile = renameStrategy.apply(child);
+							if(Objects.nonNull(newFile)){
+								try{
+									return new FileDifference(child, FileOption.applyFlags(fileOptions, child, newFile, output));
+								}
+								catch(final FlagsProcessingException e){
+									log.error("Failed to apply flags", e);
+								}
+								catch(final AbandonBackupException e){
+									log.debug("Did not backup file {} => {}", input, e.getMessage());
+								}
+							}
+							return null;
 						}
-						catch(final FlagsProcessingException e){
-							log.error("Failed to apply flags", e);
-						}
-						catch(final AbandonBackupException e){
-							log.debug("Did not backup file {} => {}", input, e.getMessage());
-						}
-					}
-					return null;
-				}
-				return new FolderDifference(child, output.resolve(child.getFileName()), renameStrategy, folderOptions, fileOptions, maxDepth - 1, filters, excludes, this.depth + 1);
-			}).filter(Objects::nonNull);
+						return new FolderDifference(child, output.resolve(child.getFileName()), renameStrategy, folderOptions, fileOptions, maxDepth - 1, filters, excludes, this.depth + 1);
+					}).filter(Objects::nonNull);
 		}
 		catch(IOException e){
 			log.error("Failed to list directory {}", input, e);
