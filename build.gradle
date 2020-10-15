@@ -4,7 +4,7 @@ buildscript {
         logback_version = '1.3.0-alpha5'
         raksrinana_utils_version = '15.0.0'
         nameascreated_version = '8.6'
-        picocli_version = '4.5.1'
+        picocli_version = '4.5.2'
         jackson_version = '2.11.3'
     }
 }
