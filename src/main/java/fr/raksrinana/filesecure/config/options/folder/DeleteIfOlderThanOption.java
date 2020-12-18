@@ -9,6 +9,7 @@ import lombok.Getter;
 import lombok.NoArgsConstructor;
 import lombok.NonNull;
 import lombok.extern.slf4j.Slf4j;
+import java.nio.file.DirectoryNotEmptyException;
 import java.nio.file.Files;
 import java.nio.file.Path;
 import java.time.LocalDateTime;
@@ -33,6 +34,9 @@ public class DeleteIfOlderThanOption implements FolderOption{
 				log.info("Deleting folder {} because it is more than {} days old", folder, dayOffset);
 				Files.delete(folder);
 			}
+		}
+		catch(DirectoryNotEmptyException e){
+			log.error("Failed to delete folder {}, not empty", folder, e);
 		}
 		catch(final Exception e){
 			log.error("Failed to determine if {} should be deleted, it will not be by default", folder, e);

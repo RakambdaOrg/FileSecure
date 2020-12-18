@@ -89,9 +89,10 @@ public class FolderDifference implements DifferenceElement{
 		try{
 			return Files.list(input).parallel()
 					.filter(child -> Files.isDirectory(child)
-							|| !excludes.stream().map(f -> f.matcher(child.getFileName().toString()).matches()).findAny().orElse(false))
+							|| excludes.stream().noneMatch(f -> f.matcher(child.getFileName().toString()).matches()))
 					.filter(child -> Files.isDirectory(child)
-							|| filters.stream().map(f -> f.matcher(child.getFileName().toString()).matches()).findAny().orElse(true))
+							|| filters.isEmpty()
+							|| filters.stream().anyMatch(f -> f.matcher(child.getFileName().toString()).matches()))
 					.map(child -> {
 						if(Files.isRegularFile(child)){
 							final var newFile = renameStrategy.apply(child);
