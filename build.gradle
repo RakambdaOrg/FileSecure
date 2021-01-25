@@ -51,7 +51,6 @@ dependencies {
         exclude group: 'edu.washington.cs.types.checker', module: 'checker-framework'
     }
 
-    implementation("fr.raksrinana:utils.http:${raksrinana_utils_version}")
     implementation("fr.raksrinana:nameascreated:${nameascreated_version}") {
         exclude group: 'ch.qos.logback', module: 'logback-classic'
     }
