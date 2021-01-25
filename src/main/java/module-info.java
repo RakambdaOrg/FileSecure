@@ -1,5 +1,4 @@
 open module fr.raksrinana.filesecure {
-	requires fr.raksrinana.utils.http;
 	requires fr.raksrinana.nameascreated;
 	requires com.fasterxml.jackson.core;
 	requires com.fasterxml.jackson.annotation;
