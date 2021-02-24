@@ -24,15 +24,20 @@ public class DeleteIfOlderThanOption implements FolderOption{
 	@JsonProperty(value = "dayOffset", required = true)
 	@Getter
 	private int dayOffset = Integer.MAX_VALUE;
+	@JsonProperty(value = "depth")
+	@Getter
+	private int depth = 0;
 	
 	@Override
-	public void apply(@NonNull final Path folder){
+	public void apply(@NonNull final Path folder, int depth){
 		try{
-			final var folderTime = Files.getLastModifiedTime(folder);
-			final var date = LocalDateTime.ofInstant(folderTime.toInstant(), ZoneId.systemDefault());
-			if(date.isBefore(LocalDateTime.now().minusDays(this.getDayOffset()))){
-				log.info("Deleting folder {} because it is more than {} days old", folder, dayOffset);
-				Files.delete(folder);
+			if(depth >= this.depth){
+				final var folderTime = Files.getLastModifiedTime(folder);
+				final var date = LocalDateTime.ofInstant(folderTime.toInstant(), ZoneId.systemDefault());
+				if(date.isBefore(LocalDateTime.now().minusDays(this.getDayOffset()))){
+					log.info("Deleting folder {} because it is more than {} days old", folder, dayOffset);
+					Files.delete(folder);
+				}
 			}
 		}
 		catch(DirectoryNotEmptyException e){

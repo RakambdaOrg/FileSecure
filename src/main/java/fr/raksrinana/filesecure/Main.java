@@ -12,6 +12,8 @@ import java.nio.file.Paths;
  */
 @Slf4j
 public class Main{
+	public static CLIParameters parameters;
+	
 	/**
 	 * Main method.
 	 *
@@ -19,7 +21,7 @@ public class Main{
 	 *             0: A path to the config file, to the json format.
 	 */
 	public static void main(final String[] args){
-		final var parameters = new CLIParameters();
+		parameters = new CLIParameters();
 		var cli = new CommandLine(parameters);
 		cli.registerConverter(Path.class, Paths::get);
 		cli.setUnmatchedArgumentsAllowed(true);

@@ -15,5 +15,10 @@ public class CLIParameters{
 			description = "The path to the configuration file",
 			required = true)
 	public String configurationFile;
+	@CommandLine.Option(names = {
+			"--dry"
+	},
+			description = "Performs a dry run")
+	public boolean dryRun;
 }
 

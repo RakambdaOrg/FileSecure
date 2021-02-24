@@ -1,5 +1,6 @@
 package fr.raksrinana.filesecure.files;
 
+import fr.raksrinana.filesecure.Main;
 import fr.raksrinana.filesecure.config.BackupStrategy;
 import lombok.Getter;
 import lombok.NonNull;
@@ -38,24 +39,26 @@ class FileDifference implements DifferenceElement{
 		generateUniqueName().ifPresent(finalName -> {
 			final var targetPath = desiredTarget.getTargetFolder().resolve(finalName);
 			log.info("{} file {} to {}", backupStrategy.name(), sourcePath, targetPath);
-			try{
-				switch(backupStrategy){
-					case MOVE:
-						Files.createDirectories(desiredTarget.getTargetFolder());
-						if(Files.isDirectory(desiredTarget.getTargetFolder())){
-							Files.move(sourcePath, targetPath);
+			if(!Main.parameters.isDryRun()){
+				try{
+					switch(backupStrategy){
+						case MOVE -> {
+							Files.createDirectories(desiredTarget.getTargetFolder());
+							if(Files.isDirectory(desiredTarget.getTargetFolder())){
+								Files.move(sourcePath, targetPath);
+							}
 						}
-						break;
-					case COPY:
-						Files.createDirectories(desiredTarget.getTargetFolder());
-						if(Files.isDirectory(desiredTarget.getTargetFolder())){
-							Files.copy(sourcePath, targetPath);
+						case COPY -> {
+							Files.createDirectories(desiredTarget.getTargetFolder());
+							if(Files.isDirectory(desiredTarget.getTargetFolder())){
+								Files.copy(sourcePath, targetPath);
+							}
 						}
-						break;
+					}
 				}
-			}
-			catch(final Exception e){
-				log.warn("Error applying strategy {} on file {}", backupStrategy, sourcePath, e);
+				catch(final Exception e){
+					log.warn("Error applying strategy {} on file {}", backupStrategy, sourcePath, e);
+				}
 			}
 		});
 	}

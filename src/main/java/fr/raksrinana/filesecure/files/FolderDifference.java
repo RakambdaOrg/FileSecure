@@ -126,7 +126,7 @@ public class FolderDifference implements DifferenceElement{
 	public void applyStrategy(@NonNull final BackupStrategy backupStrategy){
 		childrenDifferences.forEach(difference -> difference.applyStrategy(backupStrategy));
 		if(this.depth > 0){
-			this.folderOptions.forEach(option -> option.apply(this.getSourcePath()));
+			this.folderOptions.forEach(option -> option.apply(this.getSourcePath(), depth));
 		}
 	}
 }

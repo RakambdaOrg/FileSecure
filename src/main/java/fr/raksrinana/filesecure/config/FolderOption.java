@@ -17,6 +17,7 @@ import java.nio.file.Path;
 public interface FolderOption extends Option{
 	/**
 	 * @param originFile The folder to process.
+	 * @param depth
 	 */
-	void apply(@NonNull Path originFolder);
+	void apply(@NonNull Path originFolder, int depth);
 }
