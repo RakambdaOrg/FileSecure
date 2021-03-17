@@ -5,14 +5,14 @@ Backup files from a base directory to a target directory.
 To work this program needs a configuration file that will be passed as a parameter. The config file file must be in a json format. Here's an example:
 ```json
 {
-  "mappings": [
+  "rules": [
     {
-      "input": "/Input",
-      "output": "/Output"
+      "mappings": [{
+        "input": "/Input",
+        "output": "/Output"
+      }]
     },
     {
-      "input": "/Input2",
-      "output": "/Output2",
       "strategy": "move",
       "depth": 2,
       "filters": [
@@ -21,7 +21,11 @@ To work this program needs a configuration file that will be passed as a paramet
       ],
       "excludes": [
         ".*\\.ini"
-      ]
+      ],
+      "mappings": [{
+        "input": "/Input2",
+        "output": "/Output2"
+      }]
     }
   ]
 }

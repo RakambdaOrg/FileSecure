@@ -35,9 +35,9 @@ public class Main{
 		}
 		
 		Configuration.loadConfiguration(Path.of(parameters.getConfigurationFile())).ifPresentOrElse(configuration -> {
-			for(final var mapping : configuration.getMappings()){
+			for(final var rule : configuration.getRules()){
 				try{
-					final var processor = new Processor(mapping);
+					final var processor = new Processor(rule);
 					processor.process();
 				}
 				catch(final MissingFolderException e){

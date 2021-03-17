@@ -24,7 +24,7 @@ import java.util.regex.Pattern;
 @JsonInclude(JsonInclude.Include.NON_NULL)
 @NoArgsConstructor
 @Slf4j
-public class FolderMapping{
+public class Rule{
 	private final static ByDateRenaming defaultRenaming = new ByDateRenaming();
 	/**
 	 * The strategy used to rename files when executing the backup. If null the original name is kept.
@@ -40,14 +40,6 @@ public class FolderMapping{
 		}
 		return null;
 	};
-	@JsonProperty("input")
-	@Getter
-	@JsonDeserialize(using = NioPathDeserializer.class)
-	private Path input;
-	@JsonProperty("output")
-	@Getter
-	@JsonDeserialize(using = NioPathDeserializer.class)
-	private Path output;
 	@JsonProperty("strategy")
 	@Getter
 	private BackupStrategy strategy = BackupStrategy.getDefault();
@@ -68,9 +60,7 @@ public class FolderMapping{
 	@JsonProperty("inputFolderOptions")
 	@Getter
 	private Set<FolderOption> inputFolderOptions = new HashSet<>();
-	
-	@Override
-	public String toString(){
-		return getInput() + " ==> " + getOutput() + '[' + getStrategy() + " / " + getFilters().size() + " filters / " + getExcludes().size() + " excludes / " + getFileOptions().size() + " fileOptions" + ']';
-	}
+	@JsonProperty("mappings")
+	@Getter
+	private Set<Mapping> mappings = new HashSet<>();
 }

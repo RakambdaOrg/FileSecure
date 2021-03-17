@@ -23,9 +23,9 @@ import java.util.Optional;
 @NoArgsConstructor
 public class Configuration{
 	private static final ObjectReader objectReader;
-	@JsonProperty("mappings")
+	@JsonProperty("rules")
 	@Getter
-	private List<FolderMapping> mappings;
+	private List<Rule> rules;
 	
 	@NonNull
 	public static Optional<Configuration> loadConfiguration(@NonNull final Path path){

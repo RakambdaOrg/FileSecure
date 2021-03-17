@@ -1,7 +1,6 @@
 package fr.raksrinana.filesecure;
 
-import fr.raksrinana.filesecure.config.FolderMapping;
-import fr.raksrinana.filesecure.exceptions.MissingFolderException;
+import fr.raksrinana.filesecure.config.Rule;
 import fr.raksrinana.filesecure.files.FolderDifference;
 import lombok.NonNull;
 import lombok.extern.slf4j.Slf4j;
@@ -13,23 +12,15 @@ import java.nio.file.Files;
  */
 @Slf4j
 public class Processor{
-	private final FolderMapping mapping;
+	private final Rule rule;
 	
 	/**
 	 * Constructor.
 	 *
-	 * @param mapping The configuration.
-	 *
-	 * @throws MissingFolderException If one of the folders doesn't exists.
+	 * @param rule The configuration.
 	 */
-	public Processor(@NonNull final FolderMapping mapping) throws MissingFolderException{
-		if(!Files.exists(mapping.getInput())){
-			throw new MissingFolderException(mapping.getInput());
-		}
-		if(!Files.exists(mapping.getOutput())){
-			throw new MissingFolderException(mapping.getOutput(), "output");
-		}
-		this.mapping = mapping;
+	public Processor(@NonNull final Rule rule){
+		this.rule = rule;
 	}
 	
 	/**
@@ -55,9 +46,22 @@ public class Processor{
 	 * |-4.txt
 	 */
 	void process(){
-		log.info("Processing ({}) {} ==> {}", mapping.getStrategy().name(), mapping.getInput(), mapping.getOutput());
-		log.info("Building differences...");
-		final var fd = new FolderDifference(mapping.getInput(), mapping.getOutput(), mapping.getRenameStrategy(), mapping.getInputFolderOptions(), mapping.getFileOptions(), mapping.getDepth(), mapping.getFilters(), mapping.getExcludes());
-		fd.applyStrategy(mapping.getStrategy());
+		for(var mapping : rule.getMappings()){
+			if(!Files.exists(mapping.getInput())){
+				log.warn("Input folder {} doesn't exist, skipping mapping", mapping.getInput());
+				break;
+			}
+			if(!Files.exists(mapping.getOutput())){
+				log.warn("Output folder {} doesn't exist, skipping mapping", mapping.getOutput());
+				break;
+			}
+			
+			log.info("Processing ({}) {} ==> {}", rule.getStrategy().name(), mapping.getInput(), mapping.getOutput());
+			log.debug("Building differences...");
+			var fd = new FolderDifference(mapping.getInput(), mapping.getOutput(), rule);
+			
+			log.debug("Applying strategy");
+			fd.applyStrategy(rule.getStrategy());
+		}
 	}
 }
