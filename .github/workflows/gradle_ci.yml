@@ -37,6 +37,7 @@ jobs:
           GITHUB_USER: RakSrinaNa
           GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
       - uses: actions/upload-artifact@v2
+        name: Upload artifact
         with:
           name: shadow-jar
           path: build/libs/filesecure-shaded.jar
@@ -50,6 +51,7 @@ jobs:
       ', github.ref)
     steps:
       - uses: actions/download-artifact@v2
+        name: Download artifact
         with:
           name: shadow-jar
       - name: Deploy on Dropbox
