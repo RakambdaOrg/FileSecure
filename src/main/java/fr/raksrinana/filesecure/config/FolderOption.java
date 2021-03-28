@@ -5,7 +5,7 @@ import com.fasterxml.jackson.annotation.JsonInclude;
 import com.fasterxml.jackson.annotation.JsonSubTypes;
 import com.fasterxml.jackson.annotation.JsonTypeInfo;
 import fr.raksrinana.filesecure.config.options.folder.DeleteIfOlderThanOption;
-import lombok.NonNull;
+import org.jetbrains.annotations.NotNull;
 import java.nio.file.Path;
 
 @JsonIgnoreProperties(ignoreUnknown = true)
@@ -19,5 +19,5 @@ public interface FolderOption extends Option{
 	 * @param originFolder The folder to process.
 	 * @param depth
 	 */
-	void apply(@NonNull Path originFolder, int depth);
+	void apply(@NotNull Path originFolder, int depth);
 }

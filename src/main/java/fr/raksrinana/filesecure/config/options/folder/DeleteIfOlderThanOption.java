@@ -7,8 +7,8 @@ import com.fasterxml.jackson.annotation.JsonTypeName;
 import fr.raksrinana.filesecure.config.FolderOption;
 import lombok.Getter;
 import lombok.NoArgsConstructor;
-import lombok.NonNull;
 import lombok.extern.slf4j.Slf4j;
+import org.jetbrains.annotations.NotNull;
 import java.nio.file.DirectoryNotEmptyException;
 import java.nio.file.Files;
 import java.nio.file.Path;
@@ -29,12 +29,12 @@ public class DeleteIfOlderThanOption implements FolderOption{
 	private int depth = 0;
 	
 	@Override
-	public void apply(@NonNull final Path folder, int depth){
+	public void apply(@NotNull Path folder, int depth){
 		try{
 			if(depth >= this.depth){
-				final var folderTime = Files.getLastModifiedTime(folder);
-				final var date = LocalDateTime.ofInstant(folderTime.toInstant(), ZoneId.systemDefault());
-				if(date.isBefore(LocalDateTime.now().minusDays(this.getDayOffset()))){
+				var folderTime = Files.getLastModifiedTime(folder);
+				var date = LocalDateTime.ofInstant(folderTime.toInstant(), ZoneId.systemDefault());
+				if(date.isBefore(LocalDateTime.now().minusDays(getDayOffset()))){
 					log.info("Deleting folder {} because it is more than {} days old", folder, dayOffset);
 					Files.delete(folder);
 				}
@@ -43,7 +43,7 @@ public class DeleteIfOlderThanOption implements FolderOption{
 		catch(DirectoryNotEmptyException e){
 			log.error("Failed to delete folder {}, not empty", folder, e);
 		}
-		catch(final Exception e){
+		catch(Exception e){
 			log.error("Failed to determine if {} should be deleted, it will not be by default", folder, e);
 		}
 	}

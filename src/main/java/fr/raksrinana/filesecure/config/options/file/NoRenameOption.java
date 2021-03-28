@@ -7,8 +7,8 @@ import fr.raksrinana.filesecure.config.FileOption;
 import fr.raksrinana.filesecure.files.DesiredTarget;
 import fr.raksrinana.nameascreated.NewFile;
 import lombok.NoArgsConstructor;
-import lombok.NonNull;
 import lombok.extern.slf4j.Slf4j;
+import org.jetbrains.annotations.NotNull;
 import java.nio.file.Path;
 
 @JsonIgnoreProperties(ignoreUnknown = true)
@@ -18,7 +18,7 @@ import java.nio.file.Path;
 @NoArgsConstructor
 public class NoRenameOption implements FileOption{
 	@Override
-	public void apply(@NonNull final Path originFile, @NonNull final DesiredTarget desiredTarget, @NonNull final NewFile fileName, @NonNull final Path folder){
+	public void apply(@NotNull Path originFile, @NotNull DesiredTarget desiredTarget, @NotNull NewFile fileName, @NotNull Path folder){
 		desiredTarget.setDesiredName(originFile.getFileName().toString());
 	}
 	

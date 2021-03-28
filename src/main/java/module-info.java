@@ -7,4 +7,5 @@ open module fr.raksrinana.filesecure {
 	requires ch.qos.logback.classic;
 	requires info.picocli;
 	requires static lombok;
+	requires static org.jetbrains.annotations;
 }

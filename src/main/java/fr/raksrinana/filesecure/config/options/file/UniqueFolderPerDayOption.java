@@ -7,8 +7,8 @@ import fr.raksrinana.filesecure.config.FileOption;
 import fr.raksrinana.filesecure.files.DesiredTarget;
 import fr.raksrinana.nameascreated.NewFile;
 import lombok.NoArgsConstructor;
-import lombok.NonNull;
 import lombok.extern.slf4j.Slf4j;
+import org.jetbrains.annotations.NotNull;
 import java.nio.file.Path;
 
 /**
@@ -21,12 +21,13 @@ import java.nio.file.Path;
 @NoArgsConstructor
 public class UniqueFolderPerDayOption implements FileOption{
 	@Override
-	public void apply(@NonNull final Path originFile, @NonNull final DesiredTarget desiredTarget, @NonNull final NewFile fileName, @NonNull final Path folder){
+	public void apply(@NotNull Path originFile, @NotNull DesiredTarget desiredTarget, @NotNull NewFile fileName, @NotNull Path folder){
 		try{
-			final var date = fileName.getDate();
-			desiredTarget.setTargetFolder(folder.resolve(String.format("%4d-%02d-%02d", date.getYear(), date.getMonthValue(), date.getDayOfMonth())));
+			var date = fileName.getDate();
+			var dateFormat = "%4d-%02d-%02d".formatted(date.getYear(), date.getMonthValue(), date.getDayOfMonth());
+			desiredTarget.setTargetFolder(folder.resolve(dateFormat));
 		}
-		catch(final Exception e){
+		catch(Exception e){
 			log.error("Failed to build unique day folder for {} in {}", fileName, folder, e);
 		}
 	}
