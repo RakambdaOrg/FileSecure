@@ -5,7 +5,7 @@ import com.fasterxml.jackson.annotation.JsonInclude;
 import com.fasterxml.jackson.annotation.JsonSubTypes;
 import com.fasterxml.jackson.annotation.JsonTypeInfo;
 import fr.raksrinana.filesecure.config.options.folder.DeleteIfOlderThanOption;
-import lombok.NonNull;
+import org.jetbrains.annotations.NotNull;
 import java.nio.file.Path;
 
 @JsonIgnoreProperties(ignoreUnknown = true)

@@ -20,7 +20,7 @@ public class Main{
 	 * @param args The arguments of the program:
 	 *             0: A path to the config file, to the json format.
 	 */
-	public static void main(final String[] args){
+	public static void main(String[] args){
 		parameters = new CLIParameters();
 		var cli = new CommandLine(parameters);
 		cli.registerConverter(Path.class, Paths::get);
@@ -28,22 +28,22 @@ public class Main{
 		try{
 			cli.parseArgs(args);
 		}
-		catch(final CommandLine.ParameterException e){
+		catch(CommandLine.ParameterException e){
 			log.error("Failed to parse arguments", e);
 			cli.usage(System.out);
 			return;
 		}
 		
 		Configuration.loadConfiguration(Path.of(parameters.getConfigurationFile())).ifPresentOrElse(configuration -> {
-			for(final var rule : configuration.getRules()){
+			for(var rule : configuration.getRules()){
 				try{
-					final var processor = new Processor(rule);
+					var processor = new Processor(rule);
 					processor.process();
 				}
-				catch(final MissingFolderException e){
+				catch(MissingFolderException e){
 					log.warn("Didn't run, {}", e.getMessage());
 				}
-				catch(final Exception e){
+				catch(Exception e){
 					log.error("Failed to run processor", e);
 				}
 			}

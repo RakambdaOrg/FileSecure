@@ -2,8 +2,8 @@ package fr.raksrinana.filesecure;
 
 import fr.raksrinana.filesecure.config.Rule;
 import fr.raksrinana.filesecure.files.FolderDifference;
-import lombok.NonNull;
 import lombok.extern.slf4j.Slf4j;
+import org.jetbrains.annotations.NotNull;
 import java.nio.file.Files;
 
 /**
@@ -19,7 +19,7 @@ public class Processor{
 	 *
 	 * @param rule The configuration.
 	 */
-	public Processor(@NotNull final Rule rule){
+	public Processor(@NotNull Rule rule){
 		this.rule = rule;
 	}
 	

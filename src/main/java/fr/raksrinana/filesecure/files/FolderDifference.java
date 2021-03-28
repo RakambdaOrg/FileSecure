@@ -6,8 +6,8 @@ import fr.raksrinana.filesecure.config.Rule;
 import fr.raksrinana.filesecure.exceptions.AbandonBackupException;
 import fr.raksrinana.filesecure.exceptions.FlagsProcessingException;
 import lombok.Getter;
-import lombok.NonNull;
 import lombok.extern.slf4j.Slf4j;
+import org.jetbrains.annotations.NotNull;
 import java.io.IOException;
 import java.nio.file.Files;
 import java.nio.file.Path;
@@ -49,7 +49,7 @@ public class FolderDifference implements DifferenceElement{
 	 * @param rule   The rules to apply when scanning.
 	 */
 	public FolderDifference(@NotNull Path source, @NotNull Path target, @NotNull Rule rule, int depth){
-		this.sourcePath = source;
+		sourcePath = source;
 		this.rule = rule;
 		this.depth = depth;
 		if(depth > rule.getDepth()){
@@ -79,21 +79,21 @@ public class FolderDifference implements DifferenceElement{
 							|| rule.getFilters().stream().anyMatch(f -> f.matcher(child.getFileName().toString()).matches()))
 					.map(child -> {
 						if(Files.isRegularFile(child)){
-							final var newFile = rule.getRenameStrategy().apply(child);
+							var newFile = rule.getRenameStrategy().apply(child);
 							if(Objects.nonNull(newFile)){
 								try{
 									return new FileDifference(child, FileOption.applyFlags(rule.getFileOptions(), child, newFile, output));
 								}
-								catch(final FlagsProcessingException e){
+								catch(FlagsProcessingException e){
 									log.error("Failed to apply flags", e);
 								}
-								catch(final AbandonBackupException e){
+								catch(AbandonBackupException e){
 									log.debug("Did not backup file {} => {}", input, e.getMessage());
 								}
 							}
 							return null;
 						}
-						return new FolderDifference(child, output.resolve(child.getFileName()), rule, this.depth + 1);
+						return new FolderDifference(child, output.resolve(child.getFileName()), rule, depth + 1);
 					}).filter(Objects::nonNull);
 		}
 		catch(IOException e){
@@ -107,10 +107,10 @@ public class FolderDifference implements DifferenceElement{
 	 *
 	 * @param backupStrategy The strategy to apply.
 	 */
-	public void applyStrategy(@NotNull final BackupStrategy backupStrategy){
+	public void applyStrategy(@NotNull BackupStrategy backupStrategy){
 		childrenDifferences.forEach(difference -> difference.applyStrategy(backupStrategy));
-		if(this.depth > 0){
-			rule.getInputFolderOptions().forEach(option -> option.apply(this.getSourcePath(), depth));
+		if(depth > 0){
+			rule.getInputFolderOptions().forEach(option -> option.apply(getSourcePath(), depth));
 		}
 	}
 }

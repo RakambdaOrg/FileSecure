@@ -1,10 +1,10 @@
 package fr.raksrinana.filesecure.config;
 
-import lombok.NonNull;
+import org.jetbrains.annotations.NotNull;
 
 public interface Option extends Comparable<Option>{
 	@Override
-	default int compareTo(@NotNull final Option o){
+	default int compareTo(@NotNull Option o){
 		return Integer.compare(getPriority(), o.getPriority());
 	}
 	
