@@ -19,7 +19,7 @@ public class Processor{
 	 *
 	 * @param rule The configuration.
 	 */
-	public Processor(@NonNull final Rule rule){
+	public Processor(@NotNull final Rule rule){
 		this.rule = rule;
 	}
 	

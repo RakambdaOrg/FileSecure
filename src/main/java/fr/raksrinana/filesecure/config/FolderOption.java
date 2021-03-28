@@ -19,5 +19,5 @@ public interface FolderOption extends Option{
 	 * @param originFolder The folder to process.
 	 * @param depth
 	 */
-	void apply(@NonNull Path originFolder, int depth);
+	void apply(@NotNull Path originFolder, int depth);
 }

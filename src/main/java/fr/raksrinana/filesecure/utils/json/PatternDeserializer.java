@@ -9,7 +9,7 @@ import java.util.regex.Pattern;
 
 public class PatternDeserializer extends JsonDeserializer<Pattern>{
 	@Override
-	public Pattern deserialize(@NonNull final JsonParser jsonParser, @NonNull final DeserializationContext deserializationContext) throws IOException{
+	public Pattern deserialize(@NotNull final JsonParser jsonParser, @NotNull final DeserializationContext deserializationContext) throws IOException{
 		return Pattern.compile(jsonParser.getValueAsString());
 	}
 }

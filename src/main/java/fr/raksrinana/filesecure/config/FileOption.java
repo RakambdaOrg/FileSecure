@@ -9,7 +9,7 @@ import fr.raksrinana.filesecure.exceptions.AbandonBackupException;
 import fr.raksrinana.filesecure.exceptions.FlagsProcessingException;
 import fr.raksrinana.filesecure.files.DesiredTarget;
 import fr.raksrinana.nameascreated.NewFile;
-import lombok.NonNull;
+import org.jetbrains.annotations.NotNull;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 import java.nio.file.Path;
@@ -42,18 +42,18 @@ public interface FileOption extends Option{
 	 * @throws FlagsProcessingException If an error occurred while applying a flag.
 	 * @throws AbandonBackupException   If the file shouldn't be backed up.
 	 */
-	@NonNull
-	static DesiredTarget applyFlags(@NonNull final Set<FileOption> flags, @NonNull final Path originFile, @NonNull final NewFile newFile, @NonNull final Path outputFolder) throws FlagsProcessingException, AbandonBackupException{
-		final var desiredTarget = new DesiredTarget(outputFolder, newFile, newFile.getName(originFile));
+	@NotNull
+	static DesiredTarget applyFlags(@NotNull Set<FileOption> flags, @NotNull Path originFile, @NotNull NewFile newFile, @NotNull Path outputFolder) throws FlagsProcessingException, AbandonBackupException{
+		var desiredTarget = new DesiredTarget(outputFolder, newFile, newFile.getName(originFile));
 		try{
-			for(final var flag : flags){
+			for(var flag : flags){
 				flag.apply(originFile, desiredTarget, newFile, outputFolder);
 			}
 		}
-		catch(final AbandonBackupException e){
+		catch(AbandonBackupException e){
 			throw e;
 		}
-		catch(final Exception e){
+		catch(Exception e){
 			log.error("Error applying strategy to file {} in {}", newFile, outputFolder, e);
 			throw new FlagsProcessingException("Error applying strategy to file " + newFile + " in " + outputFolder.toFile().getAbsolutePath());
 		}
@@ -66,5 +66,5 @@ public interface FileOption extends Option{
 	 * @param fileName      The name of the file.
 	 * @param folder        The original destination.
 	 */
-	void apply(@NonNull Path originFile, @NonNull DesiredTarget desiredTarget, @NonNull final NewFile fileName, @NonNull final Path folder) throws AbandonBackupException;
+	void apply(@NotNull Path originFile, @NotNull DesiredTarget desiredTarget, @NotNull NewFile fileName, @NotNull Path folder) throws AbandonBackupException;
 }

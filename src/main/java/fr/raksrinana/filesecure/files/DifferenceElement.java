@@ -5,12 +5,12 @@ import lombok.NonNull;
 import java.nio.file.Path;
 
 public interface DifferenceElement extends Comparable<DifferenceElement>{
-	void applyStrategy(@NonNull final BackupStrategy backupStrategy);
+	void applyStrategy(@NotNull final BackupStrategy backupStrategy);
 	
 	@Override
 	default int compareTo(DifferenceElement o){
 		return getSourcePath().compareTo(o.getSourcePath());
 	}
 	
-	@NonNull Path getSourcePath();
+	@NotNull Path getSourcePath();
 }

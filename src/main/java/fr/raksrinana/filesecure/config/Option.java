@@ -4,7 +4,7 @@ import lombok.NonNull;
 
 public interface Option extends Comparable<Option>{
 	@Override
-	default int compareTo(@NonNull final Option o){
+	default int compareTo(@NotNull final Option o){
 		return Integer.compare(getPriority(), o.getPriority());
 	}
 	

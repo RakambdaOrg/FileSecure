@@ -25,7 +25,7 @@ class FileDifference implements DifferenceElement{
 	 * @param sourcePath    The source folder.
 	 * @param desiredTarget The target folder (where to copy/move/...).
 	 */
-	FileDifference(@NonNull final Path sourcePath, @NonNull final DesiredTarget desiredTarget){
+	FileDifference(@NotNull final Path sourcePath, @NotNull final DesiredTarget desiredTarget){
 		this.sourcePath = sourcePath;
 		this.desiredTarget = desiredTarget;
 	}
@@ -35,7 +35,7 @@ class FileDifference implements DifferenceElement{
 	 *
 	 * @param backupStrategy The strategy to apply.
 	 */
-	public void applyStrategy(@NonNull final BackupStrategy backupStrategy){
+	public void applyStrategy(@NotNull final BackupStrategy backupStrategy){
 		generateUniqueName().ifPresent(finalName -> {
 			final var targetPath = desiredTarget.getTargetFolder().resolve(finalName);
 			log.info("{} file {} to {}", backupStrategy.name(), sourcePath, targetPath);

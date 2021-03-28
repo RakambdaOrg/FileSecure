@@ -7,8 +7,8 @@ import fr.raksrinana.filesecure.config.FileOption;
 import fr.raksrinana.filesecure.files.DesiredTarget;
 import fr.raksrinana.nameascreated.NewFile;
 import lombok.NoArgsConstructor;
-import lombok.NonNull;
 import lombok.extern.slf4j.Slf4j;
+import org.jetbrains.annotations.NotNull;
 import java.nio.file.Path;
 
 /**
@@ -21,12 +21,14 @@ import java.nio.file.Path;
 @NoArgsConstructor
 public class FolderPerMonthOption implements FileOption{
 	@Override
-	public void apply(@NonNull final Path originFile, @NonNull final DesiredTarget desiredTarget, @NonNull final NewFile fileName, @NonNull final Path folder){
+	public void apply(@NotNull Path originFile, @NotNull DesiredTarget desiredTarget, @NotNull NewFile fileName, @NotNull Path folder){
 		try{
-			final var date = fileName.getDate();
-			desiredTarget.setTargetFolder(folder.resolve(String.format("%4d", date.getYear())).resolve(String.format("%02d", date.getMonthValue())));
+			var date = fileName.getDate();
+			var year = "%4d".formatted(date.getYear());
+			var month = "%02d".formatted(date.getMonthValue());
+			desiredTarget.setTargetFolder(folder.resolve(year).resolve(month));
 		}
-		catch(final Exception e){
+		catch(Exception e){
 			log.error("Failed to build month folder for {} in {}", fileName, folder, e);
 		}
 	}

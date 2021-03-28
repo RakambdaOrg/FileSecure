@@ -36,7 +36,7 @@ public class FolderDifference implements DifferenceElement{
 	 * @param target The target path (where files will be copies/moves/...).
 	 * @param rule   The rules to apply when scanning.
 	 */
-	public FolderDifference(@NonNull Path source, @NonNull Path target, @NonNull Rule rule){
+	public FolderDifference(@NotNull Path source, @NotNull Path target, @NotNull Rule rule){
 		this(source, target, rule, 0);
 	}
 	
@@ -48,7 +48,7 @@ public class FolderDifference implements DifferenceElement{
 	 * @param target The target path (where files will be copies/moves/...).
 	 * @param rule   The rules to apply when scanning.
 	 */
-	public FolderDifference(@NonNull Path source, @NonNull Path target, @NonNull Rule rule, int depth){
+	public FolderDifference(@NotNull Path source, @NotNull Path target, @NotNull Rule rule, int depth){
 		this.sourcePath = source;
 		this.rule = rule;
 		this.depth = depth;
@@ -68,8 +68,8 @@ public class FolderDifference implements DifferenceElement{
 	 *
 	 * @return A stream of differences.
 	 */
-	@NonNull
-	private Stream<DifferenceElement> getChildrenElements(@NonNull Path input, @NonNull Path output){
+	@NotNull
+	private Stream<DifferenceElement> getChildrenElements(@NotNull Path input, @NotNull Path output){
 		try{
 			return Files.list(input).parallel()
 					.filter(child -> Files.isDirectory(child)
@@ -107,7 +107,7 @@ public class FolderDifference implements DifferenceElement{
 	 *
 	 * @param backupStrategy The strategy to apply.
 	 */
-	public void applyStrategy(@NonNull final BackupStrategy backupStrategy){
+	public void applyStrategy(@NotNull final BackupStrategy backupStrategy){
 		childrenDifferences.forEach(difference -> difference.applyStrategy(backupStrategy));
 		if(this.depth > 0){
 			rule.getInputFolderOptions().forEach(option -> option.apply(this.getSourcePath(), depth));

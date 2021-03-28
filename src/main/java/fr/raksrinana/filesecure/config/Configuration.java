@@ -9,8 +9,8 @@ import com.fasterxml.jackson.databind.ObjectReader;
 import com.fasterxml.jackson.databind.SerializationFeature;
 import lombok.Getter;
 import lombok.NoArgsConstructor;
-import lombok.NonNull;
 import lombok.extern.slf4j.Slf4j;
+import org.jetbrains.annotations.NotNull;
 import java.io.IOException;
 import java.nio.file.Files;
 import java.nio.file.Path;
@@ -27,13 +27,13 @@ public class Configuration{
 	@Getter
 	private List<Rule> rules;
 	
-	@NonNull
-	public static Optional<Configuration> loadConfiguration(@NonNull final Path path){
+	@NotNull
+	public static Optional<Configuration> loadConfiguration(@NotNull Path path){
 		if(Files.isRegularFile(path)){
-			try(final var fis = Files.newBufferedReader(path)){
+			try(var fis = Files.newBufferedReader(path)){
 				return Optional.ofNullable(objectReader.readValue(fis));
 			}
-			catch(final IOException e){
+			catch(IOException e){
 				log.error("Failed to read settings in {}", path, e);
 			}
 		}
@@ -41,7 +41,7 @@ public class Configuration{
 	}
 	
 	static{
-		final var mapper = new ObjectMapper();
+		var mapper = new ObjectMapper();
 		mapper.setVisibility(mapper.getSerializationConfig()
 				.getDefaultVisibilityChecker()
 				.withFieldVisibility(JsonAutoDetect.Visibility.ANY)
