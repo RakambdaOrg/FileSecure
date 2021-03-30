@@ -49,11 +49,7 @@ public class Processor{
 		for(var mapping : rule.getMappings()){
 			if(!Files.exists(mapping.getInput())){
 				log.warn("Input folder {} doesn't exist, skipping mapping", mapping.getInput());
-				break;
-			}
-			if(!Files.exists(mapping.getOutput())){
-				log.warn("Output folder {} doesn't exist, skipping mapping", mapping.getOutput());
-				break;
+				continue;
 			}
 			
 			log.info("Processing ({}) {} ==> {}", rule.getStrategy().name(), mapping.getInput(), mapping.getOutput());
