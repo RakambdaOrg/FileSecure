@@ -46,11 +46,11 @@ public class Rule{
 	@JsonProperty("filters")
 	@Getter
 	@JsonDeserialize(contentUsing = PatternDeserializer.class)
-	private Set<Pattern> filters = new ArrayList<>();
+	private Set<Pattern> filters = new HashSet<>();
 	@JsonProperty("excludes")
 	@Getter
 	@JsonDeserialize(contentUsing = PatternDeserializer.class)
-	private Set<Pattern> excludes = new ArrayList<>();
+	private Set<Pattern> excludes = new HashSet<>();
 	@JsonProperty("options")
 	@Getter
 	private Set<FileOption> fileOptions = new HashSet<>();
@@ -62,5 +62,5 @@ public class Rule{
 	private Set<FolderOption> inputFolderOptions = new HashSet<>();
 	@JsonProperty("mappings")
 	@Getter
-	private List<Mapping> mappings = new HashSet<>();
+	private List<Mapping> mappings = new ArrayList<>();
 }
