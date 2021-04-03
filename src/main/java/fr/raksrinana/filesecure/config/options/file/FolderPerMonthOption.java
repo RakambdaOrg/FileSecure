@@ -35,6 +35,6 @@ public class FolderPerMonthOption implements FileOption{
 	
 	@Override
 	public int getPriority(){
-		return 12;
+		return 13;
 	}
 }

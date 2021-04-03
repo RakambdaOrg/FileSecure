@@ -20,6 +20,7 @@ import java.util.Set;
 @JsonTypeInfo(use = JsonTypeInfo.Id.NAME, property = "name")
 @JsonSubTypes(value = {
 		@JsonSubTypes.Type(value = FolderPerDayOption.class, name = "FolderPerDayOption"),
+		@JsonSubTypes.Type(value = FolderPerWeekOption.class, name = "FolderPerWeekOption"),
 		@JsonSubTypes.Type(value = FolderPerMonthOption.class, name = "FolderPerMonthOption"),
 		@JsonSubTypes.Type(value = FolderPerYearOption.class, name = "FolderPerYearOption"),
 		@JsonSubTypes.Type(value = IfOlderThanOption.class, name = "IfOlderThanOption"),
