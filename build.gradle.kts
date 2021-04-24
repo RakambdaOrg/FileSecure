@@ -14,6 +14,7 @@ description = "FileSecure"
 dependencies {
     implementation(libs.slf4j)
     implementation(libs.log4j2)
+    implementation(libs.log4j2Slf4j)
 
     implementation(libs.nameascreated)
 
@@ -27,13 +28,6 @@ repositories {
     val githubRepoUsername: String by project
     val githubRepoPassword: String by project
 
-    maven {
-        url = uri("https://maven.pkg.github.com/RakSrinaNa/JavaUtils/")
-        credentials {
-            username = githubRepoUsername
-            password = githubRepoPassword
-        }
-    }
     maven {
         url = uri("https://maven.pkg.github.com/RakSrinaNa/NameAsCreated/")
         credentials {

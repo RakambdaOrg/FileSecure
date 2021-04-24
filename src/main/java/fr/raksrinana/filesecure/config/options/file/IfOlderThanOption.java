@@ -10,7 +10,7 @@ import fr.raksrinana.filesecure.files.DesiredTarget;
 import fr.raksrinana.nameascreated.NewFile;
 import lombok.Getter;
 import lombok.NoArgsConstructor;
-import lombok.extern.slf4j.Slf4j;
+import lombok.extern.log4j.Log4j2;
 import org.jetbrains.annotations.NotNull;
 import java.nio.file.Path;
 import java.time.ZonedDateTime;
@@ -18,7 +18,7 @@ import java.time.ZonedDateTime;
 @JsonIgnoreProperties(ignoreUnknown = true)
 @JsonInclude(JsonInclude.Include.NON_NULL)
 @JsonTypeName("IfOlderThanOption")
-@Slf4j
+@Log4j2
 @NoArgsConstructor
 public class IfOlderThanOption implements FileOption{
 	@JsonProperty(value = "dayOffset", required = true)
