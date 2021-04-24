@@ -52,7 +52,7 @@ public class FolderDifference implements DifferenceElement{
 		sourcePath = source;
 		this.rule = rule;
 		this.depth = depth;
-		if(depth > rule.getDepth()){
+		if(rule.getDepth() < 0 || depth <= rule.getDepth()){
 			childrenDifferences = getChildrenElements(source, target).distinct().sorted().collect(Collectors.toList());
 		}
 		else{

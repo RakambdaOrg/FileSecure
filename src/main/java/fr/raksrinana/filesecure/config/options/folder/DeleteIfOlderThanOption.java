@@ -41,7 +41,7 @@ public class DeleteIfOlderThanOption implements FolderOption{
 			}
 		}
 		catch(DirectoryNotEmptyException e){
-			log.error("Failed to delete folder {}, not empty", folder, e);
+			log.error("Failed to delete folder {}, not empty", folder);
 		}
 		catch(Exception e){
 			log.error("Failed to determine if {} should be deleted, it will not be by default", folder, e);
