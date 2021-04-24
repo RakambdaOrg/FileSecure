@@ -4,8 +4,8 @@ plugins {
     application
     id("com.github.johnrengelman.shadow") version ("6.1.0")
     id("com.github.ben-manes.versions") version ("0.38.0")
-    id("io.freefair.lombok") version ("5.3.0")
-//    id("org.panteleyev.jpackageplugin") version ("1.1.1")
+    id("io.freefair.lombok") version ("6.0.0-m2")
+    id("org.beryx.jlink") version ("2.23.7")
 }
 
 group = "fr.raksrinana"
@@ -13,9 +13,7 @@ description = "FileSecure"
 
 dependencies {
     implementation(libs.slf4j)
-    implementation(libs.logback) {
-        exclude(group = "edu.washington.cs.types.checker", module = "checker-framework")
-    }
+    implementation(libs.log4j2)
 
     implementation(libs.nameascreated)
 
@@ -96,10 +94,20 @@ java {
     targetCompatibility = JavaVersion.VERSION_16
 }
 
-lombok {
-    version.set("edge-SNAPSHOT")
-}
+jlink {
+    val moduleName: String by project
+    val className: String by project
 
-//jpackage {
-//
-//}
+    this.moduleName.set(moduleName)
+    mainClass.set(className)
+    addOptions(
+        "--strip-debug",
+        "--compress", "2",
+        "--no-header-files",
+        "--no-man-pages"
+    )
+
+    launcher {
+        name = "FileSecure"
+    }
+}

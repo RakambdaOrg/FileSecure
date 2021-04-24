@@ -1,0 +1,26 @@
+configuration:
+    name: Default
+    status: warn
+
+    appenders:
+        stdout:
+            name: STDOUT
+            target: SYSTEM_OUT
+            patternLayout:
+                pattern: %highlight{%date{ISO8601} %level [%thread] %logger{1.}} - %message%n
+        file:
+            name: FILE
+            fileName: \${sys:user.home}/logs/${project.name}.log
+            filePattern: \${sys:user.home}/logs/${project.name}.log.%d{yyyy-MM-dd}.gz
+            patternLayout:
+                pattern: "[%-5level] %d{yyyy-MM-dd HH:mm:ss.SSS} [%t] %c{1} - %msg%n"
+            policies:
+                defaultRollOverStrategy:
+                    max: 10
+
+    loggers:
+        root:
+            level: info
+            appenderRef:
+                - ref: STDOUT
+                - ref: FILE
