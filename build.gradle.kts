@@ -13,8 +13,7 @@ description = "FileSecure"
 
 dependencies {
     implementation(libs.slf4j)
-    implementation(libs.log4j2)
-    implementation(libs.log4j2Slf4j)
+    implementation(libs.bundles.log4j2)
 
     implementation(libs.nameascreated)
 
@@ -34,9 +33,6 @@ repositories {
             username = githubRepoUsername
             password = githubRepoPassword
         }
-    }
-    maven {
-        url = uri("https://projectlombok.org/edge-releases")
     }
     mavenCentral()
     jcenter()

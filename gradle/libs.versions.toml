@@ -9,8 +9,8 @@ jetbrains-annotations-version = "20.1.0"
 
 [libraries]
 slf4j = { group = "org.slf4j", name = "slf4j-api", version.ref = "slf4j-version" }
-log4j2 = { group = "org.apache.logging.log4j", name = "log4j-core", version.ref = "log4j2-version" }
-log4j2Slf4j = { group = "org.apache.logging.log4j", name = "log4j-slf4j18-impl", version.ref = "log4j2-slf4j-version" }
+log4j2-core = { group = "org.apache.logging.log4j", name = "log4j-core", version.ref = "log4j2-version" }
+log4j2-slf4j = { group = "org.apache.logging.log4j", name = "log4j-slf4j18-impl", version.ref = "log4j2-slf4j-version" }
 picocli = { group = "info.picocli", name = "picocli", version.ref = "picocli-version" }
 jackson-core = { group = "com.fasterxml.jackson.core", name = "jackson-core", version.ref = "jackson-version" }
 jackson-annotations = { group = "com.fasterxml.jackson.core", name = "jackson-annotations", version.ref = "jackson-version" }
@@ -20,3 +20,4 @@ jetbrainsAnnotations = { group = "org.jetbrains", name = "annotations", version.
 
 [bundles]
 jackson = ["jackson-core", "jackson-annotations", "jackson-databind"]
+log4j2 = ["log4j2-core", "log4j2-slf4j"]
