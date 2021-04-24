@@ -62,6 +62,12 @@ tasks {
         }
     }
 
+    jar {
+        manifest {
+            attributes["Multi-Release"] = "true"
+        }
+    }
+
     shadowJar {
         archiveBaseName.set(project.name)
         archiveClassifier.set("shaded")

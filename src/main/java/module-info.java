@@ -7,6 +7,7 @@ open module fr.raksrinana.filesecure {
 	requires org.apache.logging.log4j;
 	requires org.apache.logging.log4j.core;
 	requires org.apache.logging.log4j.slf4j;
+	requires java.scripting;
 	requires info.picocli;
 	requires static lombok;
 	requires static org.jetbrains.annotations;

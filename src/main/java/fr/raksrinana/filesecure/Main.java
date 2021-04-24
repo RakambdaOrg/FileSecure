@@ -21,6 +21,7 @@ public class Main{
 	 *             0: A path to the config file, to the json format.
 	 */
 	public static void main(String[] args){
+		log.info("Hello");
 		parameters = new CLIParameters();
 		var cli = new CommandLine(parameters);
 		cli.registerConverter(Path.class, Paths::get);
