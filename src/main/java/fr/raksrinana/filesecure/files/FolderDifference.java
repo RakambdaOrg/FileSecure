@@ -1,8 +1,9 @@
 package fr.raksrinana.filesecure.files;
 
 import fr.raksrinana.filesecure.config.BackupStrategy;
-import fr.raksrinana.filesecure.config.FileOption;
 import fr.raksrinana.filesecure.config.Rule;
+import fr.raksrinana.filesecure.config.options.FileOption;
+import fr.raksrinana.filesecure.config.options.FolderOption;
 import fr.raksrinana.filesecure.exceptions.AbandonBackupException;
 import fr.raksrinana.filesecure.exceptions.FlagsProcessingException;
 import lombok.Getter;
@@ -16,6 +17,8 @@ import java.util.Objects;
 import java.util.Set;
 import java.util.stream.Collectors;
 import java.util.stream.Stream;
+import static fr.raksrinana.filesecure.config.options.FolderOptionPhase.POST;
+import static fr.raksrinana.filesecure.config.options.FolderOptionPhase.PRE;
 
 /**
  * List all the differences between two folders.
@@ -78,22 +81,26 @@ public class FolderDifference implements DifferenceElement{
 							|| rule.getFilters().isEmpty()
 							|| rule.getFilters().stream().anyMatch(f -> f.matcher(child.getFileName().toString()).matches()))
 					.map(child -> {
-						if(Files.isRegularFile(child)){
-							var newFile = rule.getRenameStrategy().apply(child);
-							if(Objects.nonNull(newFile)){
-								try{
-									return new FileDifference(child, FileOption.applyFlags(rule.getFileOptions(), child, newFile, output));
-								}
-								catch(FlagsProcessingException e){
-									log.error("Failed to apply flags", e);
-								}
-								catch(AbandonBackupException e){
-									log.debug("Did not backup file {} => {}", input, e.getMessage());
+						try{
+							if(Files.isRegularFile(child)){
+								var newFile = rule.getRenameStrategy().apply(child);
+								if(Objects.nonNull(newFile)){
+									var desiredTarget = FileOption.applyFlags(rule.getFileOptions(), child, newFile, output);
+									return new FileDifference(child, desiredTarget);
 								}
 							}
-							return null;
+							else{
+								var path = FolderOption.applyFlags(rule.getInputFolderOptions(), output.resolve(child.getFileName()), depth, PRE);
+								return new FolderDifference(child, path, rule, depth + 1);
+							}
 						}
-						return new FolderDifference(child, output.resolve(child.getFileName()), rule, depth + 1);
+						catch(FlagsProcessingException e){
+							log.error("Failed to apply folder flags", e);
+						}
+						catch(AbandonBackupException e){
+							log.debug("Did not backup {} => {}", input, e.getMessage());
+						}
+						return null;
 					}).filter(Objects::nonNull);
 		}
 		catch(IOException e){
@@ -110,7 +117,12 @@ public class FolderDifference implements DifferenceElement{
 	public void applyStrategy(@NotNull BackupStrategy backupStrategy){
 		childrenDifferences.forEach(difference -> difference.applyStrategy(backupStrategy));
 		if(depth > 0){
-			rule.getInputFolderOptions().forEach(option -> option.apply(getSourcePath(), depth));
+			try{
+				FolderOption.applyFlags(rule.getInputFolderOptions(), getSourcePath(), depth, POST);
+			}
+			catch(FlagsProcessingException | AbandonBackupException e){
+				log.error("Failed to apply folder flags", e);
+			}
 		}
 	}
 }

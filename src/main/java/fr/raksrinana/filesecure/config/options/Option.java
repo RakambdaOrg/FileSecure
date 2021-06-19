@@ -1,4 +1,4 @@
-package fr.raksrinana.filesecure.config;
+package fr.raksrinana.filesecure.config.options;
 
 import org.jetbrains.annotations.NotNull;
 

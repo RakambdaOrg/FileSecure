@@ -3,7 +3,7 @@ package fr.raksrinana.filesecure.config.options.file;
 import com.fasterxml.jackson.annotation.JsonIgnoreProperties;
 import com.fasterxml.jackson.annotation.JsonInclude;
 import com.fasterxml.jackson.annotation.JsonTypeName;
-import fr.raksrinana.filesecure.config.FileOption;
+import fr.raksrinana.filesecure.config.options.FileOption;
 import fr.raksrinana.filesecure.files.DesiredTarget;
 import fr.raksrinana.nameascreated.NewFile;
 import lombok.NoArgsConstructor;

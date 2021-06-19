@@ -2,10 +2,10 @@ plugins {
     idea
     java
     application
-    id("com.github.johnrengelman.shadow") version ("6.1.0")
-    id("com.github.ben-manes.versions") version ("0.38.0")
+    id("com.github.johnrengelman.shadow") version ("7.0.0")
+    id("com.github.ben-manes.versions") version ("0.39.0")
     id("io.freefair.lombok") version ("6.0.0-m2")
-    id("org.beryx.jlink") version ("2.23.7")
+    id("org.beryx.jlink") version ("2.24.0")
 }
 
 group = "fr.raksrinana"

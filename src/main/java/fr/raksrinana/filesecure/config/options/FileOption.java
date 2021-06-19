@@ -1,4 +1,4 @@
-package fr.raksrinana.filesecure.config;
+package fr.raksrinana.filesecure.config.options;
 
 import com.fasterxml.jackson.annotation.JsonIgnoreProperties;
 import com.fasterxml.jackson.annotation.JsonInclude;
