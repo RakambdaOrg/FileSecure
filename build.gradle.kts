@@ -2,10 +2,9 @@ plugins {
     idea
     java
     application
-    id("com.github.johnrengelman.shadow") version ("7.0.0")
-    id("com.github.ben-manes.versions") version ("0.39.0")
-    id("io.freefair.lombok") version ("6.0.0-m2")
-    id("org.beryx.jlink") version ("2.24.0")
+    alias(libs.plugins.shadow)
+    alias(libs.plugins.lombok)
+    alias(libs.plugins.names)
 }
 
 group = "fr.raksrinana"
@@ -15,7 +14,9 @@ dependencies {
     implementation(libs.slf4j)
     implementation(libs.bundles.log4j2)
 
-    implementation(libs.nameascreated)
+    implementation(libs.unirest)
+    implementation(libs.pointLocation)
+    implementation(libs.metadataExtractor)
 
     implementation(libs.picocli)
     implementation(libs.bundles.jackson)
@@ -24,18 +25,7 @@ dependencies {
 }
 
 repositories {
-    val githubRepoUsername: String by project
-    val githubRepoPassword: String by project
-
-    maven {
-        url = uri("https://maven.pkg.github.com/RakSrinaNa/NameAsCreated/")
-        credentials {
-            username = githubRepoUsername
-            password = githubRepoPassword
-        }
-    }
     mavenCentral()
-    jcenter()
 }
 
 tasks {
@@ -49,13 +39,6 @@ tasks {
 
         options.encoding = "UTF-8"
         options.isDeprecation = true
-
-        doFirst {
-            val compilerArgs = options.compilerArgs
-            compilerArgs.add("--module-path")
-            compilerArgs.add(classpath.asPath)
-            classpath = files()
-        }
     }
 
     jar {
@@ -80,30 +63,11 @@ application {
     val moduleName: String by project
     val className: String by project
 
-    mainClassName = className
     mainModule.set(moduleName)
     mainClass.set(className)
 }
 
 java {
-    sourceCompatibility = JavaVersion.VERSION_16
-    targetCompatibility = JavaVersion.VERSION_16
-}
-
-jlink {
-    val moduleName: String by project
-    val className: String by project
-
-    this.moduleName.set(moduleName)
-    mainClass.set(className)
-    addOptions(
-        "--strip-debug",
-        "--compress", "2",
-        "--no-header-files",
-        "--no-man-pages"
-    )
-
-    launcher {
-        name = "FileSecure"
-    }
+    sourceCompatibility = JavaVersion.VERSION_17
+    targetCompatibility = JavaVersion.VERSION_17
 }

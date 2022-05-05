@@ -5,7 +5,7 @@ import com.fasterxml.jackson.annotation.JsonInclude;
 import com.fasterxml.jackson.annotation.JsonTypeName;
 import fr.raksrinana.filesecure.config.options.FileOption;
 import fr.raksrinana.filesecure.files.DesiredTarget;
-import fr.raksrinana.nameascreated.NewFile;
+import fr.raksrinana.filesecure.files.NewFile;
 import lombok.NoArgsConstructor;
 import lombok.extern.log4j.Log4j2;
 import org.jetbrains.annotations.NotNull;

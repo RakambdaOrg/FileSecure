@@ -1,5 +1,7 @@
 open module fr.raksrinana.filesecure {
-	requires fr.raksrinana.nameascreated;
+	requires unirest.java;
+	requires metadata.extractor;
+	requires pointlocation6709;
 	requires com.fasterxml.jackson.core;
 	requires com.fasterxml.jackson.annotation;
 	requires com.fasterxml.jackson.databind;

@@ -73,8 +73,8 @@ public class FolderDifference implements DifferenceElement{
 	 */
 	@NotNull
 	private Stream<DifferenceElement> getChildrenElements(@NotNull Path input, @NotNull Path output){
-		try{
-			return Files.list(input).parallel()
+		try(var files = Files.list(input)){
+			return files.parallel()
 					.filter(child -> Files.isDirectory(child)
 							|| rule.getExcludes().stream().noneMatch(f -> f.matcher(child.getFileName().toString()).matches()))
 					.filter(child -> Files.isDirectory(child)

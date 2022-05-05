@@ -4,8 +4,14 @@ log4j2-version = "2.17.2"
 log4j2-slf4j-version = "2.17.2"
 picocli-version = "4.6.3"
 jackson-version = "2.13.2"
-nameascreated-version = "9.6"
 jetbrains-annotations-version = "23.0.0"
+metadata-extractor-version = "2.18.0"
+pointlocation6709-version = "4.2.1"
+unirest-version = "4.0.0-RC2"
+
+shadow-version = "7.1.2"
+names-version = "0.42.0"
+lombok-version = "6.4.3"
 
 [libraries]
 slf4j = { group = "org.slf4j", name = "slf4j-api", version.ref = "slf4j-version" }
@@ -15,9 +21,16 @@ picocli = { group = "info.picocli", name = "picocli", version.ref = "picocli-ver
 jackson-core = { group = "com.fasterxml.jackson.core", name = "jackson-core", version.ref = "jackson-version" }
 jackson-annotations = { group = "com.fasterxml.jackson.core", name = "jackson-annotations", version.ref = "jackson-version" }
 jackson-databind = { group = "com.fasterxml.jackson.core", name = "jackson-databind", version.ref = "jackson-version" }
-nameascreated = { group = "fr.raksrinana", name = "nameascreated", version.ref = "nameascreated-version" }
 jetbrainsAnnotations = { group = "org.jetbrains", name = "annotations", version.ref = "jetbrains-annotations-version" }
+metadataExtractor = { group = "com.drewnoakes", name = "metadata-extractor", version.ref = "metadata-extractor-version" }
+pointLocation = { group = "us.fatehi", name = "pointlocation6709", version.ref = "pointlocation6709-version" }
+unirest = { group = "com.konghq", name = "unirest-java", version.ref = "unirest-version" }
 
 [bundles]
 jackson = ["jackson-core", "jackson-annotations", "jackson-databind"]
 log4j2 = ["log4j2-core", "log4j2-slf4j"]
+
+[plugins]
+shadow = { id = "com.github.johnrengelman.shadow", version.ref = "shadow-version" }
+names = { id = "com.github.ben-manes.versions", version.ref = "names-version" }
+lombok = { id = "io.freefair.lombok", version.ref = "lombok-version" }

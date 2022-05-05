@@ -1,6 +1,5 @@
 package fr.raksrinana.filesecure.files;
 
-import fr.raksrinana.nameascreated.NewFile;
 import lombok.Getter;
 import lombok.Setter;
 import org.jetbrains.annotations.NotNull;

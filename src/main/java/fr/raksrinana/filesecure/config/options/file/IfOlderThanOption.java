@@ -7,7 +7,7 @@ import com.fasterxml.jackson.annotation.JsonTypeName;
 import fr.raksrinana.filesecure.config.options.FileOption;
 import fr.raksrinana.filesecure.exceptions.AbandonBackupException;
 import fr.raksrinana.filesecure.files.DesiredTarget;
-import fr.raksrinana.nameascreated.NewFile;
+import fr.raksrinana.filesecure.files.NewFile;
 import lombok.Getter;
 import lombok.NoArgsConstructor;
 import lombok.extern.log4j.Log4j2;
