@@ -13,10 +13,10 @@ import java.io.IOException;
 import java.nio.file.Files;
 import java.nio.file.Path;
 import java.util.Collection;
+import java.util.List;
 import java.util.Objects;
 import java.util.Set;
 import java.util.stream.Collectors;
-import java.util.stream.Stream;
 import static fr.raksrinana.filesecure.config.options.FolderOptionPhase.POST;
 import static fr.raksrinana.filesecure.config.options.FolderOptionPhase.PRE;
 
@@ -56,7 +56,7 @@ public class FolderDifference implements DifferenceElement{
 		this.rule = rule;
 		this.depth = depth;
 		if(rule.getDepth() < 0 || depth <= rule.getDepth()){
-			childrenDifferences = getChildrenElements(source, target).distinct().sorted().collect(Collectors.toList());
+			childrenDifferences = getChildrenElements(source, target);
 		}
 		else{
 			childrenDifferences = Set.of();
@@ -72,7 +72,7 @@ public class FolderDifference implements DifferenceElement{
 	 * @return A stream of differences.
 	 */
 	@NotNull
-	private Stream<DifferenceElement> getChildrenElements(@NotNull Path input, @NotNull Path output){
+	private Collection<DifferenceElement> getChildrenElements(@NotNull Path input, @NotNull Path output){
 		try(var files = Files.list(input)){
 			return files.parallel()
 					.filter(child -> Files.isDirectory(child)
@@ -101,12 +101,16 @@ public class FolderDifference implements DifferenceElement{
 							log.debug("Did not backup {} => {}", input, e.getMessage());
 						}
 						return null;
-					}).filter(Objects::nonNull);
+					})
+					.filter(Objects::nonNull)
+					.distinct()
+					.sorted()
+					.collect(Collectors.toList());
 		}
 		catch(IOException e){
 			log.error("Failed to list directory {}", input, e);
 		}
-		return Stream.empty();
+		return List.of();
 	}
 	
 	/**
