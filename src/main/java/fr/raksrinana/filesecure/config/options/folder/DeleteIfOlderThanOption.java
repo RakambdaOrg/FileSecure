@@ -11,11 +11,14 @@ import lombok.NoArgsConstructor;
 import lombok.NonNull;
 import lombok.extern.slf4j.Slf4j;
 import org.jetbrains.annotations.NotNull;
+import java.io.IOException;
 import java.nio.file.DirectoryNotEmptyException;
 import java.nio.file.Files;
 import java.nio.file.Path;
 import java.time.LocalDateTime;
 import java.time.ZoneId;
+import java.util.ArrayList;
+import java.util.List;
 import static fr.raksrinana.filesecure.config.options.FolderOptionPhase.POST;
 
 @JsonIgnoreProperties(ignoreUnknown = true)
@@ -30,6 +33,9 @@ public class DeleteIfOlderThanOption implements FolderOption{
 	@JsonProperty(value = "depth")
 	@Getter
 	private int depth = 0;
+	@JsonProperty(value = "deleteChildren")
+	@Getter
+	private List<String> deleteChildren = new ArrayList<>();
 	
 	@Override
 	public Path apply(@NotNull Path folder, int depth, @NonNull FolderOptionPhase phase){
@@ -39,8 +45,7 @@ public class DeleteIfOlderThanOption implements FolderOption{
 					var folderTime = Files.getLastModifiedTime(folder);
 					var date = LocalDateTime.ofInstant(folderTime.toInstant(), ZoneId.systemDefault());
 					if(date.isBefore(LocalDateTime.now().minusDays(getDayOffset()))){
-						log.info("Deleting folder {} because it is more than {} days old", folder, dayOffset);
-						Files.delete(folder);
+						delete(folder);
 					}
 				}
 			}
@@ -52,6 +57,19 @@ public class DeleteIfOlderThanOption implements FolderOption{
 			}
 		}
 		return folder;
+	}
+	
+	private void delete(Path folder) throws IOException{
+		log.info("Deleting folder {} because it is more than {} days old", folder, dayOffset);
+		
+		for(var child : deleteChildren){
+			var childPath = folder.resolve(child);
+			if(Files.deleteIfExists(childPath)){
+				log.info("Deleted child file {}", childPath);
+			}
+		}
+		
+		Files.delete(folder);
 	}
 	
 	@Override
