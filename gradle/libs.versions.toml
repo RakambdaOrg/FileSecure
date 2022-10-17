@@ -10,7 +10,7 @@ pointlocation6709-version = "4.2.1"
 unirest-version = "4.0.0-RC2"
 
 shadow-version = "7.1.2"
-names-version = "0.42.0"
+names-version = "0.43.0"
 lombok-version = "6.5.1"
 
 [libraries]
