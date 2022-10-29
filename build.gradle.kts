@@ -7,7 +7,7 @@ plugins {
     alias(libs.plugins.names)
 }
 
-group = "fr.raksrinana"
+group = "fr.rakambda"
 description = "FileSecure"
 
 dependencies {

@@ -1,4 +1,7 @@
 {
+  "assignees": [
+    "Rakambda"
+  ],
   "extends": [
     "config:base"
   ],
