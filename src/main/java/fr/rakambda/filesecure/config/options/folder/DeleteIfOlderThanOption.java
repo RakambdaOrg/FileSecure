@@ -59,7 +59,6 @@ public class DeleteIfOlderThanOption implements FolderOption{
 	}
 	
 	private void delete(Path folder) throws IOException{
-		log.info("Deleting folder {} because it is more than {} days old", folder, dayOffset);
 		
 		for(var child : deleteChildren){
 			var childPath = folder.resolve(child);
@@ -68,7 +67,13 @@ public class DeleteIfOlderThanOption implements FolderOption{
 			}
 		}
 		
-		Files.delete(folder);
+		if(Files.list(folder).toList().isEmpty()){
+			log.info("Deleting folder {} because it is more than {} days old and empty", folder, dayOffset);
+			Files.delete(folder);
+		}
+		else{
+			log.debug("Tried deleting folder {} because it is more than {} days old but wasn't empty", folder, dayOffset);
+		}
 	}
 	
 	@Override

@@ -108,7 +108,7 @@ public class ByDateRenaming implements RenamingStrategy{
 					if(date.getYear() < 1970){
 						throw new ParseException("Invalid year", 0);
 					}
-					log.info("Matched date format for {}{}", name, extension);
+					log.debug("Matched date format for {}{}", name, extension);
 					return new NewFile(outputDateFormat.format(date), extension, path.getParent(), date, path);
 				}
 			}
@@ -121,7 +121,7 @@ public class ByDateRenaming implements RenamingStrategy{
 				log.error("Error using format {} => {}", nameDateExtractor, e.getMessage());
 			}
 		}
-		log.warn("Unrecognized date format : {}{}, using file last modified time", name, extension);
+		log.debug("Unrecognized date format : {}{}, using file last modified time", name, extension);
 		var theDate = createdDate;
 		if(createdDate.getYear() <= 1970){
 			theDate = createdDate.withYear(LocalDateTime.now().getYear());
@@ -153,7 +153,7 @@ public class ByDateRenaming implements RenamingStrategy{
 								var takenDateOptional = dataExtractor.parse(directory, timeZone);
 								if(takenDateOptional.isPresent()){
 									var takenDate = takenDateOptional.get();
-									log.info("Matched directory {} for {}{}", directory, name, extension);
+									log.debug("Matched directory {} for {}{}", directory, name, extension);
 									if(takenDate.getYear() < 1970){
 										throw new ParseException("Invalid year", 0);
 									}
