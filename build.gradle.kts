@@ -3,7 +3,6 @@ plugins {
     java
     application
     alias(libs.plugins.shadow)
-    alias(libs.plugins.lombok)
     alias(libs.plugins.names)
 }
 
@@ -21,7 +20,11 @@ dependencies {
     implementation(libs.picocli)
     implementation(libs.bundles.jackson)
 
+
     compileOnly(libs.jetbrainsAnnotations)
+    compileOnly(libs.lombok)
+
+    annotationProcessor(libs.lombok)
 }
 
 repositories {

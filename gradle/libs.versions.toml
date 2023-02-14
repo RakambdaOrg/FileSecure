@@ -8,10 +8,10 @@ jetbrains-annotations-version = "24.0.0"
 metadata-extractor-version = "2.18.0"
 pointlocation6709-version = "4.2.1"
 unirest-version = "4.0.0-RC2"
+lombok-version = "1.18.26"
 
 shadow-version = "7.1.2"
 names-version = "0.45.0"
-lombok-version = "6.6.1"
 
 [libraries]
 slf4j = { group = "org.slf4j", name = "slf4j-api", version.ref = "slf4j-version" }
@@ -25,6 +25,7 @@ jetbrainsAnnotations = { group = "org.jetbrains", name = "annotations", version.
 metadataExtractor = { group = "com.drewnoakes", name = "metadata-extractor", version.ref = "metadata-extractor-version" }
 pointLocation = { group = "us.fatehi", name = "pointlocation6709", version.ref = "pointlocation6709-version" }
 unirest = { group = "com.konghq", name = "unirest-java", version.ref = "unirest-version" }
+lombok = { group = "org.projectlombok", name = "lombok", version.ref = "lombok-version" }
 
 [bundles]
 jackson = ["jackson-core", "jackson-annotations", "jackson-databind"]
@@ -33,4 +34,3 @@ log4j2 = ["log4j2-core", "log4j2-slf4j"]
 [plugins]
 shadow = { id = "com.github.johnrengelman.shadow", version.ref = "shadow-version" }
 names = { id = "com.github.ben-manes.versions", version.ref = "names-version" }
-lombok = { id = "io.freefair.lombok", version.ref = "lombok-version" }
