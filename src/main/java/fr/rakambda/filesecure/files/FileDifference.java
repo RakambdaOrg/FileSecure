@@ -5,12 +5,8 @@ import fr.rakambda.filesecure.config.BackupStrategy;
 import lombok.Getter;
 import lombok.extern.slf4j.Slf4j;
 import org.jetbrains.annotations.NotNull;
-import java.nio.channels.FileChannel;
-import java.nio.channels.OverlappingFileLockException;
 import java.nio.file.Files;
 import java.nio.file.Path;
-import java.nio.file.StandardOpenOption;
-import java.util.Objects;
 import java.util.Optional;
 
 /**
@@ -44,33 +40,21 @@ class FileDifference implements DifferenceElement{
 			var targetPath = desiredTarget.getTargetFolder().resolve(finalName);
 			log.info("{} file {} to {}", backupStrategy.name(), sourcePath, targetPath);
 			if(!Main.parameters.isDryRun()){
-				
-				try(var channel = FileChannel.open(sourcePath, StandardOpenOption.WRITE, StandardOpenOption.READ)){
-					var fileLock = channel.tryLock();
-					if(Objects.isNull(fileLock)){
-						log.warn("Failed to get lock for {}", sourcePath);
-						return;
-					}
-					
-					try(fileLock){
-						switch(backupStrategy){
-							case MOVE -> {
-								Files.createDirectories(desiredTarget.getTargetFolder());
-								if(Files.isDirectory(desiredTarget.getTargetFolder())){
-									Files.move(sourcePath, targetPath);
-								}
+				try{
+					switch(backupStrategy){
+						case MOVE -> {
+							Files.createDirectories(desiredTarget.getTargetFolder());
+							if(Files.isDirectory(desiredTarget.getTargetFolder())){
+								Files.move(sourcePath, targetPath);
 							}
-							case COPY -> {
-								Files.createDirectories(desiredTarget.getTargetFolder());
-								if(Files.isDirectory(desiredTarget.getTargetFolder())){
-									Files.copy(sourcePath, targetPath);
-								}
+						}
+						case COPY -> {
+							Files.createDirectories(desiredTarget.getTargetFolder());
+							if(Files.isDirectory(desiredTarget.getTargetFolder())){
+								Files.copy(sourcePath, targetPath);
 							}
 						}
 					}
-				}
-				catch(OverlappingFileLockException e){
-					log.warn("File {} is locked, skipping", sourcePath);
 				}
 				catch(Exception e){
 					log.warn("Error applying strategy {} on file {}", backupStrategy, sourcePath, e);
