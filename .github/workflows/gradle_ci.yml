@@ -16,18 +16,16 @@ jobs:
         with:
           distribution: 'adopt'
           java-version: ${{ env.APP_JAVA_VERSION }}
-          cache: 'gradle'
-      - uses: actions/cache@v3
-        name: Cache gradle wrapper
+
+      - name: Build project
+        uses: gradle/gradle-build-action@v2.6.1
         with:
-          path: ~/.gradle/wrapper
-          key: ${{ runner.os }}-gradle-${{ hashFiles('gradle/wrapper/gradle-wrapper.properties') }}
-      - name: Set gradle permissions
-        run: chmod +x gradlew
-      - name: Check project
-        run: ./gradlew check build
-      - uses: actions/upload-artifact@v3
-        name: Upload artifact
+          arguments: |
+            check
+            build
+
+      - name: Upload artifact
+        uses: actions/upload-artifact@v3
         with:
           name: shadow-jar
           path: build/libs/filesecure-shaded.jar
@@ -37,8 +35,8 @@ jobs:
     needs: build
     if: contains('refs/heads/main', github.ref)
     steps:
-      - uses: actions/download-artifact@v3
-        name: Download artifact
+      - name: Download artifact
+        uses: actions/download-artifact@v3
         with:
           name: shadow-jar
       - name: Deploy on Dropbox
