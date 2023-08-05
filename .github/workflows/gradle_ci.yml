@@ -1,51 +1,24 @@
-name: CI
+name: Build
 
-on: [ push ]
-
-env:
-  APP_JAVA_VERSION: 20
+on:
+  push:
+  workflow_dispatch:
 
 jobs:
   build:
-    name: Build
-    runs-on: ubuntu-latest
-    steps:
-      - name: Checkout source
-        uses: actions/checkout@v3
-      - name: Set up JDK
-        uses: actions/setup-java@v3
-        with:
-          distribution: 'adopt'
-          java-version: ${{ env.APP_JAVA_VERSION }}
-
-      - name: Build project
-        uses: gradle/gradle-build-action@v2.7.0
-        with:
-          arguments: |
-            check
-            build
-
-      - name: Upload artifact
-        uses: actions/upload-artifact@v3
-        with:
-          name: shadow-jar
-          path: build/libs/filesecure-shaded.jar
+    uses: Rakambda/rakambda-github-workflows/.github/workflows/gradle-build.yml@main
+    with:
+      java-version: ${{ vars.JAVA_VERSION }}
+      artifact-name: Gradle-Libs
 
   dropbox:
-    name: Deploy Dropbox
-    concurrency: dropbox
-    runs-on: ubuntu-latest
-    needs: build
-    if: contains('refs/heads/main', github.ref)
-    steps:
-      - name: Download artifact
-        uses: actions/download-artifact@v3
-        with:
-          name: shadow-jar
-      - name: Deploy on Dropbox
-        uses: deka0106/upload-to-dropbox@v2.0.1
-        with:
-          dropbox_access_token: ${{ secrets.DROPBOX_DEPLOY_TOKEN }}
-          src: "filesecure-shaded.jar"
-          dest: "/Documents/JARs/FileSecure.jar"
-          mode: overwrite
+    uses: Rakambda/rakambda-github-workflows/.github/workflows/dropbox-publish-artifact.yml@main
+    if: github.ref == ${{ github.event.repository.default_branch }}
+    needs:
+      - build
+    with:
+      artifact-name: Gradle-Libs
+      source: "filesecure-shaded.jar"
+      target: "/Documents/JARs/FileSecure.jar"
+    secrets:
+      dropbox-token: ${{ secrets.DROPBOX_TOKEN }}
