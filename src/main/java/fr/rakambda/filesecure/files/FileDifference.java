@@ -7,6 +7,7 @@ import lombok.extern.slf4j.Slf4j;
 import org.jetbrains.annotations.NotNull;
 import java.nio.file.Files;
 import java.nio.file.Path;
+import java.nio.file.StandardCopyOption;
 import java.util.Optional;
 
 /**
@@ -45,13 +46,13 @@ class FileDifference implements DifferenceElement{
 						case MOVE -> {
 							Files.createDirectories(desiredTarget.getTargetFolder());
 							if(Files.isDirectory(desiredTarget.getTargetFolder())){
-								Files.move(sourcePath, targetPath);
+								Files.move(sourcePath, targetPath, StandardCopyOption.ATOMIC_MOVE, StandardCopyOption.COPY_ATTRIBUTES);
 							}
 						}
 						case COPY -> {
 							Files.createDirectories(desiredTarget.getTargetFolder());
 							if(Files.isDirectory(desiredTarget.getTargetFolder())){
-								Files.copy(sourcePath, targetPath);
+								Files.copy(sourcePath, targetPath, StandardCopyOption.ATOMIC_MOVE, StandardCopyOption.COPY_ATTRIBUTES);
 							}
 						}
 					}
