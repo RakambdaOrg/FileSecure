@@ -46,13 +46,13 @@ class FileDifference implements DifferenceElement{
 						case MOVE -> {
 							Files.createDirectories(desiredTarget.getTargetFolder());
 							if(Files.isDirectory(desiredTarget.getTargetFolder())){
-								Files.move(sourcePath, targetPath, StandardCopyOption.ATOMIC_MOVE, StandardCopyOption.COPY_ATTRIBUTES);
+								Files.move(sourcePath, targetPath, StandardCopyOption.ATOMIC_MOVE);
 							}
 						}
 						case COPY -> {
 							Files.createDirectories(desiredTarget.getTargetFolder());
 							if(Files.isDirectory(desiredTarget.getTargetFolder())){
-								Files.copy(sourcePath, targetPath, StandardCopyOption.ATOMIC_MOVE, StandardCopyOption.COPY_ATTRIBUTES);
+								Files.copy(sourcePath, targetPath, StandardCopyOption.ATOMIC_MOVE);
 							}
 						}
 					}
