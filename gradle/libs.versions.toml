@@ -12,6 +12,7 @@ lombok-version = "1.18.30"
 
 shadow-version = "8.1.1"
 names-version = "0.50.0"
+jib-version = "3.4.0"
 
 [libraries]
 slf4j = { group = "org.slf4j", name = "slf4j-api", version.ref = "slf4j-version" }
@@ -34,3 +35,4 @@ log4j2 = ["log4j2-core", "log4j2-slf4j"]
 [plugins]
 shadow = { id = "com.github.johnrengelman.shadow", version.ref = "shadow-version" }
 names = { id = "com.github.ben-manes.versions", version.ref = "names-version" }
+jib = { id = "com.google.cloud.tools.jib", version.ref = "jib-version" }

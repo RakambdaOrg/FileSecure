@@ -4,6 +4,7 @@ plugins {
     application
     alias(libs.plugins.shadow)
     alias(libs.plugins.names)
+    alias(libs.plugins.jib)
 }
 
 group = "fr.rakambda"
@@ -73,4 +74,24 @@ application {
 java {
     sourceCompatibility = JavaVersion.VERSION_20
     targetCompatibility = JavaVersion.VERSION_20
+}
+
+jib {
+    from {
+        image = "eclipse-temurin:21-jdk"
+        platforms {
+            platform {
+                os = "linux"
+                architecture = "arm64"
+            }
+            platform {
+                os = "linux"
+                architecture = "amd64"
+            }
+        }
+    }
+    container {
+        creationTime.set("USE_CURRENT_TIMESTAMP")
+        user = "1052:100"
+    }
 }
