@@ -67,7 +67,7 @@ public class Processor{
 				}
 			}
 			catch(AbandonBackupException e){
-				log.warn("Transformer {} abandoned backup for file {}", option.getClass().getSimpleName(), path);
+				log.debug("Transformer {} abandoned backup for file {}", option.getClass().getSimpleName(), path);
 				return;
 			}
 			catch(Exception e){
