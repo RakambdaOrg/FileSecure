@@ -10,17 +10,16 @@ import lombok.NoArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
 import java.nio.file.Path;
 
+@Slf4j
+@Getter
 @JsonIgnoreProperties(ignoreUnknown = true)
 @JsonInclude(JsonInclude.Include.NON_NULL)
 @NoArgsConstructor
-@Slf4j
 public class Mapping{
-	@JsonProperty("input")
-	@Getter
+	@JsonProperty
 	@JsonDeserialize(using = NioPathDeserializer.class)
 	private Path input;
-	@JsonProperty("output")
-	@Getter
+	@JsonProperty
 	@JsonDeserialize(using = NioPathDeserializer.class)
 	private Path output;
 }

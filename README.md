@@ -3,44 +3,53 @@
 Backup files from a base directory to a target directory.
 
 To work this program needs a configuration file that will be passed as a parameter. The config file file must be in a json format. Here's an example:
+
 ```json
 {
   "rules": [
     {
-      "mappings": [{
-        "input": "/Input",
-        "output": "/Output"
-      }]
+      "mappings": [
+        {
+          "input": "/Input",
+          "output": "/Output"
+        }
+      ]
     },
     {
-      "strategy": "move",
+      "operation": "move",
       "depth": 2,
       "filters": [
         ".*\\.png",
-        ".*\\.jpg"     
+        ".*\\.jpg"
       ],
       "excludes": [
         ".*\\.ini"
       ],
-      "mappings": [{
-        "input": "/Input2",
-        "output": "/Output2"
-      }]
+      "mappings": [
+        {
+          "input": "/Input2",
+          "output": "/Output2"
+        }
+      ]
     }
   ]
 }
 ```
 
 Each backup to do is an object in the array called "mappings". Two fields are mandatory:
+
 * input
 * output
 
-The input folder is backed up recursively. (Maybe one day this will be configurable).
+The input folder is backed up recursively up to a certain depth.
 
 Other fields are optionals:
-* strategy: define the strategy to copy files. Can be "copy", "move" or "none" (just displays in standard output). Default is none.
-* depth: The number of subfolder to visit. A negative value mean an infinite number of subfolder.
-* filters: regexs to apply to determine which files to keep. By default all files are kept.
-* excludes: Regex to apply to determine which files to not process. Default excludes none.
 
-When the files are moved, they are renamed with a date name "yyyy-MM-dd hh.mm.ss". This one is determined by its current name or its creation date. (Maybe one day this will be configurable).
+* operation: define the strategy to copy files. Can be "copy", "move" or "none" (just displays in standard output). Default is none.
+* depth: The number of sub-folders to visit.
+* filters: Regexes to apply to determine which files to keep. By default, all files are kept.
+* excludes: Regexes to apply to determine which files to not process. By default, none are excluded.
+* fileTransformers: Transformations to apply when moving the file.
+  * TODO describe options
+* folderTransformers: Transformations to apply to input folders after operation has been applied.
+    * TODO describe options

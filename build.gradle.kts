@@ -21,11 +21,21 @@ dependencies {
     implementation(libs.picocli)
     implementation(libs.bundles.jackson)
 
-
-    compileOnly(libs.jetbrainsAnnotations)
     compileOnly(libs.lombok)
+    compileOnly(libs.jetbrainsAnnotations)
 
     annotationProcessor(libs.lombok)
+
+    testImplementation(libs.bundles.junit)
+    testRuntimeOnly(libs.junitEngine)
+
+    testImplementation(libs.bundles.assertj)
+    testImplementation(libs.bundles.mockito)
+
+    testCompileOnly(libs.lombok)
+    testCompileOnly(libs.jetbrainsAnnotations)
+
+    testAnnotationProcessor(libs.lombok)
 }
 
 repositories {
@@ -43,6 +53,14 @@ tasks {
 
         options.encoding = "UTF-8"
         options.isDeprecation = true
+    }
+
+    compileTestJava {
+        options.encoding = "UTF-8"
+    }
+
+    test {
+        useJUnitPlatform()
     }
 
     jar {

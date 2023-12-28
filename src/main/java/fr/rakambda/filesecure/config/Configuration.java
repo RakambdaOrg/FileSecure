@@ -7,6 +7,7 @@ import com.fasterxml.jackson.annotation.JsonProperty;
 import com.fasterxml.jackson.databind.ObjectMapper;
 import com.fasterxml.jackson.databind.ObjectReader;
 import com.fasterxml.jackson.databind.SerializationFeature;
+import lombok.AllArgsConstructor;
 import lombok.Getter;
 import lombok.NoArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
@@ -17,14 +18,16 @@ import java.nio.file.Path;
 import java.util.List;
 import java.util.Optional;
 
+@Slf4j
+@Getter
 @JsonIgnoreProperties(ignoreUnknown = true)
 @JsonInclude(JsonInclude.Include.NON_NULL)
-@Slf4j
 @NoArgsConstructor
+@AllArgsConstructor
 public class Configuration{
 	private static final ObjectReader objectReader;
-	@JsonProperty("rules")
-	@Getter
+	
+	@JsonProperty
 	private List<Rule> rules;
 	
 	@NotNull
