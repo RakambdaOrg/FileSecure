@@ -74,11 +74,6 @@ tasks {
         archiveClassifier.set("shaded")
         archiveVersion.set("")
     }
-
-    wrapper {
-        val wrapperVersion: String by project
-        gradleVersion = wrapperVersion
-    }
 }
 
 application {
