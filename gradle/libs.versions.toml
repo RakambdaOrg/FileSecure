@@ -10,7 +10,7 @@ pointlocation6709-version = "4.2.1"
 unirest-version = "4.0.0-RC2"
 lombok-version = "1.18.30"
 junitVersion = "5.10.1"
-assertj-core-version = "3.24.2"
+assertj-core-version = "3.25.0"
 mockito-version = "5.8.0"
 
 shadow-version = "8.1.1"
