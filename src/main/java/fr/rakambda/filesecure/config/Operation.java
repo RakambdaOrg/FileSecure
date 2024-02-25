@@ -17,6 +17,7 @@ import java.nio.file.Path;
 public enum Operation{
 	COPY(FileOperations::copy),
 	MOVE(FileOperations::move),
+	MOVE_WITH_COPY(FileOperations::moveWithCopy),
 	NONE((op, in, out) -> {});
 	
 	private final ThrowingTriConsumer<FileOperations, Path, Path> processor;

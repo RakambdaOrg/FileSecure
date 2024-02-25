@@ -28,6 +28,15 @@ public class FileOperations{
 		Files.move(in, out);
 	}
 	
+	public void moveWithCopy(@NotNull Path in, @NotNull Path out) throws IOException{
+		if(dryRun){
+			return;
+		}
+		
+		copy(in, out);
+		Files.delete(in);
+	}
+	
 	public void delete(Path path) throws IOException{
 		if(dryRun){
 			return;
