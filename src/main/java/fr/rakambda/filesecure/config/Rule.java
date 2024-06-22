@@ -33,6 +33,9 @@ public class Rule{
 	@JsonProperty
 	@JsonDeserialize(contentUsing = PatternDeserializer.class)
 	private Set<Pattern> excludes = new HashSet<>();
+	@JsonProperty
+	@JsonDeserialize(contentUsing = PatternDeserializer.class)
+	private Set<Pattern> folderExcludes = new HashSet<>();
 	
 	@JsonProperty
 	private Set<FileTransformer> fileTransformers = new HashSet<>();

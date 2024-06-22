@@ -33,7 +33,7 @@ public class Processor{
 		
 		log.info("Processing mapping ({}) {} ==> {}", rule.getOperation().name(), mapping.getInput(), mapping.getOutput());
 		log.debug("Building differences...");
-		var differenceVisitor = new DifferenceVisitor(rule.getFilters(), rule.getExcludes());
+		var differenceVisitor = new DifferenceVisitor(mapping.getInput(), rule.getFilters(), rule.getExcludes(), rule.getFolderExcludes());
 		Files.walkFileTree(mapping.getInput(), Set.of(), rule.getMaxDepth(), differenceVisitor);
 		
 		log.debug("Applying strategy");

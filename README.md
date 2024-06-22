@@ -49,8 +49,9 @@ Other fields are optionals:
 * depth: The number of sub-folders to visit.
 * filters: Regexes to apply to determine which files to keep. By default, all files are kept.
 * excludes: Regexes to apply to determine which files to not process. By default, none are excluded.
+* folderExcludes: Regexes to apply to determine which folders to not process. This is a relative path from the `input` folder, separated by `/`. By default, none are excluded.
 * skipIfAlreadyExists: If destination file already exists, skip it instead of generating a unique name for it.
 * fileTransformers: Transformations to apply when moving the file.
-  * TODO describe options
+    * TODO describe options
 * folderTransformers: Transformations to apply to input folders after operation has been applied.
     * TODO describe options
