@@ -24,8 +24,8 @@ public class Processor{
 	private final Mapping mapping;
 	private final MetadataExtractor metadataExtractor;
 	private final FileOperations fileOperations;
-
-    public void process() throws IOException{
+	
+	public void process() throws IOException{
 		if(!Files.exists(mapping.getInput())){
 			log.warn("Input folder {} doesn't exist, skipping mapping", mapping.getInput());
 			return;
@@ -76,6 +76,9 @@ public class Processor{
 			}
 		}
 		
+		if(rule.isSkipIfAlreadyExists() && Files.exists(destination)){
+			return;
+		}
 		var nonExistingDestination = generateUniqueName(destination);
 		
 		log.info("{} file {} to {}", rule.getOperation().name(), path, nonExistingDestination);

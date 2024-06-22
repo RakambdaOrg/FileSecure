@@ -40,5 +40,8 @@ public class Rule{
 	private Set<FolderTransformer> folderTransformers = new HashSet<>();
 	
 	@JsonProperty
+	private boolean skipIfAlreadyExists = false;
+	
+	@JsonProperty
 	private int maxDepth = Integer.MAX_VALUE;
 }
