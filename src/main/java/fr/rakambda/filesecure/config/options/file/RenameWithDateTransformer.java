@@ -27,7 +27,7 @@ public class RenameWithDateTransformer implements FileTransformer{
 	@JsonProperty
 	private String locale = "en";
 	@JsonProperty
-	private String zone = "UTC";
+	private String zone;
 	
 	@Override
 	public int getPriority(){
