@@ -93,9 +93,12 @@ public class Processor{
 						.or(() -> Optional.ofNullable(metadata.getTakenDate()))
 						.ifPresent(date -> {
 							try{
+								var instant = date.toInstant();
+								log.info("Setting creation date for {} to {}", exactDestination, instant);
+								
 								var attributes = Files.getFileAttributeView(nonExistingDestination, BasicFileAttributeView.class);
 								BasicFileAttributes attributesRead = attributes.readAttributes();
-								attributes.setTimes(attributesRead.lastModifiedTime(), attributesRead.lastAccessTime(), FileTime.from(date.toInstant()));
+								attributes.setTimes(attributesRead.lastModifiedTime(), attributesRead.lastAccessTime(), FileTime.from(instant));
 							}
 							catch(IOException e){
 								log.warn("Failed to set file creation date to obtained metadata", e);
