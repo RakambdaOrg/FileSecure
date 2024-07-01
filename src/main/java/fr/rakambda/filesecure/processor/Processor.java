@@ -13,7 +13,11 @@ import org.jetbrains.annotations.NotNull;
 import java.io.IOException;
 import java.nio.file.Files;
 import java.nio.file.Path;
+import java.nio.file.attribute.BasicFileAttributeView;
+import java.nio.file.attribute.BasicFileAttributes;
+import java.nio.file.attribute.FileTime;
 import java.util.Comparator;
+import java.util.Optional;
 import java.util.Set;
 
 @RequiredArgsConstructor
@@ -84,6 +88,20 @@ public class Processor{
 		log.info("{} file {} to {}", rule.getOperation().name(), path, nonExistingDestination);
 		try{
 			rule.getOperation().getProcessor().accept(fileOperations, path, nonExistingDestination);
+			if(rule.isSetFileCreationDate()){
+				Optional.ofNullable(metadata.getNameDate())
+						.or(() -> Optional.ofNullable(metadata.getTakenDate()))
+						.ifPresent(date -> {
+							try{
+								var attributes = Files.getFileAttributeView(nonExistingDestination, BasicFileAttributeView.class);
+								BasicFileAttributes attributesRead = attributes.readAttributes();
+								attributes.setTimes(attributesRead.lastModifiedTime(), attributesRead.lastAccessTime(), FileTime.from(date.toInstant()));
+							}
+							catch(IOException e){
+								log.warn("Failed to set file creation date to obtained metadata", e);
+							}
+						});
+			}
 		}
 		catch(Exception e){
 			log.warn("Error applying operation {} on file {}", rule.getOperation(), path, e);

@@ -44,6 +44,8 @@ public class Rule{
 	
 	@JsonProperty
 	private boolean skipIfAlreadyExists = false;
+	@JsonProperty
+	private boolean setFileCreationDate = true;
 	
 	@JsonProperty
 	private int maxDepth = Integer.MAX_VALUE;
