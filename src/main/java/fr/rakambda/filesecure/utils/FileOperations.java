@@ -1,12 +1,14 @@
 package fr.rakambda.filesecure.utils;
 
+import lombok.NonNull;
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
 import org.jetbrains.annotations.NotNull;
 import java.io.IOException;
 import java.nio.file.Files;
 import java.nio.file.Path;
-import static java.nio.file.StandardCopyOption.COPY_ATTRIBUTES;
+import java.nio.file.attribute.BasicFileAttributeView;
+import java.nio.file.attribute.BasicFileAttributes;
 
 @Slf4j
 @RequiredArgsConstructor
@@ -18,7 +20,10 @@ public class FileOperations{
 			return;
 		}
 		createDirectories(out.getParent());
-		Files.copy(in, out, COPY_ATTRIBUTES);
+		var inputAttributes = Files.getFileAttributeView(in, BasicFileAttributeView.class).readAttributes();
+		
+		Files.copy(in, out);
+		copyFileAttributes(inputAttributes, out);
 	}
 	
 	public void move(@NotNull Path in, @NotNull Path out) throws IOException{
@@ -26,7 +31,10 @@ public class FileOperations{
 			return;
 		}
 		createDirectories(out.getParent());
-		Files.move(in, out, COPY_ATTRIBUTES);
+		var inputAttributes = Files.getFileAttributeView(in, BasicFileAttributeView.class).readAttributes();
+		
+		Files.move(in, out);
+		copyFileAttributes(inputAttributes, out);
 	}
 	
 	public void moveWithCopy(@NotNull Path in, @NotNull Path out) throws IOException{
@@ -57,5 +65,10 @@ public class FileOperations{
 		if(!Files.isDirectory(path)){
 			throw new IOException("Destination folder %s already exists as a file".formatted(path));
 		}
+	}
+	
+	private void copyFileAttributes(@NonNull BasicFileAttributes baseAttributes, @NotNull Path to) throws IOException{
+		var attributes = Files.getFileAttributeView(to, BasicFileAttributeView.class);
+		attributes.setTimes(baseAttributes.lastModifiedTime(), baseAttributes.lastAccessTime(), baseAttributes.creationTime());
 	}
 }
