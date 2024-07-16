@@ -26,7 +26,7 @@ public class FileOperations{
 			return;
 		}
 		createDirectories(out.getParent());
-		Files.move(in, out, StandardCopyOption.COPY_ATTRIBUTES);
+		Files.move(in, out);
 	}
 	
 	public void moveWithCopy(@NotNull Path in, @NotNull Path out) throws IOException{
