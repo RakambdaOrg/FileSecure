@@ -13,6 +13,7 @@ import fr.rakambda.filesecure.config.options.file.FolderUniquePerDayTransformer;
 import fr.rakambda.filesecure.config.options.file.IfOlderThanTransformer;
 import fr.rakambda.filesecure.config.options.file.LowercaseTransformer;
 import fr.rakambda.filesecure.config.options.file.NoRenameTransformer;
+import fr.rakambda.filesecure.config.options.file.RenameWithDatePatternTransformer;
 import fr.rakambda.filesecure.config.options.file.RenameWithDateTransformer;
 import fr.rakambda.filesecure.exceptions.AbandonBackupException;
 import fr.rakambda.filesecure.processor.FileMetadata;
@@ -34,6 +35,7 @@ import java.util.Optional;
 		@JsonSubTypes.Type(value = LowercaseTransformer.class, name = "LowercaseTransformer"),
 		@JsonSubTypes.Type(value = NoRenameTransformer.class, name = "NoRenameTransformer"),
 		@JsonSubTypes.Type(value = RenameWithDateTransformer.class, name = "RenameWithDateTransformer"),
+		@JsonSubTypes.Type(value = RenameWithDatePatternTransformer.class, name = "RenameWithDatePatternTransformer"),
 })
 public interface FileTransformer extends Transformer{
 	@NotNull
