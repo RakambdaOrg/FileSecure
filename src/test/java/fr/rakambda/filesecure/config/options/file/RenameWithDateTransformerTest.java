@@ -27,11 +27,13 @@ class RenameWithDateTransformerTest{
 	private FileMetadata metadata;
 	
 	@Test
-	void itShouldWork() throws AbandonBackupException{
+	void itShouldWork() throws AbandonBackupException, IllegalAccessException, NoSuchFieldException{
+		tested.setZone("UTC+2");
+		
 		when(metadata.getDate()).thenReturn(ZonedDateTime.of(2023, 5, 12, 10, 15, 12, 0, UTC));
 		var out = Paths.get("/path/to/my/file.ext");
 		
 		assertThat(tested.apply(source, originalOut, base, out, metadata))
-				.contains(Paths.get("/path/to/my/2023-05-12 10.15.12.ext"));
+				.contains(Paths.get("/path/to/my/2023-05-12 12.15.12.ext"));
 	}
 }

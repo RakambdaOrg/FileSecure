@@ -7,7 +7,9 @@ import com.fasterxml.jackson.annotation.JsonTypeName;
 import fr.rakambda.filesecure.config.options.FileTransformer;
 import fr.rakambda.filesecure.exceptions.AbandonBackupException;
 import fr.rakambda.filesecure.processor.FileMetadata;
+import lombok.AccessLevel;
 import lombok.NoArgsConstructor;
+import lombok.Setter;
 import lombok.extern.log4j.Log4j2;
 import org.jetbrains.annotations.NotNull;
 import java.nio.file.Path;
@@ -27,6 +29,7 @@ public class RenameWithDateTransformer implements FileTransformer{
 	@JsonProperty
 	private String locale = "en";
 	@JsonProperty
+	@Setter(AccessLevel.PACKAGE)
 	private String zone;
 	
 	@Override
