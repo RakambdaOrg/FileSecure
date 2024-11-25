@@ -12,9 +12,13 @@ public abstract class DatePatternNameExtractor implements NameDateExtractor{
 	public Optional<ZonedDateTime> parse(@NotNull String name){
 		var matcher = getPattern().matcher(name);
 		if(matcher.find()){
-			return Optional.of(ZonedDateTime.parse(matcher.group(0), getFormatter()));
+			return Optional.of(ZonedDateTime.parse(matcher.group(getCaptureGroupIndex()), getFormatter()));
 		}
 		return Optional.empty();
+	}
+	
+	protected int getCaptureGroupIndex(){
+		return 0;
 	}
 	
 	protected abstract DateTimeFormatter getFormatter();

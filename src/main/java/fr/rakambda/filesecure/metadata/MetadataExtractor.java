@@ -17,6 +17,7 @@ import fr.rakambda.filesecure.metadata.name.Pattern1NameDateExtractorImpl;
 import fr.rakambda.filesecure.metadata.name.Pattern2NameDateExtractorImpl;
 import fr.rakambda.filesecure.metadata.name.Pattern3NameDateExtractorImpl;
 import fr.rakambda.filesecure.metadata.name.Pattern4NameDateExtractorImpl;
+import fr.rakambda.filesecure.metadata.name.Pattern5NameDateExtractorImpl;
 import fr.rakambda.filesecure.processor.FileMetadata;
 import fr.rakambda.filesecure.utils.json.GeonamesTimeZone;
 import kong.unirest.GenericType;
@@ -57,6 +58,7 @@ public class MetadataExtractor{
 		dateFormats.add(new Pattern2NameDateExtractorImpl());
 		dateFormats.add(new Pattern3NameDateExtractorImpl());
 		dateFormats.add(new Pattern4NameDateExtractorImpl());
+		dateFormats.add(new Pattern5NameDateExtractorImpl());
 		
 		mediaDateExtractors = new ArrayList<>();
 		mediaDateExtractors.add(new SimpleMediaDateExtractor<>(QuickTimeMetadataDirectory.class, QuickTimeMetadataDirectory.TAG_CREATION_DATE));
