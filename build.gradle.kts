@@ -14,6 +14,7 @@ description = "FileSecure"
 
 dependencies {
     implementation(platform(libs.jacksonBom))
+    implementation(platform(libs.log4j2Bom))
 
     implementation(libs.slf4j)
     implementation(libs.bundles.log4j2)
