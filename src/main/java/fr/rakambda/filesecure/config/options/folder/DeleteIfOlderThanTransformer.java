@@ -22,8 +22,10 @@ import java.time.ZoneId;
 @JsonTypeName("DeleteIfOlderThanTransformer")
 @NoArgsConstructor
 public class DeleteIfOlderThanTransformer implements FolderTransformer{
-	@JsonProperty(required = true)
-	private int dayOffset = Integer.MAX_VALUE;
+	@JsonProperty
+	private int dayOffset = 0;
+	@JsonProperty
+	private int minuteOffset = 0;
 	@JsonProperty
 	private int depth = 1;
 	
@@ -48,7 +50,7 @@ public class DeleteIfOlderThanTransformer implements FolderTransformer{
 			
 			var folderTime = Files.getLastModifiedTime(folder);
 			var date = LocalDateTime.ofInstant(folderTime.toInstant(), ZoneId.systemDefault());
-			if(date.isBefore(LocalDateTime.now().minusDays(dayOffset))){
+			if(date.isBefore(LocalDateTime.now().minusDays(dayOffset).minusMinutes(minuteOffset))){
 				delete(fileOperations, folder);
 			}
 		}

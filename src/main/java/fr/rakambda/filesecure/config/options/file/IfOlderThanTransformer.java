@@ -22,8 +22,10 @@ import java.util.Optional;
 @NoArgsConstructor
 @AllArgsConstructor
 public class IfOlderThanTransformer implements FileTransformer {
-	@JsonProperty(required = true)
-	private int dayOffset = Integer.MAX_VALUE;
+	@JsonProperty
+	private int dayOffset = 0;
+	@JsonProperty
+	private int minuteOffset = 0;
 	
 	@Override
 	public int getPriority(){
@@ -34,7 +36,7 @@ public class IfOlderThanTransformer implements FileTransformer {
 	@Override
 	public Optional<Path> apply(@NotNull Path sourceFile, @NotNull Path originalOutput, @NotNull Path baseOutput, @NotNull Path currentOutput, @NotNull FileMetadata metadata) throws AbandonBackupException{
 		var date = metadata.getDate();
-		if(date.isAfter(ZonedDateTime.now().minusDays(dayOffset))){
+		if(date.isAfter(ZonedDateTime.now().minusDays(dayOffset).minusMinutes(minuteOffset))){
 			throw new AbandonBackupException(sourceFile);
 		}
 		return Optional.empty();
