@@ -2,7 +2,7 @@
 slf4j-version = "2.0.17"
 log4j2-version = "2.24.3"
 picocli-version = "4.7.6"
-jackson-version = "2.18.2"
+jackson-version = "2.18.3"
 jetbrains-annotations-version = "26.0.2"
 metadata-extractor-version = "2.19.0"
 pointlocation6709-version = "4.2.2"
