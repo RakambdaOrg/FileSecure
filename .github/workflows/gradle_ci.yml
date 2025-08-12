@@ -17,13 +17,13 @@ jobs:
   dropbox:
     uses: RakambdaOrg/rakambda-github-workflows/.github/workflows/dropbox-publish-artifact.yml@main
     if: ${{ github.ref == format('refs/heads/{0}', github.event.repository.default_branch) }}
-    environment: DropBoxDeployment
     needs:
       - build
     with:
       artifact-name: Gradle-Libs
       source: "filesecure-shaded.jar"
       target: "/Documents/JARs/FileSecure.jar"
+      environment: DropBoxDeployment
     secrets:
       dropbox-token: ${{ secrets.DROPBOX_TOKEN }}
 
