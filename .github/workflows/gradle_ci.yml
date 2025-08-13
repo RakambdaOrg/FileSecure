@@ -23,7 +23,7 @@ jobs:
       artifact-name: Gradle-Libs
       source: "filesecure-shaded.jar"
       target: "/Documents/JARs/FileSecure.jar"
-      environment: DropBoxDeployment
+      environment: DropboxPersonal
     secrets:
       dropbox-token: ${{ secrets.DROPBOX_TOKEN }}
 
