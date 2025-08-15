@@ -12,8 +12,7 @@ junitVersion = "5.13.4"
 assertj-core-version = "3.27.4"
 mockito-version = "5.18.0"
 
-shadow-version = "8.1.1"
-names-version = "0.52.0"
+shadow-version = "9.0.2"
 jib-version = "3.4.5"
 
 [libraries]
@@ -49,6 +48,5 @@ mockito = ["mockito-core", "mockito-junit"]
 assertj = ["assertj-core"]
 
 [plugins]
-shadow = { id = "com.github.johnrengelman.shadow", version.ref = "shadow-version" }
-names = { id = "com.github.ben-manes.versions", version.ref = "names-version" }
+shadow = { id = "com.gradleup.shadow", version.ref = "shadow-version" }
 jib = { id = "com.google.cloud.tools.jib", version.ref = "jib-version" }
