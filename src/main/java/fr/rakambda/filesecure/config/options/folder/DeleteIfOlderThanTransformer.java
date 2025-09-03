@@ -8,7 +8,7 @@ import fr.rakambda.filesecure.config.options.FolderTransformer;
 import fr.rakambda.filesecure.utils.FileOperations;
 import lombok.NoArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
-import org.jetbrains.annotations.NotNull;
+import org.jspecify.annotations.NonNull;
 import java.io.IOException;
 import java.nio.file.DirectoryNotEmptyException;
 import java.nio.file.Files;
@@ -35,7 +35,7 @@ public class DeleteIfOlderThanTransformer implements FolderTransformer{
 	}
 	
 	@Override
-	public void apply(@NotNull FileOperations fileOperations, @NotNull Path folder, @NotNull Path baseFolder){
+	public void apply(@NonNull FileOperations fileOperations, @NonNull Path folder, @NonNull Path baseFolder){
 		try{
 			var relativize = baseFolder.relativize(folder);
 			var relativeDepth = relativize.getNameCount();
@@ -62,7 +62,7 @@ public class DeleteIfOlderThanTransformer implements FolderTransformer{
 		}
 	}
 	
-	private void delete(@NotNull FileOperations fileOperations, @NotNull Path folder) throws IOException{
+	private void delete(@NonNull FileOperations fileOperations, @NonNull Path folder) throws IOException{
 		if(Files.list(folder).toList().isEmpty()){
 			log.info("Deleting folder {} because it is more than {} days old and empty", folder, dayOffset);
 			fileOperations.delete(folder);

@@ -11,7 +11,7 @@ import lombok.AllArgsConstructor;
 import lombok.Getter;
 import lombok.NoArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
-import org.jetbrains.annotations.NotNull;
+import org.jspecify.annotations.NonNull;
 import java.io.IOException;
 import java.nio.file.Files;
 import java.nio.file.Path;
@@ -30,8 +30,8 @@ public class Configuration{
 	@JsonProperty
 	private List<Rule> rules;
 	
-	@NotNull
-	public static Optional<Configuration> loadConfiguration(@NotNull Path path){
+	@NonNull
+	public static Optional<Configuration> loadConfiguration(@NonNull Path path){
 		if(Files.isRegularFile(path)){
 			try(var fis = Files.newBufferedReader(path)){
 				return Optional.ofNullable(objectReader.readValue(fis));

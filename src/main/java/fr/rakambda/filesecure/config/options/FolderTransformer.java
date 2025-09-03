@@ -8,7 +8,7 @@ import fr.rakambda.filesecure.config.options.folder.DeleteChildrenTransformer;
 import fr.rakambda.filesecure.config.options.folder.DeleteIfEmptyTransformer;
 import fr.rakambda.filesecure.config.options.folder.DeleteIfOlderThanTransformer;
 import fr.rakambda.filesecure.utils.FileOperations;
-import org.jetbrains.annotations.NotNull;
+import org.jspecify.annotations.NonNull;
 import java.nio.file.Path;
 
 @JsonIgnoreProperties(ignoreUnknown = true)
@@ -20,5 +20,5 @@ import java.nio.file.Path;
 		@JsonSubTypes.Type(value = DeleteChildrenTransformer.class, name = "DeleteChildrenTransformer"),
 })
 public interface FolderTransformer extends Transformer{
-	void apply(@NotNull FileOperations fileOperations, @NotNull Path folder, @NotNull Path baseFolder);
+	void apply(@NonNull FileOperations fileOperations, @NonNull Path folder, @NonNull Path baseFolder);
 }

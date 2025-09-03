@@ -2,7 +2,7 @@ package fr.rakambda.filesecure.metadata.media;
 
 import com.drew.metadata.Directory;
 import lombok.Getter;
-import org.jetbrains.annotations.NotNull;
+import org.jspecify.annotations.NonNull;
 import java.time.ZonedDateTime;
 import java.util.Date;
 import java.util.Optional;
@@ -13,14 +13,14 @@ public class SimpleMediaDateExtractor<T extends Directory> implements MediaDateE
 	@Getter
 	private final Class<T> klass;
 	
-	public SimpleMediaDateExtractor(@NotNull Class<T> klass, int tag){
+	public SimpleMediaDateExtractor(@NonNull Class<T> klass, int tag){
 		this.klass = klass;
 		this.tag = tag;
 	}
 	
-	@NotNull
+	@NonNull
 	@Override
-	public Optional<ZonedDateTime> parse(@NotNull Directory directory, @NotNull TimeZone tz){
+	public Optional<ZonedDateTime> parse(@NonNull Directory directory, @NonNull TimeZone tz){
 		return Optional.ofNullable(directory.getDate(tag, tz))
 				.map(Date::toInstant)
 				.map(date -> date.atZone(tz.toZoneId()));

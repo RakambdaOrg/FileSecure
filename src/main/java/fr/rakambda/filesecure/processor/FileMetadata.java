@@ -2,8 +2,8 @@ package fr.rakambda.filesecure.processor;
 
 import lombok.Getter;
 import lombok.RequiredArgsConstructor;
-import org.jetbrains.annotations.NotNull;
-import org.jetbrains.annotations.Nullable;
+import org.jspecify.annotations.NonNull;
+import org.jspecify.annotations.Nullable;
 import java.time.ZonedDateTime;
 import java.util.Optional;
 
@@ -17,7 +17,7 @@ public class FileMetadata{
 	@Nullable
 	private final ZonedDateTime nameDate;
 	
-	@NotNull
+	@NonNull
 	public ZonedDateTime getDate(){
 		return Optional.ofNullable(nameDate)
 				.or(() -> Optional.ofNullable(takenDate))

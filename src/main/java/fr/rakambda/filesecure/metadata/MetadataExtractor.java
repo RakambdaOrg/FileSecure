@@ -23,8 +23,8 @@ import fr.rakambda.filesecure.utils.json.GeonamesTimeZone;
 import kong.unirest.GenericType;
 import kong.unirest.Unirest;
 import lombok.extern.slf4j.Slf4j;
-import org.jetbrains.annotations.NotNull;
-import org.jetbrains.annotations.Nullable;
+import org.jspecify.annotations.NonNull;
+import org.jspecify.annotations.Nullable;
 import us.fatehi.pointlocation6709.Angle;
 import us.fatehi.pointlocation6709.Latitude;
 import us.fatehi.pointlocation6709.Longitude;
@@ -68,13 +68,13 @@ public class MetadataExtractor{
 		mediaDateExtractors.add(new XmpMediaDateExtractor());
 	}
 	
-	@NotNull
-	public FileMetadata getMetadata(@NotNull Path path) throws IOException{
+	@NonNull
+	public FileMetadata getMetadata(@NonNull Path path) throws IOException{
 		return new FileMetadata(getDateFromMetadata(path), getCreationDate(path), getDateFromFileName(path));
 	}
 	
-	@NotNull
-	private ZonedDateTime getCreationDate(@NotNull Path path) throws IOException{
+	@NonNull
+	private ZonedDateTime getCreationDate(@NonNull Path path) throws IOException{
 		var attr = Files.readAttributes(path, BasicFileAttributes.class);
 		var date = Instant.ofEpochMilli(attr.lastModifiedTime().toMillis()).atZone(ZoneId.systemDefault());
 		
@@ -86,7 +86,7 @@ public class MetadataExtractor{
 	}
 	
 	@Nullable
-	private ZonedDateTime getDateFromMetadata(@NotNull Path path){
+	private ZonedDateTime getDateFromMetadata(@NonNull Path path){
 		try{
 			var metadata = ImageMetadataReader.readMetadata(path.toFile());
 			if(Objects.isNull(metadata)){
@@ -122,7 +122,7 @@ public class MetadataExtractor{
 	}
 	
 	@Nullable
-	private ZonedDateTime runDirectoryExtractor(@NotNull MediaDateExtractor<?> dataExtractor, @NotNull Directory directory, @NotNull TimeZone timeZone) throws ParseException{
+	private ZonedDateTime runDirectoryExtractor(@NonNull MediaDateExtractor<?> dataExtractor, @NonNull Directory directory, @NonNull TimeZone timeZone) throws ParseException{
 		log.debug("Trying {}", dataExtractor.getKlass().getName());
 		
 		var takenDateOptional = dataExtractor.parse(directory, timeZone);
@@ -139,7 +139,7 @@ public class MetadataExtractor{
 	}
 	
 	@Nullable
-	private ZonedDateTime getDateFromFileName(@NotNull Path path){
+	private ZonedDateTime getDateFromFileName(@NonNull Path path){
 		var fileName = path.getFileName().toString();
 		
 		for(var nameDateExtractor : dateFormats){
@@ -171,8 +171,8 @@ public class MetadataExtractor{
 		return null;
 	}
 	
-	@NotNull
-	private Optional<ZoneId> getZoneIdFromMetadata(@NotNull Metadata metadata){
+	@NonNull
+	private Optional<ZoneId> getZoneIdFromMetadata(@NonNull Metadata metadata){
 		try{
 			for(var gpsDirectory : metadata.getDirectoriesOfType(GpsDirectory.class)){
 				var location = gpsDirectory.getGeoLocation();
@@ -220,7 +220,7 @@ public class MetadataExtractor{
 	 *
 	 * @return The zoneID corresponding to this location.
 	 */
-	@NotNull
+	@NonNull
 	private static Optional<ZoneId> getZoneID(double latitude, double longitude){
 		try{
 			var request = Unirest.get("http://api.geonames.org/timezoneJSON")
@@ -246,8 +246,8 @@ public class MetadataExtractor{
 	 *
 	 * @return The angle.
 	 */
-	@NotNull
-	private static Optional<Angle> getAngle(@NotNull String s){
+	@NonNull
+	private static Optional<Angle> getAngle(@NonNull String s){
 		var pattern = Pattern.compile("(\\d{1,3}),(\\d{1,2})\\.(\\d+)([NESW])");
 		var matcher = pattern.matcher(s);
 		if(matcher.matches()){
@@ -267,7 +267,7 @@ public class MetadataExtractor{
 	 *
 	 * @return The sign of the angle.
 	 */
-	private static double getMultiplicand(@NotNull String group){
+	private static double getMultiplicand(@NonNull String group){
 		return switch(group){
 			case "W", "S" -> -1;
 			default -> 1;

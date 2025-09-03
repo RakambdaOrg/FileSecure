@@ -1,6 +1,6 @@
 package fr.rakambda.filesecure.metadata.name;
 
-import org.jetbrains.annotations.NotNull;
+import org.jspecify.annotations.NonNull;
 import java.time.ZonedDateTime;
 import java.util.Optional;
 
@@ -12,5 +12,5 @@ public interface NameDateExtractor{
 	 *
 	 * @return The date if found.
 	 */
-	@NotNull Optional<ZonedDateTime> parse(@NotNull String name);
+	@NonNull Optional<ZonedDateTime> parse(@NonNull String name);
 }

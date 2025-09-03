@@ -2,7 +2,7 @@ package fr.rakambda.filesecure.utils;
 
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
-import org.jetbrains.annotations.NotNull;
+import org.jspecify.annotations.NonNull;
 import java.io.IOException;
 import java.nio.file.Files;
 import java.nio.file.Path;
@@ -13,7 +13,7 @@ import java.nio.file.StandardCopyOption;
 public class FileOperations{
 	private final boolean dryRun;
 	
-	public void copy(@NotNull Path in, @NotNull Path out) throws IOException{
+	public void copy(@NonNull Path in, @NonNull Path out) throws IOException{
 		if(dryRun){
 			return;
 		}
@@ -21,7 +21,7 @@ public class FileOperations{
 		Files.copy(in, out, StandardCopyOption.COPY_ATTRIBUTES);
 	}
 	
-	public void move(@NotNull Path in, @NotNull Path out) throws IOException{
+	public void move(@NonNull Path in, @NonNull Path out) throws IOException{
 		if(dryRun){
 			return;
 		}
@@ -29,7 +29,7 @@ public class FileOperations{
 		Files.move(in, out);
 	}
 	
-	public void moveWithCopy(@NotNull Path in, @NotNull Path out) throws IOException{
+	public void moveWithCopy(@NonNull Path in, @NonNull Path out) throws IOException{
 		if(dryRun){
 			return;
 		}

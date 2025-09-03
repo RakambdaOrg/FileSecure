@@ -10,7 +10,7 @@ import fr.rakambda.filesecure.processor.FileMetadata;
 import lombok.AllArgsConstructor;
 import lombok.NoArgsConstructor;
 import lombok.extern.log4j.Log4j2;
-import org.jetbrains.annotations.NotNull;
+import org.jspecify.annotations.NonNull;
 import java.nio.file.Path;
 import java.nio.file.Paths;
 import java.util.Objects;
@@ -30,17 +30,17 @@ public class FolderCanonicalTransformer implements FileTransformer{
 	@JsonProperty(required = true)
 	private int elementCount = Integer.MAX_VALUE;
 	
-	@NotNull
+	@NonNull
 	@Override
-	public Optional<Path> apply(@NotNull Path sourceFile, @NotNull Path originalOutput, @NotNull Path baseOutput, @NotNull Path currentOutput, @NotNull FileMetadata metadata) throws AbandonBackupException{
+	public Optional<Path> apply(@NonNull Path sourceFile, @NonNull Path originalOutput, @NonNull Path baseOutput, @NonNull Path currentOutput, @NonNull FileMetadata metadata) throws AbandonBackupException{
 		var relative = baseOutput.relativize(currentOutput);
 		var base = getBase(relative);
 		var canonical = getCanonicalPath(base.getFileName().toString());
 		return Optional.of(baseOutput.resolve(canonical).resolve(relative));
 	}
 	
-	@NotNull
-	private Path getBase(@NotNull Path path){
+	@NonNull
+	private Path getBase(@NonNull Path path){
 		var parent = path.getParent();
 		if(Objects.isNull(parent) || Objects.equals(parent, path)){
 			return path;

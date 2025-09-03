@@ -11,7 +11,7 @@ import fr.rakambda.filesecure.processor.FileMetadata;
 import fr.rakambda.filesecure.utils.json.PatternDeserializer;
 import lombok.NoArgsConstructor;
 import lombok.extern.log4j.Log4j2;
-import org.jetbrains.annotations.NotNull;
+import org.jspecify.annotations.NonNull;
 import java.nio.file.Path;
 import java.time.ZoneId;
 import java.time.ZonedDateTime;
@@ -45,9 +45,9 @@ public class RenameWithDatePatternTransformer implements FileTransformer{
 		return 0;
 	}
 	
-	@NotNull
+	@NonNull
 	@Override
-	public Optional<Path> apply(@NotNull Path sourceFile, @NotNull Path originalOutput, @NotNull Path baseOutput, @NotNull Path currentOutput, @NotNull FileMetadata metadata) throws AbandonBackupException{
+	public Optional<Path> apply(@NonNull Path sourceFile, @NonNull Path originalOutput, @NonNull Path baseOutput, @NonNull Path currentOutput, @NonNull FileMetadata metadata) throws AbandonBackupException{
 		var date = extractDate(currentOutput.getFileName().toString())
 				.orElseThrow(() -> new AbandonBackupException(sourceFile));
 		
@@ -61,8 +61,8 @@ public class RenameWithDatePatternTransformer implements FileTransformer{
 		return Optional.of(currentOutput.getParent().resolve(formatter.format(date) + extension));
 	}
 	
-	@NotNull
-	private Optional<ZonedDateTime> extractDate(@NotNull String name){
+	@NonNull
+	private Optional<ZonedDateTime> extractDate(@NonNull String name){
 		try{
 			var matcher = regex.matcher(name);
 			if(!matcher.matches()){

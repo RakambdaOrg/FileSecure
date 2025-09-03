@@ -1,10 +1,10 @@
 package fr.rakambda.filesecure.config.options;
 
-import org.jetbrains.annotations.NotNull;
+import org.jspecify.annotations.NonNull;
 
 public interface Transformer extends Comparable<Transformer>{
 	@Override
-	default int compareTo(@NotNull Transformer o){
+	default int compareTo(@NonNull Transformer o){
 		return Integer.compare(getPriority(), o.getPriority());
 	}
 	

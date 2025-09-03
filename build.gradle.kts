@@ -24,9 +24,9 @@ dependencies {
 
     implementation(libs.picocli)
     implementation(libs.bundles.jackson)
+    implementation(libs.jSpecify)
 
     compileOnly(libs.lombok)
-    compileOnly(libs.jetbrainsAnnotations)
 
     annotationProcessor(libs.lombok)
 
@@ -38,7 +38,6 @@ dependencies {
     testImplementation(libs.bundles.mockito)
 
     testCompileOnly(libs.lombok)
-    testCompileOnly(libs.jetbrainsAnnotations)
 
     testAnnotationProcessor(libs.lombok)
 }

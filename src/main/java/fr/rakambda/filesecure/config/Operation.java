@@ -7,7 +7,7 @@ import fr.rakambda.filesecure.utils.FileOperations;
 import fr.rakambda.filesecure.utils.ThrowingTriConsumer;
 import lombok.Getter;
 import lombok.RequiredArgsConstructor;
-import org.jetbrains.annotations.NotNull;
+import org.jspecify.annotations.NonNull;
 import java.nio.file.Path;
 
 @Getter
@@ -23,7 +23,7 @@ public enum Operation{
 	private final ThrowingTriConsumer<FileOperations, Path, Path> processor;
 	
 	@JsonCreator
-	public static Operation getByName(@NotNull String name){
+	public static Operation getByName(@NonNull String name){
 		return valueOf(name);
 	}
 	

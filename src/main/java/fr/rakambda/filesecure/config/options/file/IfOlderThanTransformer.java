@@ -10,7 +10,7 @@ import fr.rakambda.filesecure.processor.FileMetadata;
 import lombok.AllArgsConstructor;
 import lombok.NoArgsConstructor;
 import lombok.extern.log4j.Log4j2;
-import org.jetbrains.annotations.NotNull;
+import org.jspecify.annotations.NonNull;
 import java.nio.file.Path;
 import java.time.ZonedDateTime;
 import java.util.Optional;
@@ -32,9 +32,9 @@ public class IfOlderThanTransformer implements FileTransformer {
 		return 0;
 	}
 	
-	@NotNull
+	@NonNull
 	@Override
-	public Optional<Path> apply(@NotNull Path sourceFile, @NotNull Path originalOutput, @NotNull Path baseOutput, @NotNull Path currentOutput, @NotNull FileMetadata metadata) throws AbandonBackupException{
+	public Optional<Path> apply(@NonNull Path sourceFile, @NonNull Path originalOutput, @NonNull Path baseOutput, @NonNull Path currentOutput, @NonNull FileMetadata metadata) throws AbandonBackupException{
 		var date = metadata.getDate();
 		if(date.isAfter(ZonedDateTime.now().minusDays(dayOffset).minusMinutes(minuteOffset))){
 			throw new AbandonBackupException(sourceFile);

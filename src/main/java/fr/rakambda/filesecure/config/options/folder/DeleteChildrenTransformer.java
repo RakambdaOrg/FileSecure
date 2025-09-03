@@ -8,7 +8,7 @@ import fr.rakambda.filesecure.config.options.FolderTransformer;
 import fr.rakambda.filesecure.utils.FileOperations;
 import lombok.NoArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
-import org.jetbrains.annotations.NotNull;
+import org.jspecify.annotations.NonNull;
 import java.nio.file.Path;
 import java.util.ArrayList;
 import java.util.List;
@@ -28,7 +28,7 @@ public class DeleteChildrenTransformer implements FolderTransformer{
 	}
 	
 	@Override
-	public void apply(@NotNull FileOperations fileOperations, @NotNull Path folder, @NotNull Path baseFolder){
+	public void apply(@NonNull FileOperations fileOperations, @NonNull Path folder, @NonNull Path baseFolder){
 		try{
 			for(var child : names){
 				var childPath = folder.resolve(child);

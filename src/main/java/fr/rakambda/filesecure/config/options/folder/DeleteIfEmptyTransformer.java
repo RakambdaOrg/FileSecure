@@ -9,7 +9,7 @@ import fr.rakambda.filesecure.utils.FileOperations;
 import lombok.AllArgsConstructor;
 import lombok.NoArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
-import org.jetbrains.annotations.NotNull;
+import org.jspecify.annotations.NonNull;
 import java.nio.file.DirectoryNotEmptyException;
 import java.nio.file.Files;
 import java.nio.file.Path;
@@ -30,7 +30,7 @@ public class DeleteIfEmptyTransformer implements FolderTransformer{
 	}
 	
 	@Override
-	public void apply(@NotNull FileOperations fileOperations, @NotNull Path folder, @NotNull Path baseFolder){
+	public void apply(@NonNull FileOperations fileOperations, @NonNull Path folder, @NonNull Path baseFolder){
 		try{
 			var relativeDepth = baseFolder.relativize(folder).getNameCount();
 			if(relativeDepth < depth){

@@ -8,7 +8,7 @@ import fr.rakambda.filesecure.exceptions.AbandonBackupException;
 import fr.rakambda.filesecure.processor.FileMetadata;
 import lombok.NoArgsConstructor;
 import lombok.extern.log4j.Log4j2;
-import org.jetbrains.annotations.NotNull;
+import org.jspecify.annotations.NonNull;
 import java.nio.file.Path;
 import java.util.Optional;
 
@@ -18,9 +18,9 @@ import java.util.Optional;
 @JsonTypeName("FolderPerDayTransformer")
 @NoArgsConstructor
 public class FolderPerDayTransformer implements FileTransformer{
-	@NotNull
+	@NonNull
 	@Override
-	public Optional<Path> apply(@NotNull Path sourceFile, @NotNull Path originalOutput, @NotNull Path baseOutput, @NotNull Path currentOutput, @NotNull FileMetadata metadata) throws AbandonBackupException{
+	public Optional<Path> apply(@NonNull Path sourceFile, @NonNull Path originalOutput, @NonNull Path baseOutput, @NonNull Path currentOutput, @NonNull FileMetadata metadata) throws AbandonBackupException{
 		var date = metadata.getDate();
 		var year = "%4d".formatted(date.getYear());
 		var month = "%02d".formatted(date.getMonthValue());

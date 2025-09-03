@@ -9,7 +9,7 @@ import fr.rakambda.filesecure.utils.FileOperations;
 import lombok.RequiredArgsConstructor;
 import lombok.SneakyThrows;
 import lombok.extern.slf4j.Slf4j;
-import org.jetbrains.annotations.NotNull;
+import org.jspecify.annotations.NonNull;
 import java.io.IOException;
 import java.nio.file.Files;
 import java.nio.file.Path;
@@ -23,7 +23,7 @@ import java.util.Set;
 @RequiredArgsConstructor
 @Slf4j
 public class Processor{
-	@NotNull
+	@NonNull
 	private final Rule rule;
 	private final Mapping mapping;
 	private final MetadataExtractor metadataExtractor;
@@ -49,14 +49,14 @@ public class Processor{
 				.forEach(this::cleanup);
 	}
 	
-	private void cleanup(@NotNull Path path){
+	private void cleanup(@NonNull Path path){
 		for(var option : rule.getFolderTransformers()){
 			option.apply(fileOperations, path, mapping.getInput());
 		}
 	}
 	
 	@SneakyThrows(IOException.class)
-	private void applyStrategy(@NotNull Path path) throws FlagsProcessingException{
+	private void applyStrategy(@NonNull Path path) throws FlagsProcessingException{
 		var relativeInput = mapping.getInput().relativize(path);
 		var exactDestination = mapping.getOutput().resolve(relativeInput);
 		var destination = exactDestination;
@@ -112,8 +112,8 @@ public class Processor{
 		}
 	}
 	
-	@NotNull
-	private Path generateUniqueName(@NotNull Path sourcePath){
+	@NonNull
+	private Path generateUniqueName(@NonNull Path sourcePath){
 		try{
 			if(!Files.exists(sourcePath)){
 				return sourcePath;

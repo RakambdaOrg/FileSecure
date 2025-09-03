@@ -17,7 +17,7 @@ import fr.rakambda.filesecure.config.options.file.RenameWithDatePatternTransform
 import fr.rakambda.filesecure.config.options.file.RenameWithDateTransformer;
 import fr.rakambda.filesecure.exceptions.AbandonBackupException;
 import fr.rakambda.filesecure.processor.FileMetadata;
-import org.jetbrains.annotations.NotNull;
+import org.jspecify.annotations.NonNull;
 import java.nio.file.Path;
 import java.util.Optional;
 
@@ -38,6 +38,6 @@ import java.util.Optional;
 		@JsonSubTypes.Type(value = RenameWithDatePatternTransformer.class, name = "RenameWithDatePatternTransformer"),
 })
 public interface FileTransformer extends Transformer{
-	@NotNull
-	Optional<Path> apply(@NotNull Path sourceFile, @NotNull Path originalOutput, @NotNull Path baseOutput, @NotNull Path currentOutput, @NotNull FileMetadata metadata) throws AbandonBackupException;
+	@NonNull
+	Optional<Path> apply(@NonNull Path sourceFile, @NonNull Path originalOutput, @NonNull Path baseOutput, @NonNull Path currentOutput, @NonNull FileMetadata metadata) throws AbandonBackupException;
 }

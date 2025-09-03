@@ -8,7 +8,7 @@ import fr.rakambda.filesecure.exceptions.AbandonBackupException;
 import fr.rakambda.filesecure.processor.FileMetadata;
 import lombok.NoArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
-import org.jetbrains.annotations.NotNull;
+import org.jspecify.annotations.NonNull;
 import java.nio.file.Path;
 import java.util.Locale;
 import java.util.Optional;
@@ -24,9 +24,9 @@ public class LowercaseTransformer implements FileTransformer {
 		return Integer.MAX_VALUE;
 	}
 	
-	@NotNull
+	@NonNull
 	@Override
-	public Optional<Path> apply(@NotNull Path sourceFile, @NotNull Path originalOutput, @NotNull Path baseOutput, @NotNull Path currentOutput, @NotNull FileMetadata metadata) throws AbandonBackupException{
+	public Optional<Path> apply(@NonNull Path sourceFile, @NonNull Path originalOutput, @NonNull Path baseOutput, @NonNull Path currentOutput, @NonNull FileMetadata metadata) throws AbandonBackupException{
 		var relative = baseOutput.relativize(currentOutput.getParent());
 		return Optional.of(baseOutput.resolve(relative.toString().toLowerCase(Locale.ROOT)).resolve(currentOutput.getFileName()));
 	}

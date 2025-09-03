@@ -2,7 +2,7 @@ package fr.rakambda.filesecure.metadata.media;
 
 import com.drew.metadata.Directory;
 import com.drew.metadata.xmp.XmpDirectory;
-import org.jetbrains.annotations.NotNull;
+import org.jspecify.annotations.NonNull;
 import java.time.ZonedDateTime;
 import java.time.format.DateTimeFormatter;
 import java.util.List;
@@ -13,9 +13,9 @@ public class XmpMediaDateExtractor implements MediaDateExtractor<XmpDirectory>{
 	private final List<String> keys = List.of("xmp:CreateDate", "photoshop:DateCreated");
 	private final DateTimeFormatter dateTimeFormatter = DateTimeFormatter.ofPattern("yyyy-MM-dd'T'HH:mm:ss");
 	
-	@NotNull
+	@NonNull
 	@Override
-	public Optional<ZonedDateTime> parse(@NotNull Directory directory, @NotNull TimeZone tz){
+	public Optional<ZonedDateTime> parse(@NonNull Directory directory, @NonNull TimeZone tz){
 		var xmpDirectory = (XmpDirectory) directory;
 		var values = xmpDirectory.getXmpProperties();
 		for(var key : keys){
@@ -31,7 +31,7 @@ public class XmpMediaDateExtractor implements MediaDateExtractor<XmpDirectory>{
 		return Optional.empty();
 	}
 	
-	@NotNull
+	@NonNull
 	@Override
 	public Class<XmpDirectory> getKlass(){
 		return XmpDirectory.class;
