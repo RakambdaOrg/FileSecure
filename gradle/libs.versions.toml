@@ -10,7 +10,7 @@ unirest-version = "4.0.0-RC2"
 lombok-version = "1.18.42"
 junitVersion = "5.13.4"
 assertj-core-version = "3.27.5"
-mockito-version = "5.19.0"
+mockito-version = "5.20.0"
 
 shadow-version = "9.1.0"
 jib-version = "3.4.5"
