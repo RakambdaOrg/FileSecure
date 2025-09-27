@@ -12,7 +12,7 @@ junitVersion = "5.13.4"
 assertj-core-version = "3.27.6"
 mockito-version = "5.20.0"
 
-shadow-version = "9.2.1"
+shadow-version = "9.2.2"
 jib-version = "3.4.5"
 
 [libraries]
