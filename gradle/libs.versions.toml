@@ -8,7 +8,7 @@ metadata-extractor-version = "2.19.0"
 pointlocation6709-version = "4.2.2"
 unirest-version = "4.0.0-RC2"
 lombok-version = "1.18.42"
-junitVersion = "5.13.4"
+junitVersion = "6.0.0"
 assertj-core-version = "3.27.6"
 mockito-version = "5.20.0"
 
