@@ -13,7 +13,7 @@ assertj-core-version = "3.27.6"
 mockito-version = "5.20.0"
 
 shadow-version = "9.2.2"
-jib-version = "3.4.5"
+jib-version = "3.5.0"
 
 [libraries]
 slf4j = { group = "org.slf4j", name = "slf4j-api", version.ref = "slf4j-version" }
