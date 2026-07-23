@@ -178,6 +178,9 @@ public class MetadataExtractor{
 		try{
 			for(var gpsDirectory : metadata.getDirectoriesOfType(GpsDirectory.class)){
 				var location = gpsDirectory.getGeoLocation();
+				if(Objects.isNull(location)){
+					continue;
+				}
 				var zoneId = getZoneID(location.getLatitude(), location.getLongitude());
 				if(zoneId.isPresent()){
 					return zoneId;
