@@ -6,6 +6,9 @@
         </Console>
     </Appenders>
     <Loggers>
+        <Logger name="com.github.kokorin.jaffree" level="error" additivity="false">
+            <AppenderRef ref="console"/>
+        </Logger>
         <Root level="info" additivity="false">
             <AppenderRef ref="console"/>
         </Root>
