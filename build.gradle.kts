@@ -1,9 +1,10 @@
 import com.github.jengelman.gradle.plugins.shadow.transformers.Log4j2PluginsCacheFileTransformer
+import org.jetbrains.kotlin.gradle.dsl.JvmTarget
 
 plugins {
     idea
-    java
     application
+    alias(libs.plugins.kotlin)
     alias(libs.plugins.shadow)
     alias(libs.plugins.jib)
 }
@@ -11,58 +12,51 @@ plugins {
 group = "fr.rakambda"
 description = "FileSecure"
 
+val javaVersion = providers.gradleProperty("javaVersion").get()
+
 dependencies {
     implementation(platform(libs.jacksonBom))
     implementation(platform(libs.log4j2Bom))
 
+    implementation(libs.coroutines)
+
     implementation(libs.slf4j)
     implementation(libs.bundles.log4j2)
+    implementation(libs.kotlinLogging)
 
-    implementation(libs.unirest)
+    implementation(libs.clikt)
+    implementation(libs.bundles.jackson)
+
     implementation(libs.pointLocation)
     implementation(libs.metadataExtractor)
 
-    implementation(libs.picocli)
-    implementation(libs.bundles.jackson)
-    implementation(libs.jSpecify)
+    implementation(libs.jaffree)
+    implementation(libs.progressbar)
+    implementation(libs.h2)
+    implementation(libs.bundles.jna)
 
-    compileOnly(libs.lombok)
-
-    annotationProcessor(libs.lombok)
-
-    implementation(platform(libs.junitBom))
+    testImplementation(platform(libs.junitBom))
     testImplementation(libs.bundles.junit)
     testRuntimeOnly(libs.junitPlatformLauncher)
-
     testImplementation(libs.bundles.assertj)
-    testImplementation(libs.bundles.mockito)
-
-    testCompileOnly(libs.lombok)
-
-    testAnnotationProcessor(libs.lombok)
 }
 
 repositories {
     mavenCentral()
 }
 
+java {
+    sourceCompatibility = JavaVersion.toVersion(javaVersion)
+    targetCompatibility = JavaVersion.toVersion(javaVersion)
+}
+
+kotlin {
+    compilerOptions {
+        jvmTarget.set(JvmTarget.fromTarget(javaVersion))
+    }
+}
+
 tasks {
-    processResources {
-        expand(project.properties)
-    }
-
-    compileJava {
-        val moduleName: String by project
-        inputs.property("moduleName", moduleName)
-
-        options.encoding = "UTF-8"
-        options.isDeprecation = true
-    }
-
-    compileTestJava {
-        options.encoding = "UTF-8"
-    }
-
     test {
         useJUnitPlatform()
     }
@@ -84,16 +78,7 @@ tasks {
 }
 
 application {
-    val moduleName: String by project
-    val className: String by project
-
-    mainModule.set(moduleName)
-    mainClass.set(className)
-}
-
-java {
-    sourceCompatibility = JavaVersion.VERSION_26
-    targetCompatibility = JavaVersion.VERSION_26
+    mainClass.set(providers.gradleProperty("className"))
 }
 
 jib {
