@@ -155,6 +155,21 @@ is the source itself, the source is replaced. A pipeline can contain only one `C
 
 ## Migrating from previous versions
 
+A converter turns FileSecure 12 and MediaConverter configuration files into the new format. Several files can be given, they are merged into one
+configuration, one pipeline per old rule or conversion:
+
+```shell
+java -cp FileSecure.jar fr.rakambda.filesecure.migration.MigrateConfigCommandKt FileSecure.json MediaConverter.json -o config.json
+# or from the sources
+./gradlew migrateConfig --args="/absolute/path/FileSecure.json -o /absolute/path/config.json"
+```
+
+Without `-o` the result is printed. An existing output file is only replaced with `--force`. The result is checked against the new format before
+being written, and warnings list what couldn't be converted exactly (unknown keys that were already ignored, transformer order, behaviour
+changes): review them before using the new configuration, ideally with a `--dry` run first.
+
+The tables below detail the conversion.
+
 ### FileSecure 12
 
 Each `rule` becomes a pipeline, with the same `mappings` and `operation`.

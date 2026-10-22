@@ -67,6 +67,14 @@ tasks {
         }
     }
 
+    register<JavaExec>("migrateConfig") {
+        group = "application"
+        description = "Converts FileSecure 12 and MediaConverter configurations, pass the files with --args"
+        classpath = sourceSets["main"].runtimeClasspath
+        mainClass.set("fr.rakambda.filesecure.migration.MigrateConfigCommandKt")
+        jvmArgs("--enable-native-access=ALL-UNNAMED")
+    }
+
     shadowJar {
         archiveBaseName.set(project.name)
         archiveClassifier.set("shaded")
