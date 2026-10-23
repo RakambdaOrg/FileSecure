@@ -25,8 +25,7 @@ class ConfigMigratorTest{
 	private val migrator = ConfigMigrator()
 
 	private fun migrate(vararg sources: Pair<String, String>): Configuration{
-		val result = migrator.migrate(sources.map { (name, json) -> ConfigMigrator.Source(name, ConfigMigrator.MAPPER.readTree(json)) })
-		return Configuration.parse(ConfigMigrator.MAPPER.writeValueAsString(result))
+		return Configuration.parse(migrator.migrate(sources.map { (name, json) -> ConfigMigrator.Source(name, ConfigMigrator.MAPPER.readTree(json)) }))
 	}
 
 	@Test

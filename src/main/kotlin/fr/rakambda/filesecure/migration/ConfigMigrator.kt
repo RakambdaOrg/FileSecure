@@ -6,6 +6,8 @@ import com.fasterxml.jackson.databind.json.JsonMapper
 import com.fasterxml.jackson.databind.node.ArrayNode
 import com.fasterxml.jackson.databind.node.JsonNodeFactory
 import com.fasterxml.jackson.databind.node.ObjectNode
+import com.fasterxml.jackson.dataformat.yaml.YAMLGenerator
+import com.fasterxml.jackson.dataformat.yaml.YAMLMapper
 import fr.rakambda.filesecure.config.Configuration
 import java.util.Locale
 import java.util.regex.Pattern
@@ -23,9 +25,9 @@ class ConfigMigrator{
 
 	/**
 	 * @param sources Old configurations, each being a FileSecure 12 (`rules`) or MediaConverter (`conversions`) configuration.
-	 * @return The new configuration, already validated by the FileSecure 13 parser.
+	 * @return The new configuration in YAML, already validated by the FileSecure 13 parser.
 	 */
-	fun migrate(sources: List<Source>): ObjectNode{
+	fun migrate(sources: List<Source>): String{
 		val pipelines = nodes.arrayNode()
 		for(source in sources){
 			val root = source.content
@@ -37,9 +39,9 @@ class ConfigMigrator{
 			root.path("rules").forEachIndexed { index, rule -> pipelines.add(migrateRule(rule, "${source.name} rule #${index + 1}")) }
 			root.path("conversions").forEachIndexed { index, conversion -> pipelines.add(migrateConversion(conversion, "${source.name} conversion #${index + 1}")) }
 		}
-		val result = nodes.objectNode().set<ObjectNode>("pipelines", pipelines)
-		Configuration.parse(MAPPER.writeValueAsString(result))
-		return result
+		val yaml = YAML_WRITER.writeValueAsString(nodes.objectNode().set<ObjectNode>("pipelines", pipelines))
+		Configuration.parse(yaml)
+		return yaml
 	}
 
 	private fun migrateRule(rule: JsonNode, name: String): ObjectNode{
@@ -181,6 +183,15 @@ class ConfigMigrator{
 	private data class TransformerDefinition(val newType: String, val priority: Int, val parameters: Set<String>)
 
 	companion object{
+		private val YAML_WRITER = YAMLMapper.builder()
+			.enable(YAMLGenerator.Feature.MINIMIZE_QUOTES)
+			.disable(YAMLGenerator.Feature.WRITE_DOC_START_MARKER)
+			.build()
+			.writer()
+		
+		/**
+		 * Reads the old JSON configurations.
+		 */
 		val MAPPER: JsonMapper = JsonMapper.builder()
 			.enable(JsonReadFeature.ALLOW_JAVA_COMMENTS)
 			.enable(JsonReadFeature.ALLOW_TRAILING_COMMA)

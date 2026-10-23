@@ -12,7 +12,7 @@ new, see [migrating](#migrating-from-previous-versions).
 ## Running
 
 ```shell
-java -jar FileSecure.jar -c config.json
+java -jar FileSecure.jar -c config.yaml
 ```
 
 | Flag                       | Description                                                                                                   |
@@ -39,43 +39,46 @@ Conversions need [ffmpeg](https://ffmpeg.org) (video and audio) and [ImageMagick
 
 ## Configuration
 
-The configuration is a JSON file (comments and trailing commas are allowed). Unknown keys are rejected to catch typos.
+The configuration is a YAML file. Unknown keys are rejected to catch typos. Files whose name ends with `.json` are read as JSON instead
+(comments and trailing commas allowed), with the same keys.
 
-```json5
-{
-  "pipelines": [
-    {
-      // Back up photos from the phone, sorted by month and renamed with their date
-      "name": "Phone photos",
-      "mappings": [
-        {"input": "/phone/DCIM", "output": "/backup/Photos"}
-      ],
-      "scan": {"skipHidden": true, "excludedFolders": ["\\.thumbnails"]},
-      "stages": [
-        {"type": "NameFilter", "includes": [".*\\.jpg", ".*\\.mp4"]},
-        {"type": "IfOlderThan", "dayOffset": 2},
-        {"type": "FolderPerMonth"},
-        {"type": "RenameWithDate"}
-      ],
-      "operation": "MOVE",
-      "setFileCreationDate": true,
-      "folderActions": [{"type": "DeleteIfEmpty"}]
-    },
-    {
-      // Convert videos to HEVC in place, files that can't be converted are left untouched
-      "name": "Videos",
-      "mappings": [
-        {"input": "/media/Videos", "output": "/media/Videos"}
-      ],
-      "stages": [
-        {"type": "Convert", "processors": ["VIDEO_TO_HEVC_MKV"], "cache": "/data/videos.db"}
-      ],
-      "operation": "MOVE",
-      "temp": "/data/temp"
-    }
-  ]
-}
+```yaml
+pipelines:
+  # Back up photos from the phone, sorted by month and renamed with their date
+  - name: Phone photos
+    mappings:
+      - input: /phone/DCIM
+        output: /backup/Photos
+    scan:
+      skipHidden: true
+      excludedFolders: ['\.thumbnails']
+    stages:
+      - type: NameFilter
+        includes: ['.*\.jpg', '.*\.mp4']
+      - type: IfOlderThan
+        dayOffset: 2
+      - type: FolderPerMonth
+      - type: RenameWithDate
+    operation: MOVE
+    setFileCreationDate: true
+    folderActions:
+      - type: DeleteIfEmpty
+
+  # Convert videos to HEVC in place, files that can't be converted are left untouched
+  - name: Videos
+    mappings:
+      - input: /media/Videos
+        output: /media/Videos
+    stages:
+      - type: Convert
+        processors: [VIDEO_TO_HEVC_MKV]
+        cache: /data/videos.db
+    operation: MOVE
+    temp: /data/temp
 ```
+
+Regexes are best written between single quotes: backslashes are kept as is, and values starting with characters such as `[`, `*` or `{` would
+otherwise be read as YAML syntax. A single quote inside is written `''`.
 
 ### Pipeline
 
@@ -83,7 +86,7 @@ The configuration is a JSON file (comments and trailing commas are allowed). Unk
 |-----------------------|----------|---------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------|
 | `name`                | `#index` | Name used in logs.                                                                                                                                                                    |
 | `enabled`             | `true`   | Disabled pipelines are skipped.                                                                                                                                                       |
-| `mappings`            |          | **Mandatory**. List of `{"input": ..., "output": ...}` folders. A file at `input/a/b.txt` has `output/a/b.txt` as initial destination.                                               |
+| `mappings`            |          | **Mandatory**. List of `{input: ..., output: ...}` folders. A file at `input/a/b.txt` has `output/a/b.txt` as initial destination.                                               |
 | `scan.maxDepth`       | no limit | How many levels of sub-folders are visited, `1` only processes the files directly in `input`.                                                                                       |
 | `scan.skipHidden`     | `false`  | Ignore hidden files and folders.                                                                                                                                                      |
 | `scan.excludedFolders`| none     | Regexes matched against the folder path relative to `input`, using `/` as separator (e.g. `"a/b"`). Matching folders are not visited.                                                |
@@ -115,30 +118,31 @@ date it was taken from its metadata (EXIF, QuickTime, MP4, XMP), otherwise its l
 | `NoRename`              |                                                                                                  | Restores the original file name.                                                                                                                                                                                            |
 | `RenameWithDate`        | `format` (`yyyy-MM-dd HH.mm.ss`), `locale` (`en`), `zone`, `filters`                           | Renames the file with its date, keeping its extension. When `filters` (regexes) is set, only files whose original name matches one of them are renamed.                                                                   |
 | `RenameWithDatePattern` | `regex`, `dateFormat`, `timeFormat` (mandatory), `outputFormat`, `locale`, `zone`               | Renames the file with a date read from its current name. `regex` must define the groups `date` and `time`, parsed with `dateFormat` and `timeFormat`. Files not matching are skipped.                                     |
-| `RegexPath`             | `rules` (mandatory), `unmatched` (`SKIP`)                                                        | Rewrites the destination relative to the output folder (with `/` separators) with the first rule whose `regex` fully matches it, `replacement` can use its groups (`$1`, `${name}`). Files matching no rule are skipped, or kept unchanged with `"unmatched": "PASS"`. See the example below. |
+| `RegexPath`             | `rules` (mandatory), `unmatched` (`SKIP`)                                                        | Rewrites the destination relative to the output folder (with `/` separators) with the first rule whose `regex` fully matches it, `replacement` can use its groups (`$1`, `${name}`). Files matching no rule are skipped, or kept unchanged with `unmatched: PASS`. See the example below. |
 | `Convert`               | see below                                                                                        | Plans the conversion of media files.                                                                                                                                                                                        |
 
 `RegexPath` can replace many similar mappings. This moves `DropOff/Bob - 123/a.jpg` to `Whatsapp/123/a.jpg` and `DropOff/bob_tw/a.jpg` to
 `Twitter/bob_tw/a.jpg`, other files are left in place:
 
-```json
-{
-  "mappings": [{"input": "/data/DropOff", "output": "/data"}],
-  "stages": [
-    {"type": "RegexPath", "rules": [
-      {"regex": "(?:[^/]* - )?(\\d+)/(.*)", "replacement": "Whatsapp/$1/$2"},
-      {"regex": "(bob_tw|carol_tw)/(.*)", "replacement": "Twitter/$1/$2"}
-    ]}
-  ],
-  "operation": "MOVE"
-}
+```yaml
+mappings:
+  - input: /data/DropOff
+    output: /data
+stages:
+  - type: RegexPath
+    rules:
+      - regex: '(?:[^/]* - )?(\d+)/(.*)'
+        replacement: Whatsapp/$1/$2
+      - regex: '(bob_tw|carol_tw)/(.*)'
+        replacement: Twitter/$1/$2
+operation: MOVE
 ```
 
 ### Convert
 
 The file is probed with ffprobe and converted by the first processor able to handle it. Its destination extension changes accordingly, so stages placed
 after `Convert` see the new extension. The conversion only runs once all stages accepted the file and its destination is free, so with
-`"conflict": "SKIP"` already converted files are not converted again.
+`conflict: SKIP` already converted files are not converted again.
 
 With `MOVE` or `MOVE_WITH_COPY` the source is sent to the trash (deleted where there is none) once the converted file is in place. When the destination
 is the source itself, the source is replaced. A pipeline can contain only one `Convert` stage.
@@ -147,7 +151,7 @@ is the source itself, the source is replaced. A pipeline can contain only one `C
 |--------------|----------------------------------------------|-------------------------------------------------------------------------------------------------------------------------------------------------------------------|
 | `processors` | `VIDEO_TO_HEVC_MKV`, `MP3_TO_AAC`, `TIFF_TO_JPG` | Processors tried in order.                                                                                                                                    |
 | `extensions` | `mp4`, `mov`, `mkv`, `avi`, `tiff`, `mp3`, `m4a`, `m4v`, `ts`, `m2ts`, `mts`, `heic`, `jpg`, `raf` | Only files with these extensions are probed.                                                                    |
-| `filters`    | none                                         | Probe filters, all must pass: `{"type": "LengthMoreThan", "value": seconds}`, `{"type": "LengthLessThan", "value": seconds}`.                                     |
+| `filters`    | none                                         | Probe filters, all must pass: `{type: LengthMoreThan, value: seconds}`, `{type: LengthLessThan, value: seconds}`.                                     |
 | `unhandled`  | `SKIP`                                       | What happens to files that won't be converted: `SKIP` leaves them untouched, `PASS` lets them continue through the pipeline unchanged (e.g. to back them up too). |
 | `cache`      | none                                         | H2 database file remembering files that can't be converted, so they aren't probed again on the next runs (until they are modified).                               |
 
@@ -172,13 +176,13 @@ is the source itself, the source is replaced. A pipeline can contain only one `C
 
 ## Migrating from previous versions
 
-A converter turns FileSecure 12 and MediaConverter configuration files into the new format. Several files can be given, they are merged into one
+A converter turns FileSecure 12 and MediaConverter configuration files into the new YAML format. Several files can be given, they are merged into one
 configuration, one pipeline per old rule or conversion:
 
 ```shell
-java -cp FileSecure.jar fr.rakambda.filesecure.migration.MigrateConfigCommandKt FileSecure.json MediaConverter.json -o config.json
+java -cp FileSecure.jar fr.rakambda.filesecure.migration.MigrateConfigCommandKt FileSecure.json MediaConverter.json -o config.yaml
 # or from the sources
-./gradlew migrateConfig --args="/absolute/path/FileSecure.json -o /absolute/path/config.json"
+./gradlew migrateConfig --args="/absolute/path/FileSecure.json -o /absolute/path/config.yaml"
 ```
 
 Without `-o` the result is printed. An existing output file is only replaced with `--force`. The result is checked against the new format before
@@ -196,7 +200,7 @@ Each `rule` becomes a pipeline, with the same `mappings` and `operation`.
 | `filters`, `excludes`                 | A `NameFilter` stage with `includes`, `excludes`                                   |
 | `folderExcludes`                      | `scan.excludedFolders`                                                             |
 | `maxDepth`                            | `scan.maxDepth`                                                                    |
-| `skipIfAlreadyExists: true`           | `"conflict": "SKIP"`                                                               |
+| `skipIfAlreadyExists: true`           | `conflict: SKIP`                                                                   |
 | `fileTransformers`                    | `stages`, without the `Transformer` suffix (`FolderPerYearTransformer` → `FolderPerYear`), `name` becomes `type` |
 | `folderTransformers`                  | `folderActions`, same renaming                                                     |
 | `setFileCreationDate`                 | unchanged                                                                          |
@@ -211,14 +215,14 @@ Each `conversion` becomes a pipeline with a `Convert` stage.
 | MediaConverter                 | FileSecure 13                                                                     |
 |--------------------------------|-----------------------------------------------------------------------------------|
 | `input`, `output`              | A mapping                                                                         |
-| `deleteInput: true` (default)  | `"operation": "MOVE"`                                                             |
-| `deleteInput: false`           | `"operation": "COPY", "conflict": "SKIP"`                                         |
+| `deleteInput: true` (default)  | `operation: MOVE`                                                                 |
+| `deleteInput: false`           | `operation: COPY` and `conflict: SKIP`                                            |
 | `database`                     | `cache` of the `Convert` stage, existing database files can be reused             |
 | `temp`                         | `temp`                                                                            |
 | `excluded`                     | `scan.excludedFolders` (regexes, so escape special characters such as `.`)       |
 | `processors`, `extensions`     | Same keys in the `Convert` stage                                                  |
 | `filters` (`name`, `value`)    | `filters` of the `Convert` stage, `name` becomes `type`                           |
-| hidden files were ignored      | `"scan": {"skipHidden": true}`                                                    |
+| hidden files were ignored      | `scan: {skipHidden: true}`                                                        |
 | `-ft`, `--ffmpegThreads`       | `-ft`, `--ffmpeg-threads`                                                         |
 
 ### Behaviour changes

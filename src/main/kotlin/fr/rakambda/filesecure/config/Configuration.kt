@@ -5,9 +5,12 @@ import com.fasterxml.jackson.core.json.JsonReadFeature
 import com.fasterxml.jackson.databind.DeserializationContext
 import com.fasterxml.jackson.databind.DeserializationFeature
 import com.fasterxml.jackson.databind.MapperFeature
+import com.fasterxml.jackson.databind.ObjectMapper
+import com.fasterxml.jackson.databind.cfg.MapperBuilder
 import com.fasterxml.jackson.databind.deser.std.StdScalarDeserializer
 import com.fasterxml.jackson.databind.json.JsonMapper
 import com.fasterxml.jackson.databind.module.SimpleModule
+import com.fasterxml.jackson.dataformat.yaml.YAMLMapper
 import com.fasterxml.jackson.module.kotlin.kotlinModule
 import com.fasterxml.jackson.module.kotlin.readValue
 import fr.rakambda.filesecure.stage.Convert
@@ -39,21 +42,30 @@ data class Configuration(
 	}
 
 	companion object{
-		private val mapper = JsonMapper.builder()
-			.addModule(kotlinModule())
+		private val yamlMapper = configure(YAMLMapper.builder()).build()
+		private val jsonMapper = configure(JsonMapper.builder())
 			.enable(JsonReadFeature.ALLOW_JAVA_COMMENTS)
 			.enable(JsonReadFeature.ALLOW_TRAILING_COMMA)
+			.build()
+		
+		private fun <M : ObjectMapper, B : MapperBuilder<M, B>> configure(builder: B): B = builder
+			.addModule(kotlinModule())
+			.addModule(SimpleModule().addDeserializer(Path::class.java, PathDeserializer))
 			.enable(MapperFeature.ACCEPT_CASE_INSENSITIVE_ENUMS)
 			.enable(DeserializationFeature.FAIL_ON_UNKNOWN_PROPERTIES)
 			.enable(DeserializationFeature.FAIL_ON_NULL_FOR_PRIMITIVES)
-			.addModule(SimpleModule().addDeserializer(Path::class.java, PathDeserializer))
-			.build()
-
-		fun load(path: Path): Configuration = Files.newBufferedReader(path).use { parse(it) }
-
-		fun parse(reader: Reader): Configuration = mapper.readValue<Configuration>(reader).also { it.validate() }
-
-		fun parse(json: String): Configuration = parse(json.reader())
+		
+		/**
+		 * Reads a YAML configuration, or a JSON one if the file name ends with `.json`.
+		 */
+		fun load(path: Path): Configuration = Files.newBufferedReader(path).use {
+			parse(it, json = path.fileName.toString().endsWith(".json", ignoreCase = true))
+		}
+		
+		fun parse(reader: Reader, json: Boolean = false): Configuration =
+			(if(json) jsonMapper else yamlMapper).readValue<Configuration>(reader).also { it.validate() }
+		
+		fun parse(content: String, json: Boolean = false): Configuration = parse(content.reader(), json)
 	}
 }
 

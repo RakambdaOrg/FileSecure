@@ -13,13 +13,13 @@ import java.nio.file.Files
 
 /**
  * Standalone tool converting old configurations, run with
- * `java -cp FileSecure.jar fr.rakambda.filesecure.migration.MigrateConfigCommandKt old.json [other.json...] -o new.json`.
+ * `java -cp FileSecure.jar fr.rakambda.filesecure.migration.MigrateConfigCommandKt old.json [other.json...] -o config.yaml`.
  */
 class MigrateConfigCommand : CliktCommand(name = "migrate-config"){
 	private val inputs by argument(help = "FileSecure 12 or MediaConverter configuration files, all merged into one new configuration")
 		.path(mustExist = true, canBeDir = false, mustBeReadable = true)
 		.multiple(required = true)
-	private val output by option("-o", "--output", help = "File to write the new configuration to, printed if not set")
+	private val output by option("-o", "--output", help = "YAML file to write the new configuration to, printed if not set")
 		.path(canBeDir = false)
 	private val force by option("-f", "--force", help = "Overwrite the output file if it exists")
 		.flag()
@@ -42,13 +42,12 @@ class MigrateConfigCommand : CliktCommand(name = "migrate-config"){
 			throw ProgramResult(1)
 		}
 		
-		val json = ConfigMigrator.MAPPER.writerWithDefaultPrettyPrinter().writeValueAsString(result) + System.lineSeparator()
 		if(output == null){
-			echo(json, trailingNewline = false)
+			echo(result, trailingNewline = false)
 		}
 		else{
 			output.toAbsolutePath().parent?.let(Files::createDirectories)
-			Files.writeString(output, json)
+			Files.writeString(output, result)
 			echo("New configuration written to $output", err = true)
 		}
 		migrator.warnings.forEach { echo("WARNING: $it", err = true) }

@@ -32,6 +32,7 @@ jackson-core = { group = "com.fasterxml.jackson.core", name = "jackson-core" }
 jackson-annotations = { group = "com.fasterxml.jackson.core", name = "jackson-annotations" }
 jackson-databind = { group = "com.fasterxml.jackson.core", name = "jackson-databind" }
 jackson-kotlin = { group = "com.fasterxml.jackson.module", name = "jackson-module-kotlin" }
+jackson-yaml = { group = "com.fasterxml.jackson.dataformat", name = "jackson-dataformat-yaml" }
 metadataExtractor = { group = "com.drewnoakes", name = "metadata-extractor", version.ref = "metadata-extractor-version" }
 pointLocation = { group = "us.fatehi", name = "pointlocation6709", version.ref = "pointlocation6709-version" }
 jaffree = { group = "com.github.kokorin.jaffree", name = "jaffree", version.ref = "jaffree-version" }
@@ -47,7 +48,7 @@ junitPlatformLauncher = { group = "org.junit.platform", name = "junit-platform-l
 assertj-core = { group = "org.assertj", name = "assertj-core", version.ref = "assertj-core-version" }
 
 [bundles]
-jackson = ["jackson-core", "jackson-annotations", "jackson-databind", "jackson-kotlin"]
+jackson = ["jackson-core", "jackson-annotations", "jackson-databind", "jackson-kotlin", "jackson-yaml"]
 log4j2 = ["log4j2-core", "log4j2-slf4j", "log4j2-json"]
 jna = ["jna", "jna-platform"]
 junit = ["junit-api", "junit-params", "junit-engine"]

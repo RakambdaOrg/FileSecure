@@ -56,10 +56,15 @@ class RegexPathTest{
 	@Test
 	fun parsesFromConfiguration(){
 		val pipeline = Configuration.parse("""
-			{"pipelines": [{
-				"mappings": [{"input": "/in", "output": "/out"}],
-				"stages": [{"type": "RegexPath", "rules": [{"regex": "(\\d+)/(.*)", "replacement": "W/$1/$2"}], "unmatched": "PASS"}]
-			}]}
+			pipelines:
+			  - mappings:
+			      - {input: /in, output: /out}
+			    stages:
+			      - type: RegexPath
+			        rules:
+			          - regex: (\d+)/(.*)
+			            replacement: W/$1/$2
+			        unmatched: PASS
 		""".trimIndent()).pipelines.single()
 
 		val parsed = pipeline.stages.single() as RegexPath
