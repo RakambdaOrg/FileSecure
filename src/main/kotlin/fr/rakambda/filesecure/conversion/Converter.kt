@@ -64,7 +64,7 @@ class FfmpegConverter(
 			throw e
 		}
 		catch(e: Exception){
-			throw ConversionException("ffmpeg failed to convert $input", e)
+			throw ConversionException("ffmpeg failed to convert $input: ${describeFailure(e)}", e)
 		}
 	}
 
@@ -100,7 +100,7 @@ class CommandConverter(
 		}
 		try{
 			tools.processListener?.invoke(process)
-			val exitCode = coroutineScope {
+			coroutineScope {
 				val output = async(Dispatchers.IO) { process.inputStream.bufferedReader().use { it.readText() } }
 				val exitCode = try{
 					process.onExit().await().exitValue()
@@ -111,13 +111,8 @@ class CommandConverter(
 					throw e
 				}
 				if(exitCode != 0){
-					val text = output.await()
-					log.warn { "Command `$description` exited with code $exitCode: $text" }
+					throw ConversionException("Command `$description` exited with code $exitCode: ${output.await().trim()}")
 				}
-				exitCode
-			}
-			if(exitCode != 0){
-				throw ConversionException("Command `$description` exited with code $exitCode")
 			}
 			progress.stepTo(1)
 		}

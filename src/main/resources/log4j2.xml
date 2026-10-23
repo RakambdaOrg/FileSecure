@@ -10,6 +10,8 @@
         <Logger name="com.github.kokorin.jaffree" level="error" additivity="false">
             <AppenderRef ref="console"/>
         </Logger>
+        <!-- Error lines printed by ffmpeg and ffprobe, also for files they handle; on failure they are part of the exception FileSecure logs -->
+        <Logger name="com.github.kokorin.jaffree.process.BaseStdReader" level="off" additivity="false"/>
         <Root level="info" additivity="false">
             <AppenderRef ref="console"/>
         </Root>

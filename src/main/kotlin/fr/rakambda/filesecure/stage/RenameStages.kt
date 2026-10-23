@@ -70,7 +70,7 @@ data class RenameWithDatePattern(
 			return ZonedDateTime.parse("${matcher.group("date")} ${matcher.group("time")}", inputFormatter)
 		}
 		catch(e: Exception){
-			log.error(e) { "Failed to decode date from value `$name` and format `$dateFormat $timeFormat`" }
+			log.warn { "Failed to read a date from `$name` with format `$dateFormat $timeFormat`, the file is skipped: ${e.message}" }
 			return null
 		}
 	}

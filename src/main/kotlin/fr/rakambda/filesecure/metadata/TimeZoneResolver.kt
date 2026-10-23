@@ -38,7 +38,7 @@ class GeonamesTimeZoneResolver(private val username: String) : TimeZoneResolver{
 				.build()
 			val response = client.send(request, HttpResponse.BodyHandlers.ofString())
 			if(response.statusCode() !in 200..299){
-				log.warn { "Geonames answered ${response.statusCode()} for coordinates $latitude;$longitude" }
+				log.warn { "Geonames answered ${response.statusCode()} for coordinates $latitude;$longitude, the system time zone is used" }
 				return null
 			}
 			val zoneId = mapper.readTree(response.body()).path("timezoneId").textValue()?.let(ZoneId::of)
@@ -50,7 +50,7 @@ class GeonamesTimeZoneResolver(private val username: String) : TimeZoneResolver{
 			return null
 		}
 		catch(e: Exception){
-			log.error(e) { "Error getting zoneID for coordinates $latitude;$longitude" }
+			log.warn { "Failed to get the time zone of coordinates $latitude;$longitude from geonames, the system time zone is used: ${e.javaClass.simpleName}: ${e.message}" }
 			return null
 		}
 	}

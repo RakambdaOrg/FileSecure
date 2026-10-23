@@ -166,10 +166,13 @@ class PipelineRunner(private val environment: RunEnvironment){
 				throw e
 			}
 			catch(e: Exception){
-				log.error(e) { "Failed to process $file" }
 				// Failures caused by a cancellation aren't errors
 				if(currentCoroutineContext().isActive){
+					log.error(e) { "Failed to process $file" }
 					stats.error()
+				}
+				else{
+					log.warn { "Processing of $file interrupted by the stop: ${e.message}" }
 				}
 			}
 			finally{
@@ -227,7 +230,7 @@ class PipelineRunner(private val environment: RunEnvironment){
 			}
 
 			fileDate?.let {
-				log.info { "Setting creation date for $destination to ${it.toInstant()}" }
+				log.debug { "Setting creation date for $destination to ${it.toInstant()}" }
 				try{
 					val time = FileTime.from(it.toInstant())
 					withContext(Dispatchers.IO) { fileOperations.setTimes(destination, time, time) }
@@ -236,7 +239,7 @@ class PipelineRunner(private val environment: RunEnvironment){
 					throw e
 				}
 				catch(e: Exception){
-					log.warn(e) { "Failed to set file creation date to obtained metadata" }
+					log.error(e) { "Failed to set the creation date of $destination to ${it.toInstant()}" }
 					stats.error()
 				}
 			}

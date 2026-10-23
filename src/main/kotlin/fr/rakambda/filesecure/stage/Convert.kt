@@ -96,7 +96,7 @@ private class ConvertExecutor(
 				it.canHandle(probeResult, file)
 			}
 			catch(e: Exception){
-				log.error(e) { "Failed to check if ${it.javaClass.simpleName} can handle $file" }
+				log.warn(e) { "Failed to check if ${it.javaClass.simpleName} can handle $file, it is considered not handled" }
 				false
 			}
 		}

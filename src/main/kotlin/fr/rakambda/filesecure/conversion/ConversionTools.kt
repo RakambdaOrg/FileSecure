@@ -2,6 +2,7 @@ package fr.rakambda.filesecure.conversion
 
 import com.github.kokorin.jaffree.ffprobe.FFprobe
 import com.github.kokorin.jaffree.ffprobe.FFprobeResult
+import com.github.kokorin.jaffree.process.JaffreeAbnormalExitException
 import io.github.oshai.kotlinlogging.KotlinLogging
 import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.runInterruptible
@@ -45,7 +46,7 @@ class ConversionTools(
 					.execute()
 			}
 			catch(e: Exception){
-				log.warn { "Failed to probe file $file" }
+				log.warn { "Failed to probe file $file, it is considered not convertible: ${describeFailure(e)}" }
 				null
 			}
 		}
@@ -54,4 +55,21 @@ class ConversionTools(
 	private companion object{
 		const val MAX_CONCURRENT_PROBES = 10
 	}
+}
+
+/**
+ * Message of the exception, followed by the error lines the process printed if it is a Jaffree process failure (they aren't logged by Jaffree).
+ */
+internal fun describeFailure(e: Throwable): String{
+	val processErrors = generateSequence(e) { it.cause }
+		.filterIsInstance<JaffreeAbnormalExitException>()
+		.firstOrNull()
+		?.processErrorLogMessages
+		.orEmpty()
+		.joinToString(" | ") { it.message.trim() }
+	if(processErrors.isEmpty()){
+		return "${e.message}"
+	}
+	// Jaffree's message refers to its logs, where these lines aren't written
+	return "${e.message.orEmpty().removeSuffix(" Check logs for detailed error message.").removeSuffix(".")}: $processErrors"
 }

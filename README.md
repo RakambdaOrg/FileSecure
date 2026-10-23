@@ -53,6 +53,9 @@ Total: 163 found, 100 moved, 38 copied, 3 converted, 10 skipped by stages, 5 des
 * `errors`: files that failed (stage, conversion, transfer, setting dates), failed folder actions, and pipelines that failed as a whole (e.g. a `Convert`
   cache that can't be opened). A missing input folder is only a warning.
 
+Each counted error is logged once at `ERROR` level when it happens. Problems the run works around (missing input folder, file that can't be probed,
+unreadable metadata, time zone lookup failure) are logged at `WARN` level and aren't counted.
+
 Exit codes:
 
 | Code | Meaning                                                                    |

@@ -1,6 +1,7 @@
 package fr.rakambda.filesecure.metadata
 
 import com.drew.imaging.ImageMetadataReader
+import com.drew.imaging.ImageProcessingException
 import com.drew.metadata.Metadata
 import com.drew.metadata.exif.ExifSubIFDDirectory
 import com.drew.metadata.exif.GpsDirectory
@@ -12,6 +13,7 @@ import io.github.oshai.kotlinlogging.KotlinLogging
 import us.fatehi.pointlocation6709.parse.PointLocationParser
 import java.nio.file.Files
 import java.nio.file.Path
+import java.time.Instant
 import java.time.LocalDateTime
 import java.time.ZoneId
 import java.time.ZonedDateTime
@@ -50,28 +52,38 @@ class MetadataExtractor(
 	private fun getDateFromMetadata(path: Path): ZonedDateTime?{
 		try{
 			val metadata = ImageMetadataReader.readMetadata(path.toFile()) ?: return null
-			val timeZone = TimeZone.getTimeZone(getZoneIdFromMetadata(metadata) ?: ZoneId.systemDefault())
+			val timeZone = TimeZone.getTimeZone(getZoneIdFromMetadata(path, metadata) ?: ZoneId.systemDefault())
 
 			for(extractor in mediaDateExtractors){
 				for(directory in metadata.getDirectoriesOfType(extractor.directoryClass)){
 					try{
 						log.debug { "Trying ${extractor.directoryClass.name}" }
 						val date = extractor.parse(directory, timeZone) ?: continue
+						if(date.toInstant() == MP4_EPOCH){
+							log.debug { "No date in metadata directory ${extractor.directoryClass.simpleName} of $path, its creation time is unset" }
+							continue
+						}
 						if(date.year < 1970){
-							log.warn { "Invalid year with metadata directory ${extractor.directoryClass.name} for file $path" }
+							log.warn { "Ignoring date $date of $path from metadata directory ${extractor.directoryClass.simpleName}, its year is before 1970" }
 							continue
 						}
 						log.debug { "Matched metadata directory $directory" }
 						return date
 					}
 					catch(e: Exception){
-						log.error { "Error processing metadata directory ${extractor.directoryClass.name} for $path => ${e.message}" }
+						log.warn { "Failed to read a date from metadata directory ${extractor.directoryClass.simpleName} of $path: ${e.describe()}" }
 					}
 				}
 			}
 		}
 		catch(e: Exception){
-			log.error { "Error getting date from metadata for $path => ${e.message}" }
+			// ImageProcessingException itself (not a format specific subclass) is only thrown when the file isn't a supported image or video
+			if(e.javaClass == ImageProcessingException::class.java){
+				log.debug { "No date metadata for $path, not a supported image or video: ${e.message}" }
+			}
+			else{
+				log.warn { "Failed to read the metadata of $path, its date is taken from elsewhere: ${e.describe()}" }
+			}
 		}
 		return null
 	}
@@ -83,7 +95,7 @@ class MetadataExtractor(
 				log.debug { "Trying name extractor `$extractor`" }
 				val date = extractor.parse(fileName) ?: continue
 				if(date.year < 1970){
-					log.warn { "Invalid year with used format for file $path" }
+					log.warn { "Ignoring date $date found in the name of $path, its year is before 1970" }
 					continue
 				}
 				log.debug { "Matched date format for $path" }
@@ -92,13 +104,13 @@ class MetadataExtractor(
 			catch(_: DateTimeParseException){
 			}
 			catch(e: Exception){
-				log.error { "Error using format $extractor => ${e.message}" }
+				log.warn { "Failed to read a date from the name of $path with $extractor: ${e.describe()}" }
 			}
 		}
 		return null
 	}
 
-	private fun getZoneIdFromMetadata(metadata: Metadata): ZoneId?{
+	private fun getZoneIdFromMetadata(path: Path, metadata: Metadata): ZoneId?{
 		try{
 			for(directory in metadata.getDirectoriesOfType(GpsDirectory::class.java)){
 				val location = directory.geoLocation ?: continue
@@ -120,13 +132,17 @@ class MetadataExtractor(
 			}
 		}
 		catch(e: Exception){
-			log.warn(e) { "Error getting GPS infos" }
+			log.warn { "Failed to read the location of $path, the system time zone is used: ${e.describe()}" }
 		}
 		return null
 	}
 
+	private fun Exception.describe() = "${javaClass.simpleName}: $message"
+
 	companion object{
 		private const val QUICKTIME_LOCATION_TAG = 0x050D
+		// Value of an unset MP4 / QuickTime creation time
+		private val MP4_EPOCH = Instant.parse("1904-01-01T00:00:00Z")
 		private val ANGLE_PATTERN = Pattern.compile("""(\d{1,3}),(\d{1,2})\.(\d+)([NESW])""")
 
 		/**

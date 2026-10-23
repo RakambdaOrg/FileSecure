@@ -25,7 +25,7 @@ class WindowsAffinity(private val mask: Long){
 		if(!Platform.isWindows()){
 			return
 		}
-		log.info { "Setting affinity $mask to pid ${process.pid()}" }
+		log.debug { "Setting affinity $mask to pid ${process.pid()}" }
 		val kernel = Kernel32.INSTANCE
 		val handle = kernel.OpenProcess(WinNT.PROCESS_SET_INFORMATION or WinNT.PROCESS_QUERY_INFORMATION, false, process.pid().toInt())
 		if(handle == null){

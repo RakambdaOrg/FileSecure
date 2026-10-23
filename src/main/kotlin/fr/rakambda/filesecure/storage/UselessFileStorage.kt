@@ -51,7 +51,7 @@ class H2Storage(private val databaseFile: Path) : UselessFileStorage{
 	private val saveLock = ReentrantLock()
 
 	init{
-		log.info { "Loading useless files from $databaseFile" }
+		log.debug { "Loading useless files from $databaseFile" }
 		databaseFile.toAbsolutePath().parent?.let(Files::createDirectories)
 		connect().use { connection ->
 			connection.createStatement().use { statement ->
@@ -69,7 +69,7 @@ class H2Storage(private val databaseFile: Path) : UselessFileStorage{
 				}
 			}
 		}
-		log.info { "Loaded ${useless.size} useless files" }
+		log.info { "Loaded ${useless.size} useless files from $databaseFile" }
 	}
 
 	override fun isUseless(path: Path, lastModified: Timestamp): Boolean{
@@ -106,7 +106,7 @@ class H2Storage(private val databaseFile: Path) : UselessFileStorage{
 					count++
 				}
 				statement.executeBatch()
-				log.info { "Saved $count new useless files" }
+				log.debug { "Saved $count new useless files" }
 			}
 		}
 	}
