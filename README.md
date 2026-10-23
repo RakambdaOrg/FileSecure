@@ -43,6 +43,10 @@ The configuration is a YAML file. Unknown keys are rejected to catch typos. File
 (comments and trailing commas allowed), with the same keys.
 
 ```yaml
+# Settings shared by all pipelines, see below
+defaults:
+  operation: MOVE
+
 pipelines:
   # Back up photos from the phone, sorted by month and renamed with their date
   - name: Phone photos
@@ -59,7 +63,6 @@ pipelines:
         dayOffset: 2
       - type: FolderPerMonth
       - type: RenameWithDate
-    operation: MOVE
     setFileCreationDate: true
     folderActions:
       - type: DeleteIfEmpty
@@ -73,7 +76,6 @@ pipelines:
       - type: Convert
         processors: [VIDEO_TO_HEVC_MKV]
         cache: /data/videos.db
-    operation: MOVE
     temp: /data/temp
 ```
 
@@ -96,8 +98,88 @@ otherwise be read as YAML syntax. A single quote inside is written `''`.
 | `setFileCreationDate` | `false`  | Set the creation and modification dates of the destination to the date found in the file name or in its metadata.                                                                  |
 | `temp`                | system   | Folder where conversions write before their result is moved to its destination.                                                                                                     |
 | `folderActions`       | none     | [Actions](#folder-actions) applied to every visited input folder once all files are processed, deepest folders first.                                                              |
+| `useDefaults`         | `true`   | Merge the [defaults](#defaults) into this pipeline.                                                                                                                                |
 
 Enum values are case-insensitive. A file whose destination is itself (input and output being the same folder) is left untouched, unless it is converted.
+
+### Defaults
+
+`defaults` holds settings written once for all pipelines. It accepts the same keys as a pipeline, except `name`, `enabled` and `mappings`, and is
+merged into every pipeline:
+
+* `stages` and `folderActions`: the default entries are placed before the pipeline's own.
+* `scan`: merged key by key, the pipeline's keys win.
+* Other keys (`operation`, `conflict`, `setFileCreationDate`, `temp`): the default applies when the pipeline doesn't set the key.
+
+A pipeline with `useDefaults: false` ignores `defaults`.
+
+```yaml
+defaults:
+  scan:
+    skipHidden: true
+  stages:
+    - type: NameFilter
+      excludes: ['.*\.db', '.*\.ini']
+  operation: MOVE
+
+pipelines:
+  # Excludes .db and .ini files, then sorts by year, moved
+  - mappings:
+      - input: /in/Photos
+        output: /out/Photos
+    stages:
+      - type: FolderPerYear
+  # Excludes .db, .ini and .txt files (several NameFilter stages exclude every pattern of each), copied
+  - mappings:
+      - input: /in/Notes
+        output: /out/Notes
+    stages:
+      - type: NameFilter
+        excludes: ['.*\.txt']
+    operation: COPY
+  # Not affected by defaults: copies hidden files too, nothing excluded, operation NONE
+  - mappings:
+      - input: /in/Other
+        output: /out/Other
+    useDefaults: false
+```
+
+### Anchors and templates
+
+YAML anchors (`&name`) and aliases (`*name`) repeat a value written once, and the merge key `<<` copies the keys of a mapping, the keys written
+next to it taking precedence. Anchors are best defined under the top-level `templates` key, which FileSecure ignores and whose content is free.
+
+```yaml
+templates:
+  cleanup: &cleanup
+    - type: DeleteChildren
+      names: [Thumbs.db]
+    - type: DeleteIfEmpty
+  archive: &archive
+    stages:
+      - type: FolderPerYear
+    conflict: SKIP
+    folderActions: *cleanup
+
+pipelines:
+  - <<: *archive
+    mappings:
+      - input: /in/Scans
+        output: /archive/Scans
+  # Same as above, with conflict: RENAME
+  - <<: *archive
+    mappings:
+      - input: /in/Letters
+        output: /archive/Letters
+    conflict: RENAME
+  - mappings:
+      - input: /in/Photos
+        output: /out/Photos
+    folderActions: *cleanup
+```
+
+`<<` replaces whole keys: a pipeline merging `*archive` and writing its own `stages` doesn't get the template's stages. Unlike `defaults`, anchors
+are a YAML feature and don't exist in JSON configurations.
 
 ### Stages
 

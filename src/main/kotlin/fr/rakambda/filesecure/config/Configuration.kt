@@ -10,9 +10,9 @@ import com.fasterxml.jackson.databind.cfg.MapperBuilder
 import com.fasterxml.jackson.databind.deser.std.StdScalarDeserializer
 import com.fasterxml.jackson.databind.json.JsonMapper
 import com.fasterxml.jackson.databind.module.SimpleModule
+import com.fasterxml.jackson.databind.node.ObjectNode
 import com.fasterxml.jackson.dataformat.yaml.YAMLMapper
 import com.fasterxml.jackson.module.kotlin.kotlinModule
-import com.fasterxml.jackson.module.kotlin.readValue
 import fr.rakambda.filesecure.stage.Convert
 import java.io.Reader
 import java.nio.file.Files
@@ -42,6 +42,7 @@ data class Configuration(
 	}
 
 	companion object{
+		private const val TEMPLATES = "templates"
 		private val yamlMapper = configure(YAMLMapper.builder()).build()
 		private val jsonMapper = configure(JsonMapper.builder())
 			.enable(JsonReadFeature.ALLOW_JAVA_COMMENTS)
@@ -62,8 +63,17 @@ data class Configuration(
 			parse(it, json = path.fileName.toString().endsWith(".json", ignoreCase = true))
 		}
 		
-		fun parse(reader: Reader, json: Boolean = false): Configuration =
-			(if(json) jsonMapper else yamlMapper).readValue<Configuration>(reader).also { it.validate() }
+		/**
+		 * Reads a configuration: YAML anchors and aliases are resolved, `templates` is dropped and `defaults` is merged into the pipelines before
+		 * binding.
+		 */
+		fun parse(reader: Reader, json: Boolean = false): Configuration{
+			val mapper = if(json) jsonMapper else yamlMapper
+			val tree = if(json) ConfigurationTree(mapper.readTree(reader)) else ConfigurationTree.readYaml(reader)
+			(tree.root as? ObjectNode)?.remove(TEMPLATES)
+			applyDefaults(tree, mapper)
+			return tree.bind(mapper, tree.root, Configuration::class.java).also { it.validate() }
+		}
 		
 		fun parse(content: String, json: Boolean = false): Configuration = parse(content.reader(), json)
 	}
