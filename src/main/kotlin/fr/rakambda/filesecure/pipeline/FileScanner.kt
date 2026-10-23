@@ -45,6 +45,10 @@ class FileScanner(
 		if(options.skipHidden && Files.isHidden(file)){
 			return FileVisitResult.CONTINUE
 		}
+		if(file.fileName.toString().endsWith(FileOperations.PARTIAL_SUFFIX)){
+			log.warn { "Ignoring $file, left by an interrupted copy, it can be deleted" }
+			return FileVisitResult.CONTINUE
+		}
 		return if(onFile(file)) FileVisitResult.CONTINUE else FileVisitResult.TERMINATE
 	}
 

@@ -174,6 +174,18 @@ class PipelineRunnerTest{
 	}
 
 	@Test
+	fun scanIgnoresPartialFiles(){
+		file("a.txt")
+		val partial = file("sub/.b.txt${FileOperations.PARTIAL_SUFFIX}")
+
+		run(pipeline(Operation.MOVE))
+
+		assertThat(output.resolve("a.txt")).exists()
+		assertThat(output.resolve("sub")).doesNotExist()
+		assertThat(partial).exists()
+	}
+
+	@Test
 	fun maxDepthDoesNotProcessFoldersAsFiles(){
 		val deep = file("deep/deeper.txt")
 		file("keep.txt")

@@ -5,7 +5,10 @@ import io.github.oshai.kotlinlogging.KotlinLogging
 import java.awt.Desktop
 import java.awt.GraphicsEnvironment
 import java.io.IOException
+import java.nio.file.AtomicMoveNotSupportedException
+import java.nio.file.FileAlreadyExistsException
 import java.nio.file.Files
+import java.nio.file.LinkOption
 import java.nio.file.Path
 import java.nio.file.StandardCopyOption
 import java.nio.file.attribute.BasicFileAttributeView
@@ -17,7 +20,13 @@ private val log = KotlinLogging.logger {}
 /**
  * Every write to the file system goes through here, doing nothing during dry runs.
  */
-class FileOperations(val dryRun: Boolean){
+class FileOperations internal constructor(
+	val dryRun: Boolean,
+	private val atomicMove: (Path, Path) -> Unit,
+	private val copyToPartial: (Path, Path) -> Unit,
+){
+	constructor(dryRun: Boolean) : this(dryRun, ::defaultAtomicMove, ::defaultCopyToPartial)
+
 	fun transfer(operation: Operation, input: Path, output: Path){
 		when(operation){
 			Operation.COPY -> copy(input, output)
@@ -32,7 +41,7 @@ class FileOperations(val dryRun: Boolean){
 			return
 		}
 		createDirectories(output.parent)
-		Files.copy(input, output, StandardCopyOption.COPY_ATTRIBUTES)
+		safeCopy(input, output)
 	}
 
 	fun move(input: Path, output: Path){
@@ -40,14 +49,15 @@ class FileOperations(val dryRun: Boolean){
 			return
 		}
 		createDirectories(output.parent)
-		Files.move(input, output)
+		moveFile(input, output)
 	}
 
 	fun moveWithCopy(input: Path, output: Path){
 		if(dryRun){
 			return
 		}
-		copy(input, output)
+		createDirectories(output.parent)
+		safeCopy(input, output)
 		Files.delete(input)
 	}
 
@@ -68,10 +78,15 @@ class FileOperations(val dryRun: Boolean){
 			val backup = source.resolveSibling("${source.fileName}.filesecure-original")
 			Files.move(source, backup)
 			try{
-				Files.move(converted, destination)
+				moveFile(converted, destination)
 			}
 			catch(e: Exception){
-				Files.move(backup, source)
+				try{
+					Files.move(backup, source)
+				}
+				catch(restoreError: Exception){
+					e.addSuppressed(restoreError)
+				}
 				throw e
 			}
 			copyTimes(sourceAttributes, destination)
@@ -79,10 +94,65 @@ class FileOperations(val dryRun: Boolean){
 			return
 		}
 
-		Files.move(converted, destination)
+		moveFile(converted, destination)
 		copyTimes(sourceAttributes, destination)
 		if(operation.removesSource){
 			trash(source)
+		}
+	}
+
+	/**
+	 * Renames the file when source and destination are on the same file system, otherwise copies it safely then deletes the source.
+	 */
+	private fun moveFile(source: Path, destination: Path){
+		ensureFree(destination)
+		try{
+			atomicMove(source, destination)
+			return
+		}
+		catch(_: AtomicMoveNotSupportedException){
+			log.debug { "$source and $destination are on different file systems, copying" }
+		}
+		safeCopy(source, destination)
+		Files.delete(source)
+	}
+
+	/**
+	 * Copies to a partial file next to the destination, checks its size then renames it, so the destination never holds an incomplete file.
+	 * The source is never modified.
+	 */
+	private fun safeCopy(source: Path, destination: Path){
+		ensureFree(destination)
+		val partial = partialFile(destination)
+		try{
+			val expectedSize = Files.size(source)
+			copyToPartial(source, partial)
+			val size = Files.size(partial)
+			if(size != expectedSize){
+				throw IOException("Copy of $source to $partial is incomplete: $size bytes written out of $expectedSize")
+			}
+			ensureFree(destination)
+			try{
+				Files.move(partial, destination, StandardCopyOption.ATOMIC_MOVE)
+			}
+			catch(_: AtomicMoveNotSupportedException){
+				Files.move(partial, destination)
+			}
+		}
+		catch(e: Throwable){
+			try{
+				Files.deleteIfExists(partial)
+			}
+			catch(deleteError: Exception){
+				e.addSuppressed(deleteError)
+			}
+			throw e
+		}
+	}
+
+	private fun ensureFree(destination: Path){
+		if(Files.exists(destination, LinkOption.NOFOLLOW_LINKS)){
+			throw FileAlreadyExistsException(destination.toString())
 		}
 	}
 
@@ -147,6 +217,20 @@ class FileOperations(val dryRun: Boolean){
 		Files.createDirectories(path)
 		if(!Files.isDirectory(path)){
 			throw IOException("Destination folder $path already exists as a file")
+		}
+	}
+
+	companion object{
+		const val PARTIAL_SUFFIX = ".filesecure-partial"
+
+		fun partialFile(destination: Path): Path = destination.resolveSibling(".${destination.fileName}$PARTIAL_SUFFIX")
+
+		private fun defaultAtomicMove(source: Path, destination: Path){
+			Files.move(source, destination, StandardCopyOption.ATOMIC_MOVE)
+		}
+
+		private fun defaultCopyToPartial(source: Path, partial: Path){
+			Files.copy(source, partial, StandardCopyOption.COPY_ATTRIBUTES, StandardCopyOption.REPLACE_EXISTING)
 		}
 	}
 }

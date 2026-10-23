@@ -103,6 +103,16 @@ otherwise be read as YAML syntax. A single quote inside is written `''`.
 
 Enum values are case-insensitive. A file whose destination is itself (input and output being the same folder) is left untouched, unless it is converted.
 
+Moves and copies never leave an incomplete file under its final name, even if the run is interrupted (network drop, crash):
+
+* `MOVE` first tries an atomic rename, which succeeds when the source and the destination are on the same disk.
+* Otherwise (different disks, e.g. a local disk and a NAS), and for `COPY` and `MOVE_WITH_COPY`, the file is copied to `.<name>.filesecure-partial` in
+  the destination folder, its size is checked against the source, then it is renamed to its final name. The source is only deleted after that, and
+  is left untouched if anything fails.
+* Converted files are put in place the same way from the `temp` folder.
+* An existing destination is never overwritten. `.filesecure-partial` files left by an interrupted run are ignored by the scan (a warning is logged)
+  and can safely be deleted.
+
 ### Mapping table
 
 `mappingTable` writes many mappings between two base folders as a table, one line per mapping. Each entry `key: value` becomes the mapping
