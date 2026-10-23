@@ -20,6 +20,7 @@ import java.nio.file.Path
 	JsonSubTypes.Type(value = NoRename::class, name = "NoRename"),
 	JsonSubTypes.Type(value = RenameWithDate::class, name = "RenameWithDate"),
 	JsonSubTypes.Type(value = RenameWithDatePattern::class, name = "RenameWithDatePattern"),
+	JsonSubTypes.Type(value = RegexPath::class, name = "RegexPath"),
 	JsonSubTypes.Type(value = Convert::class, name = "Convert"),
 )
 sealed interface Stage{

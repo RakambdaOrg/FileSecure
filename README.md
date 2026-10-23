@@ -115,7 +115,24 @@ date it was taken from its metadata (EXIF, QuickTime, MP4, XMP), otherwise its l
 | `NoRename`              |                                                                                                  | Restores the original file name.                                                                                                                                                                                            |
 | `RenameWithDate`        | `format` (`yyyy-MM-dd HH.mm.ss`), `locale` (`en`), `zone`, `filters`                           | Renames the file with its date, keeping its extension. When `filters` (regexes) is set, only files whose original name matches one of them are renamed.                                                                   |
 | `RenameWithDatePattern` | `regex`, `dateFormat`, `timeFormat` (mandatory), `outputFormat`, `locale`, `zone`               | Renames the file with a date read from its current name. `regex` must define the groups `date` and `time`, parsed with `dateFormat` and `timeFormat`. Files not matching are skipped.                                     |
+| `RegexPath`             | `rules` (mandatory), `unmatched` (`SKIP`)                                                        | Rewrites the destination relative to the output folder (with `/` separators) with the first rule whose `regex` fully matches it, `replacement` can use its groups (`$1`, `${name}`). Files matching no rule are skipped, or kept unchanged with `"unmatched": "PASS"`. See the example below. |
 | `Convert`               | see below                                                                                        | Plans the conversion of media files.                                                                                                                                                                                        |
+
+`RegexPath` can replace many similar mappings. This moves `DropOff/Bob - 123/a.jpg` to `Whatsapp/123/a.jpg` and `DropOff/bob_tw/a.jpg` to
+`Twitter/bob_tw/a.jpg`, other files are left in place:
+
+```json
+{
+  "mappings": [{"input": "/data/DropOff", "output": "/data"}],
+  "stages": [
+    {"type": "RegexPath", "rules": [
+      {"regex": "(?:[^/]* - )?(\\d+)/(.*)", "replacement": "Whatsapp/$1/$2"},
+      {"regex": "(bob_tw|carol_tw)/(.*)", "replacement": "Twitter/$1/$2"}
+    ]}
+  ],
+  "operation": "MOVE"
+}
+```
 
 ### Convert
 
