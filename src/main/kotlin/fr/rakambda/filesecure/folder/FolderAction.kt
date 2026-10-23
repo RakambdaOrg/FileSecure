@@ -4,6 +4,7 @@ import com.fasterxml.jackson.annotation.JsonSubTypes
 import com.fasterxml.jackson.annotation.JsonTypeInfo
 import fr.rakambda.filesecure.pipeline.FileOperations
 import io.github.oshai.kotlinlogging.KotlinLogging
+import java.nio.file.DirectoryNotEmptyException
 import java.nio.file.Files
 import java.nio.file.Path
 import java.time.LocalDateTime
@@ -24,6 +25,7 @@ sealed interface FolderAction{
 	/**
 	 * @param folder The folder to apply the action to.
 	 * @param baseFolder The input folder of the mapping.
+	 * @throws FolderActionException If the action failed.
 	 */
 	fun apply(fileOperations: FileOperations, folder: Path, baseFolder: Path)
 }
@@ -38,6 +40,29 @@ internal fun depthOf(folder: Path, baseFolder: Path): Int{
 	return baseFolder.relativize(folder).nameCount
 }
 
+class FolderActionException(message: String, cause: Throwable) : Exception(message, cause)
+
+/**
+ * Deletes the folder, unless a file appeared in it since it was found empty.
+ */
+private fun deleteEmptyFolder(fileOperations: FileOperations, folder: Path){
+	try{
+		fileOperations.delete(folder)
+	}
+	catch(_: DirectoryNotEmptyException){
+		log.info { "Not deleting folder $folder, it is not empty anymore" }
+	}
+}
+
+private inline fun deletionCheck(folder: Path, block: () -> Unit){
+	try{
+		block()
+	}
+	catch(e: Exception){
+		throw FolderActionException("Failed to determine if $folder should be deleted, it will not be by default", e)
+	}
+}
+
 internal fun isEmptyFolder(folder: Path): Boolean = Files.list(folder).use { it.findAny().isEmpty }
 
 /**
@@ -47,15 +72,12 @@ data class DeleteIfEmpty(
 	val depth: Int = 1,
 ) : FolderAction{
 	override fun apply(fileOperations: FileOperations, folder: Path, baseFolder: Path){
-		try{
+		deletionCheck(folder) {
 			if(depthOf(folder, baseFolder) < depth || !isEmptyFolder(folder)){
 				return
 			}
 			log.info { "Deleting folder $folder because it is empty" }
-			fileOperations.delete(folder)
-		}
-		catch(e: Exception){
-			log.error(e) { "Failed to determine if $folder should be deleted, it will not be by default" }
+			deleteEmptyFolder(fileOperations, folder)
 		}
 	}
 }
@@ -69,7 +91,7 @@ data class DeleteIfOlderThan(
 	val depth: Int = 1,
 ) : FolderAction{
 	override fun apply(fileOperations: FileOperations, folder: Path, baseFolder: Path){
-		try{
+		deletionCheck(folder) {
 			if(depthOf(folder, baseFolder) < depth){
 				return
 			}
@@ -79,25 +101,23 @@ data class DeleteIfOlderThan(
 			}
 			if(isEmptyFolder(folder)){
 				log.info { "Deleting folder $folder because it is more than $dayOffset days old and empty" }
-				fileOperations.delete(folder)
+				deleteEmptyFolder(fileOperations, folder)
 			}
 			else{
 				log.debug { "Tried deleting folder $folder because it is more than $dayOffset days old but wasn't empty" }
 			}
 		}
-		catch(e: Exception){
-			log.error(e) { "Failed to determine if $folder should be deleted, it will not be by default" }
-		}
 	}
 }
 
 /**
- * Deletes the given children of every folder, if they exist.
+ * Deletes the given children of every folder, if they exist. All children are tried even if one fails.
  */
 data class DeleteChildren(
 	val names: List<String> = emptyList(),
 ) : FolderAction{
 	override fun apply(fileOperations: FileOperations, folder: Path, baseFolder: Path){
+		var failure: FolderActionException? = null
 		for(name in names){
 			val child = folder.resolve(name)
 			try{
@@ -106,8 +126,10 @@ data class DeleteChildren(
 				}
 			}
 			catch(e: Exception){
-				log.error(e) { "Failed to delete child $child" }
+				val error = FolderActionException("Failed to delete child $child", e)
+				failure?.addSuppressed(error) ?: run { failure = error }
 			}
 		}
+		failure?.let { throw it }
 	}
 }

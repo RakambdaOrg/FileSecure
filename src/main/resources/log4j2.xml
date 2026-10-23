@@ -1,5 +1,6 @@
 <?xml version="1.0" encoding="UTF-8"?>
-<Configuration name="Default" status="warn">
+<!-- No Log4j shutdown hook, so the run summary can still be logged from the application shutdown hook -->
+<Configuration name="Default" status="warn" shutdownHook="disable">
     <Appenders>
         <Console name="console" target="SYSTEM_OUT">
             <PatternLayout disableAnsi="false" pattern="%highlight{%date{ISO8601} %level [%thread] %logger{1.} - %message}%n"/>

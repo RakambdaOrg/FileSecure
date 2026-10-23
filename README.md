@@ -35,6 +35,36 @@ While running, these commands can be typed in the console:
 * `r`: resume.
 * `q`: quit, running conversions are stopped and their temporary files removed. Stopping the process (Ctrl+C, `SIGTERM`) does the same.
 
+At the end of the run (also when stopped with `q`), a summary is logged: one line per enabled pipeline, then a total. Counters that are zero are
+omitted, except `found` and `errors`. The lines are logged at `ERROR` level when there are errors, `INFO` otherwise.
+
+```text
+Pipeline 'Photos': 123 found, 100 moved, 3 converted, 10 skipped by stages, 5 destination exists, 2 errors
+Pipeline 'Backup': 40 found, 38 copied, 2 already in place, 0 errors
+Total: 163 found, 100 moved, 38 copied, 3 converted, 10 skipped by stages, 5 destination exists, 2 already in place, 2 errors
+```
+
+* `moved`, `copied`, `converted`: files transferred (`MOVE_WITH_COPY` counts as moved, a converted file counts as converted whatever the operation).
+  During a dry run, they read `would move`, `would copy` and `would convert`, and the lines are marked `(dry run)`. With the `NONE` operation, accepted
+  files are counted as `would process (operation NONE)`.
+* `skipped by stages`: filtered out by a stage.
+* `destination exists`: skipped because of the `SKIP` conflict strategy.
+* `already in place`: the file is already at its destination.
+* `errors`: files that failed (stage, conversion, transfer, setting dates), failed folder actions, and pipelines that failed as a whole (e.g. a `Convert`
+  cache that can't be opened). A missing input folder is only a warning.
+
+Exit codes:
+
+| Code | Meaning                                                                    |
+|------|----------------------------------------------------------------------------|
+| 0    | Success.                                                                   |
+| 1    | Invalid command line or configuration.                                     |
+| 2    | At least one error happened during the run.                                |
+| 3    | Stopped with the `q` command (takes precedence over 2).                    |
+
+When the process is stopped by Ctrl+C or `SIGTERM`, running conversions are stopped and the summary is still logged, but the exit code is the one set by
+the JVM for the signal (usually 130 for Ctrl+C and 143 for `SIGTERM`).
+
 Conversions need [ffmpeg](https://ffmpeg.org) (video and audio) and [ImageMagick](https://imagemagick.org) (photos) to be installed.
 
 ## Configuration

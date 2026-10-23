@@ -6,6 +6,7 @@ import fr.rakambda.filesecure.config.Operation
 import fr.rakambda.filesecure.config.Pipeline
 import fr.rakambda.filesecure.config.ScanOptions
 import fr.rakambda.filesecure.conversion.ConversionTools
+import fr.rakambda.filesecure.folder.DeleteChildren
 import fr.rakambda.filesecure.folder.DeleteIfEmpty
 import fr.rakambda.filesecure.metadata.MetadataExtractor
 import fr.rakambda.filesecure.stage.FolderPerYear
@@ -16,6 +17,8 @@ import kotlinx.coroutines.runBlocking
 import org.assertj.core.api.Assertions.assertThat
 import org.junit.jupiter.api.Test
 import org.junit.jupiter.api.io.TempDir
+import java.io.IOException
+import java.nio.file.AtomicMoveNotSupportedException
 import java.nio.file.Files
 import java.nio.file.Path
 import java.nio.file.attribute.FileTime
@@ -41,9 +44,9 @@ class PipelineRunnerTest{
 		it.writeText(content)
 	}
 
-	private fun run(pipeline: Pipeline, dryRun: Boolean = false) = runBlocking {
+	private fun run(pipeline: Pipeline, dryRun: Boolean = false, fileOperations: FileOperations = FileOperations(dryRun)): PipelineStats = runBlocking {
 		val environment = RunEnvironment(
-			fileOperations = FileOperations(dryRun),
+			fileOperations = fileOperations,
 			metadataExtractor = MetadataExtractor({ _, _ -> null }),
 			tools = ConversionTools(),
 			workers = 4,
@@ -62,8 +65,12 @@ class PipelineRunnerTest{
 		val a = file("a/b.txt")
 		val c = file("c.txt")
 
-		run(pipeline(Operation.COPY))
+		val stats = run(pipeline(Operation.COPY))
 
+		assertThat(stats.foundCount).isEqualTo(2)
+		assertThat(stats.count(FileOutcome.COPIED)).isEqualTo(2)
+		assertThat(stats.errorCount).isZero()
+		assertThat(stats.describe(false)).isEqualTo("2 found, 2 copied, 0 errors")
 		assertThat(output.resolve("a/b.txt")).hasContent("a/b.txt")
 		assertThat(output.resolve("c.txt")).hasContent("c.txt")
 		assertThat(a).exists()
@@ -74,8 +81,9 @@ class PipelineRunnerTest{
 	fun moveRemovesSourcesAndCleansFolders(){
 		val a = file("a/b.txt")
 
-		run(pipeline(Operation.MOVE).copy(folderActions = listOf(DeleteIfEmpty())))
+		val stats = run(pipeline(Operation.MOVE).copy(folderActions = listOf(DeleteIfEmpty())))
 
+		assertThat(stats.describe(false)).isEqualTo("1 found, 1 moved, 0 errors")
 		assertThat(output.resolve("a/b.txt")).hasContent("a/b.txt")
 		assertThat(a).doesNotExist()
 		assertThat(a.parent).doesNotExist()
@@ -85,9 +93,12 @@ class PipelineRunnerTest{
 	@Test
 	fun noneOperationWritesNothing(){
 		val a = file("a.txt")
+		file("b.txt")
 
-		run(pipeline(Operation.NONE))
+		val stats = run(pipeline(Operation.NONE))
 
+		assertThat(stats.count(FileOutcome.PROCESSED)).isEqualTo(2)
+		assertThat(stats.describe(false)).isEqualTo("2 found, 2 would process (operation NONE), 0 errors")
 		assertThat(a).exists()
 		assertThat(output).doesNotExist()
 	}
@@ -96,8 +107,10 @@ class PipelineRunnerTest{
 	fun dryRunWritesNothing(){
 		val a = file("a/b.txt")
 
-		run(pipeline(Operation.MOVE).copy(folderActions = listOf(DeleteIfEmpty())), dryRun = true)
+		val stats = run(pipeline(Operation.MOVE).copy(folderActions = listOf(DeleteIfEmpty())), dryRun = true)
 
+		assertThat(stats.count(FileOutcome.MOVED)).isEqualTo(1)
+		assertThat(stats.describe(true)).isEqualTo("1 found, 1 would move, 0 errors")
 		assertThat(a).exists()
 		assertThat(output).doesNotExist()
 	}
@@ -128,8 +141,9 @@ class PipelineRunnerTest{
 		val a = file("a.txt", "new")
 		output.createDirectories().resolve("a.txt").writeText("old")
 
-		run(pipeline(Operation.MOVE).copy(conflict = ConflictStrategy.SKIP))
+		val stats = run(pipeline(Operation.MOVE).copy(conflict = ConflictStrategy.SKIP))
 
+		assertThat(stats.describe(false)).isEqualTo("1 found, 1 destination exists, 0 errors")
 		assertThat(output.resolve("a.txt")).hasContent("old")
 		assertThat(a).exists()
 		assertThat(output.resolve("a (1).txt")).doesNotExist()
@@ -150,8 +164,9 @@ class PipelineRunnerTest{
 	fun inPlaceMoveDoesNothing(){
 		val a = file("a.txt")
 
-		run(Pipeline(mappings = listOf(Mapping(input, input)), operation = Operation.MOVE))
+		val stats = run(Pipeline(mappings = listOf(Mapping(input, input)), operation = Operation.MOVE))
 
+		assertThat(stats.describe(false)).isEqualTo("1 found, 1 already in place, 0 errors")
 		assertThat(a).hasContent("a.txt")
 		assertThat(input.resolve("a (1).txt")).doesNotExist()
 	}
@@ -202,13 +217,14 @@ class PipelineRunnerTest{
 		file("2023-05-12 10.15.12.jpg")
 		file("2022-01-02 03.04.05.txt")
 
-		run(pipeline(
+		val stats = run(pipeline(
 			Operation.COPY,
 			NameFilter(includes = listOf(Pattern.compile(""".*\.jpg"""))),
 			FolderPerYear(),
 			RenameWithDate(format = "yyyyMMdd_HHmmss"),
 		))
 
+		assertThat(stats.describe(false)).isEqualTo("2 found, 1 copied, 1 skipped by stages, 0 errors")
 		assertThat(output.resolve("2023/20230512_101512.jpg")).exists()
 		assertThat(output.resolve("2022")).doesNotExist()
 	}
@@ -224,11 +240,49 @@ class PipelineRunnerTest{
 	}
 
 	@Test
+	fun failingTransferIsCountedAndOthersAreProcessed(){
+		val bad = file("bad.txt")
+		file("good1.txt")
+		file("sub/good2.txt")
+		val fileOperations = FileOperations(
+			false,
+			{ source, destination -> throw AtomicMoveNotSupportedException(source.toString(), destination.toString(), "test") },
+			{ source, partial ->
+				if(source == bad){
+					throw IOException("Network dropped")
+				}
+				Files.copy(source, partial)
+			},
+		)
+
+		val stats = run(pipeline(Operation.MOVE), fileOperations = fileOperations)
+
+		assertThat(stats.describe(false)).isEqualTo("3 found, 2 moved, 1 errors")
+		assertThat(bad).exists()
+		assertThat(output.resolve("good1.txt")).exists()
+		assertThat(output.resolve("sub/good2.txt")).exists()
+	}
+
+	@Test
+	fun failingFolderActionIsCountedAndOthersAreApplied(){
+		file("sub/a.txt")
+		val thumbs = file("Thumbs.db")
+
+		// "sub" is a non-empty folder, deleting it fails
+		val stats = run(pipeline(Operation.COPY).copy(folderActions = listOf(DeleteChildren(listOf("sub")), DeleteChildren(listOf("Thumbs.db")))))
+
+		assertThat(stats.describe(false)).isEqualTo("2 found, 2 copied, 1 errors")
+		assertThat(input.resolve("sub/a.txt")).exists()
+		assertThat(thumbs).doesNotExist()
+	}
+
+	@Test
 	fun missingInputIsSkipped(){
 		Files.delete(input)
 
-		run(pipeline(Operation.COPY))
+		val stats = run(pipeline(Operation.COPY))
 
+		assertThat(stats.describe(false)).isEqualTo("0 found, 0 errors")
 		assertThat(output).doesNotExist()
 	}
 }

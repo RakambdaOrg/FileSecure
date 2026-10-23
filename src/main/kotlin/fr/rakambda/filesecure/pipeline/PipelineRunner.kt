@@ -5,6 +5,7 @@ import fr.rakambda.filesecure.config.Operation
 import fr.rakambda.filesecure.config.Pipeline
 import fr.rakambda.filesecure.conversion.ConversionException
 import fr.rakambda.filesecure.conversion.PlannedConversion
+import fr.rakambda.filesecure.folder.FolderAction
 import fr.rakambda.filesecure.stage.Convert
 import fr.rakambda.filesecure.stage.StageExecutor
 import fr.rakambda.filesecure.stage.StageResult
@@ -15,6 +16,8 @@ import kotlinx.coroutines.NonCancellable
 import kotlinx.coroutines.channels.Channel
 import kotlinx.coroutines.channels.trySendBlocking
 import kotlinx.coroutines.coroutineScope
+import kotlinx.coroutines.currentCoroutineContext
+import kotlinx.coroutines.isActive
 import kotlinx.coroutines.launch
 import kotlinx.coroutines.runInterruptible
 import kotlinx.coroutines.sync.withPermit
@@ -27,7 +30,10 @@ import java.util.concurrent.ConcurrentLinkedQueue
 private val log = KotlinLogging.logger {}
 
 class PipelineRunner(private val environment: RunEnvironment){
-	suspend fun run(pipeline: Pipeline, name: String){
+	/**
+	 * @param stats Updated while the pipeline runs, so counts are kept if it fails or is cancelled.
+	 */
+	suspend fun run(pipeline: Pipeline, name: String, stats: PipelineStats = PipelineStats()): PipelineStats{
 		log.info { "Running pipeline $name" }
 		val context = PipelineContext(environment, pipeline)
 		val executors = mutableListOf<StageExecutor>()
@@ -38,7 +44,7 @@ class PipelineRunner(private val environment: RunEnvironment){
 			val tempDirectory = if(pipeline.stages.any { it is Convert } && !environment.dryRun) createTempDirectory(pipeline.temp) else null
 			try{
 				for(mapping in pipeline.mappings){
-					MappingRun(pipeline, mapping, executors, tempDirectory).run()
+					MappingRun(pipeline, mapping, executors, tempDirectory, stats).run()
 				}
 			}
 			finally{
@@ -52,9 +58,11 @@ class PipelineRunner(private val environment: RunEnvironment){
 				}
 				catch(e: Exception){
 					log.error(e) { "Failed to close stage $executor" }
+					stats.error()
 				}
 			}
 		}
+		return stats
 	}
 
 	private suspend fun createTempDirectory(parent: Path?): Path = withContext(Dispatchers.IO) {
@@ -81,6 +89,7 @@ class PipelineRunner(private val environment: RunEnvironment){
 		private val mapping: Mapping,
 		private val executors: List<StageExecutor>,
 		private val tempDirectory: Path?,
+		private val stats: PipelineStats,
 	){
 		private val reserver = DestinationReserver()
 		private val fileOperations = environment.fileOperations
@@ -101,6 +110,7 @@ class PipelineRunner(private val environment: RunEnvironment){
 						runInterruptible(Dispatchers.IO) {
 							FileScanner(mapping.input, pipeline.scan, folders::add) { file ->
 								progress.fileFound()
+								stats.fileFound()
 								files.trySendBlocking(file).isSuccess
 							}.scan()
 						}
@@ -122,9 +132,19 @@ class PipelineRunner(private val environment: RunEnvironment){
 				log.debug { "Applying folder actions" }
 				withContext(Dispatchers.IO) {
 					folders.sortedByDescending { it.nameCount }.forEach { folder ->
-						pipeline.folderActions.forEach { it.apply(fileOperations, folder, mapping.input) }
+						pipeline.folderActions.forEach { action -> applyFolderAction(action, folder) }
 					}
 				}
+			}
+		}
+
+		private fun applyFolderAction(action: FolderAction, folder: Path){
+			try{
+				action.apply(fileOperations, folder, mapping.input)
+			}
+			catch(e: Exception){
+				log.error(e) { e.message ?: "Failed to apply $action to $folder" }
+				stats.error()
 			}
 		}
 
@@ -136,6 +156,7 @@ class PipelineRunner(private val environment: RunEnvironment){
 					val result = executor.process(item)
 					if(result is StageResult.Skip){
 						log.debug { "Skipping $file: ${result.reason}" }
+						stats.record(FileOutcome.SKIPPED_BY_STAGE)
 						return
 					}
 				}
@@ -146,6 +167,10 @@ class PipelineRunner(private val environment: RunEnvironment){
 			}
 			catch(e: Exception){
 				log.error(e) { "Failed to process $file" }
+				// Failures caused by a cancellation aren't errors
+				if(currentCoroutineContext().isActive){
+					stats.error()
+				}
 			}
 			finally{
 				progress.fileProcessed()
@@ -160,6 +185,7 @@ class PipelineRunner(private val environment: RunEnvironment){
 			val isSource = item.destination.toAbsolutePath().normalize() == source.toAbsolutePath().normalize()
 			if(isSource && conversion == null){
 				log.debug { "$source is already at its destination" }
+				stats.record(FileOutcome.ALREADY_IN_PLACE)
 				return
 			}
 			// The source is replaced by its converted version, there's no conflict as the source will be gone
@@ -167,12 +193,14 @@ class PipelineRunner(private val environment: RunEnvironment){
 			val destination = if(replaceSource) item.destination else reserver.reserve(item.destination, pipeline.conflict)
 			if(destination == null){
 				log.info { "Skipping $source, destination ${item.destination} already exists" }
+				stats.record(FileOutcome.DESTINATION_EXISTS)
 				return
 			}
 
 			val conversionDescription = conversion?.let { " converted to ${it.processor.extension}" } ?: ""
 			log.info { "$operation file $source to $destination$conversionDescription" }
 			if(operation == Operation.NONE){
+				stats.record(FileOutcome.PROCESSED)
 				return
 			}
 
@@ -181,15 +209,21 @@ class PipelineRunner(private val environment: RunEnvironment){
 
 			if(conversion == null){
 				withContext(Dispatchers.IO) { fileOperations.transfer(operation, source, destination) }
+				stats.record(if(operation == Operation.COPY) FileOutcome.COPIED else FileOutcome.MOVED)
 			}
 			else{
-				val converted = convert(item, conversion, destination) ?: return
+				val converted = convert(item, conversion, destination)
+				if(converted == null){
+					stats.record(FileOutcome.CONVERTED)
+					return
+				}
 				try{
 					withContext(Dispatchers.IO) { fileOperations.commitConverted(operation, source, converted, destination, replaceSource) }
 				}
 				finally{
 					withContext(NonCancellable + Dispatchers.IO) { Files.deleteIfExists(converted) }
 				}
+				stats.record(FileOutcome.CONVERTED)
 			}
 
 			fileDate?.let {
@@ -198,8 +232,12 @@ class PipelineRunner(private val environment: RunEnvironment){
 					val time = FileTime.from(it.toInstant())
 					withContext(Dispatchers.IO) { fileOperations.setTimes(destination, time, time) }
 				}
+				catch(e: CancellationException){
+					throw e
+				}
 				catch(e: Exception){
 					log.warn(e) { "Failed to set file creation date to obtained metadata" }
+					stats.error()
 				}
 			}
 		}

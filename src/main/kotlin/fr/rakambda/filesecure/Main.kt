@@ -21,10 +21,12 @@ import fr.rakambda.filesecure.metadata.GeonamesTimeZoneResolver
 import fr.rakambda.filesecure.metadata.MetadataExtractor
 import fr.rakambda.filesecure.pipeline.FileOperations
 import fr.rakambda.filesecure.pipeline.PipelineRunner
+import fr.rakambda.filesecure.pipeline.PipelineStats
 import fr.rakambda.filesecure.pipeline.RunEnvironment
 import fr.rakambda.filesecure.progress.ConsoleProgressReporter
 import fr.rakambda.filesecure.progress.NoOpProgressReporter
 import io.github.oshai.kotlinlogging.KotlinLogging
+import io.github.oshai.kotlinlogging.Level
 import kotlinx.coroutines.CancellationException
 import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.launch
@@ -80,7 +82,8 @@ class FileSecureCommand : CliktCommand(name = "filesecure"){
 		val pauseGate = PauseGate()
 		val affinity = affinityMask?.let(::WindowsAffinity)
 		val progressReporter = if(progress) ConsoleProgressReporter() else NoOpProgressReporter
-		progressReporter.use {
+		val report = RunReport(configuration, dryRun)
+		val completed = progressReporter.use {
 			val environment = RunEnvironment(
 				fileOperations = FileOperations(dryRun),
 				metadataExtractor = MetadataExtractor(GeonamesTimeZoneResolver(geonamesUsername)),
@@ -90,11 +93,23 @@ class FileSecureCommand : CliktCommand(name = "filesecure"){
 				pauseGate = pauseGate,
 				progress = progressReporter,
 			)
-			runPipelines(configuration, environment, pauseGate)
+			runPipelines(configuration, environment, pauseGate, report)
+		}
+		if(!completed){
+			// The JVM is shutting down, the shutdown hook logs the summary
+			return
+		}
+		report.log()
+		val code = exitCode(report.errors, report.stopped)
+		if(code != 0){
+			throw ProgramResult(code)
 		}
 	}
 
-	private fun runPipelines(configuration: Configuration, environment: RunEnvironment, pauseGate: PauseGate) = runBlocking {
+	/**
+	 * @return false if the JVM is shutting down.
+	 */
+	private fun runPipelines(configuration: Configuration, environment: RunEnvironment, pauseGate: PauseGate, report: RunReport): Boolean = runBlocking {
 		val runner = PipelineRunner(environment)
 		val job = launch(Dispatchers.Default) {
 			configuration.pipelines.forEachIndexed { index, pipeline ->
@@ -103,34 +118,96 @@ class FileSecureCommand : CliktCommand(name = "filesecure"){
 					log.info { "Pipeline $name is disabled" }
 					return@forEachIndexed
 				}
+				val stats = report.start(index)
 				try{
-					runner.run(pipeline, name)
+					runner.run(pipeline, name, stats)
 				}
 				catch(e: CancellationException){
 					throw e
 				}
 				catch(e: Exception){
 					log.error(e) { "Failed to run pipeline $name" }
+					stats.error()
 				}
 			}
 		}
 
-		ConsoleHandler(System.`in`, pauseGate) { job.cancel() }.start()
+		ConsoleHandler(System.`in`, pauseGate) {
+			if(job.isActive){
+				report.stopped = true
+			}
+			job.cancel()
+		}.start()
 		val shutdownHook = Thread {
 			job.cancel()
 			// Give running conversions the time to be stopped and their temporary files removed
 			runBlocking { withTimeoutOrNull(30.seconds) { job.join() } }
+			report.stopped = true
+			report.log()
 		}
 		Runtime.getRuntime().addShutdownHook(shutdownHook)
 
 		job.join()
 		try{
 			Runtime.getRuntime().removeShutdownHook(shutdownHook)
+			true
 		}
 		catch(_: IllegalStateException){
 			// Already shutting down
+			false
 		}
 	}
+}
+
+/**
+ * Counts of every enabled pipeline of a run.
+ */
+private class RunReport(private val configuration: Configuration, private val dryRun: Boolean){
+	private val stats = arrayOfNulls<PipelineStats>(configuration.pipelines.size)
+
+	/**
+	 * Set when the run is stopped with the `q` command or by the JVM shutting down.
+	 */
+	@Volatile
+	var stopped = false
+
+	val errors: Long
+		get() = stats.sumOf { it?.errorCount ?: 0 }
+
+	@Synchronized
+	fun start(index: Int): PipelineStats = PipelineStats().also { stats[index] = it }
+
+	@Synchronized
+	fun log(){
+		val mode = if(dryRun) " (dry run)" else ""
+		val total = PipelineStats()
+		configuration.pipelines.forEachIndexed { index, pipeline ->
+			if(!pipeline.enabled){
+				return@forEachIndexed
+			}
+			val name = pipeline.displayName(index)
+			val pipelineStats = stats[index]
+			if(pipelineStats == null){
+				log.info { "Pipeline '$name'$mode: not run" }
+				return@forEachIndexed
+			}
+			total += pipelineStats
+			val level = if(pipelineStats.errorCount > 0) Level.ERROR else Level.INFO
+			log.at(level) { message = "Pipeline '$name'$mode: ${pipelineStats.describe(dryRun)}" }
+		}
+		val level = if(total.errorCount > 0) Level.ERROR else Level.INFO
+		val suffix = if(stopped) ", stopped before the end" else ""
+		log.at(level) { message = "Total$mode: ${total.describe(dryRun)}$suffix" }
+	}
+}
+
+/**
+ * @return 3 if the run was stopped with the `q` command, 2 if any error happened, 0 otherwise.
+ */
+internal fun exitCode(errors: Long, stopped: Boolean): Int = when{
+	stopped -> 3
+	errors > 0 -> 2
+	else -> 0
 }
 
 fun main(args: Array<String>){

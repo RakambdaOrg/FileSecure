@@ -2,6 +2,7 @@ package fr.rakambda.filesecure.folder
 
 import fr.rakambda.filesecure.pipeline.FileOperations
 import org.assertj.core.api.Assertions.assertThat
+import org.assertj.core.api.Assertions.assertThatThrownBy
 import org.junit.jupiter.api.Test
 import org.junit.jupiter.api.io.TempDir
 import java.nio.file.Files
@@ -79,5 +80,18 @@ class FolderActionTest{
 
 		assertThat(folder.resolve("Thumbs.db")).doesNotExist()
 		assertThat(folder.resolve("keep.jpg")).exists()
+	}
+
+	@Test
+	fun deleteChildrenTriesAllChildrenThenFails(){
+		val folder = Files.createDirectories(root.resolve("a"))
+		Files.createFile(Files.createDirectories(folder.resolve("notEmpty")).resolve("file"))
+		Files.createFile(folder.resolve("Thumbs.db"))
+
+		assertThatThrownBy { DeleteChildren(listOf("notEmpty", "Thumbs.db")).apply(fileOperations, folder, root) }
+			.isInstanceOf(FolderActionException::class.java)
+			.hasMessageContaining("notEmpty")
+
+		assertThat(folder.resolve("Thumbs.db")).doesNotExist()
 	}
 }

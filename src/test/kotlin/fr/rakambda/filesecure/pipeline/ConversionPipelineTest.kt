@@ -54,8 +54,9 @@ class ConversionPipelineTest{
 		val modified = mp3.getLastModifiedTime()
 		val text = input.resolve("music/notes.txt").also { it.writeText("notes") }
 
-		run(convertPipeline(Operation.MOVE, Convert(processors = listOf(ProcessorType.MP3_TO_AAC))))
+		val stats = run(convertPipeline(Operation.MOVE, Convert(processors = listOf(ProcessorType.MP3_TO_AAC))))
 
+		assertThat(stats.describe(false)).isEqualTo("2 found, 1 converted, 1 skipped by stages, 0 errors")
 		val converted = output.resolve("music/song.m4a")
 		assertThat(converted).exists()
 		assertThat(codecs(converted)).containsExactly("aac")
@@ -71,8 +72,9 @@ class ConversionPipelineTest{
 		generateMp3(input.resolve("song.mp3"))
 		input.resolve("notes.txt").writeText("notes")
 
-		run(convertPipeline(Operation.COPY, Convert(processors = listOf(ProcessorType.MP3_TO_AAC), unhandled = UnhandledStrategy.PASS)))
+		val stats = run(convertPipeline(Operation.COPY, Convert(processors = listOf(ProcessorType.MP3_TO_AAC), unhandled = UnhandledStrategy.PASS)))
 
+		assertThat(stats.describe(false)).isEqualTo("2 found, 1 copied, 1 converted, 0 errors")
 		assertThat(output.resolve("song.m4a")).exists()
 		assertThat(output.resolve("notes.txt")).hasContent("notes")
 		assertThat(input.resolve("song.mp3")).exists()
@@ -102,8 +104,9 @@ class ConversionPipelineTest{
 	fun dryRunDoesNotConvert(){
 		val mp3 = generateMp3(input.resolve("song.mp3"))
 
-		run(convertPipeline(Operation.MOVE, Convert(processors = listOf(ProcessorType.MP3_TO_AAC))), dryRun = true)
+		val stats = run(convertPipeline(Operation.MOVE, Convert(processors = listOf(ProcessorType.MP3_TO_AAC))), dryRun = true)
 
+		assertThat(stats.describe(true)).isEqualTo("1 found, 1 would convert, 0 errors")
 		assertThat(mp3).exists()
 		assertThat(output).doesNotExist()
 	}
@@ -130,8 +133,10 @@ class ConversionPipelineTest{
 		ffmpeg("-f", "lavfi", "-i", "testsrc=duration=60:size=640x360:rate=30", "-c:v", "libx264", "-preset", "ultrafast", video.toString())
 		val environment = RunEnvironment(FileOperations(false), MetadataExtractor({ _, _ -> null }), ConversionTools())
 
+		val stats = PipelineStats()
+
 		val job = launch(Dispatchers.Default) {
-			PipelineRunner(environment).run(convertPipeline(Operation.MOVE, Convert(processors = listOf(ProcessorType.VIDEO_TO_HEVC_MKV))), "test")
+			PipelineRunner(environment).run(convertPipeline(Operation.MOVE, Convert(processors = listOf(ProcessorType.VIDEO_TO_HEVC_MKV))), "test", stats)
 		}
 		withTimeout(30.seconds) {
 			while(childFfmpegCount() == 0L){
@@ -148,6 +153,8 @@ class ConversionPipelineTest{
 		assertThat(video).exists()
 		assertThat(output).doesNotExist()
 		assertThat(temp.listDirectoryEntries()).isEmpty()
+		assertThat(stats.errorCount).describedAs("cancellation is not an error").isZero()
+		assertThat(stats.foundCount).isEqualTo(1)
 	}
 
 	private fun childFfmpegCount() = ProcessHandle.current().descendants()
@@ -186,7 +193,7 @@ class ConversionPipelineTest{
 		temp = temp,
 	)
 
-	private fun run(pipeline: Pipeline, dryRun: Boolean = false, magick: String = "magick") = runBlocking {
+	private fun run(pipeline: Pipeline, dryRun: Boolean = false, magick: String = "magick"): PipelineStats = runBlocking {
 		val environment = RunEnvironment(
 			fileOperations = FileOperations(dryRun),
 			metadataExtractor = MetadataExtractor({ _, _ -> null }),
