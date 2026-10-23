@@ -74,6 +74,13 @@ class ConfigurationTest{
 	}
 
 	@Test
+	fun readsWindowsPathsOnAnyPlatform(){
+		val pipeline = Configuration.parse("""{"pipelines": [{"mappings": [{"input": "D:/Documents/In", "output": "//nas.home/share"}]}]}""").pipelines.single()
+		
+		assertThat(pipeline.mappings.single().input).isEqualTo(Path.of("D:/Documents/In"))
+	}
+	
+	@Test
 	fun rejectsUnknownProperties(){
 		assertThatThrownBy { Configuration.parse("""{"pipelines": [{"mappings": [], "depth": 2}]}""") }
 			.isInstanceOf(UnrecognizedPropertyException::class.java)

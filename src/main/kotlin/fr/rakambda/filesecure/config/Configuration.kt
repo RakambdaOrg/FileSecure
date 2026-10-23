@@ -1,9 +1,13 @@
 package fr.rakambda.filesecure.config
 
+import com.fasterxml.jackson.core.JsonParser
 import com.fasterxml.jackson.core.json.JsonReadFeature
+import com.fasterxml.jackson.databind.DeserializationContext
 import com.fasterxml.jackson.databind.DeserializationFeature
 import com.fasterxml.jackson.databind.MapperFeature
+import com.fasterxml.jackson.databind.deser.std.StdScalarDeserializer
 import com.fasterxml.jackson.databind.json.JsonMapper
+import com.fasterxml.jackson.databind.module.SimpleModule
 import com.fasterxml.jackson.module.kotlin.kotlinModule
 import com.fasterxml.jackson.module.kotlin.readValue
 import fr.rakambda.filesecure.stage.Convert
@@ -42,6 +46,7 @@ data class Configuration(
 			.enable(MapperFeature.ACCEPT_CASE_INSENSITIVE_ENUMS)
 			.enable(DeserializationFeature.FAIL_ON_UNKNOWN_PROPERTIES)
 			.enable(DeserializationFeature.FAIL_ON_NULL_FOR_PRIMITIVES)
+			.addModule(SimpleModule().addDeserializer(Path::class.java, PathDeserializer))
 			.build()
 
 		fun load(path: Path): Configuration = Files.newBufferedReader(path).use { parse(it) }
@@ -50,6 +55,15 @@ data class Configuration(
 
 		fun parse(json: String): Configuration = parse(json.reader())
 	}
+}
+
+/**
+ * Reads paths as plain file paths. Jackson's default reads `D:/folder` as a URI with the scheme `D` when not running on Windows.
+ */
+private object PathDeserializer : StdScalarDeserializer<Path>(Path::class.java){
+	private fun readResolve(): Any = PathDeserializer
+	
+	override fun deserialize(parser: JsonParser, context: DeserializationContext): Path = Path.of(parser.valueAsString)
 }
 
 class InvalidConfigurationException(message: String) : RuntimeException(message)
