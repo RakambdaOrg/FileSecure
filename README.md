@@ -88,7 +88,8 @@ otherwise be read as YAML syntax. A single quote inside is written `''`.
 |-----------------------|----------|---------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------|
 | `name`                | `#index` | Name used in logs.                                                                                                                                                                    |
 | `enabled`             | `true`   | Disabled pipelines are skipped.                                                                                                                                                       |
-| `mappings`            |          | **Mandatory**. List of `{input: ..., output: ...}` folders. A file at `input/a/b.txt` has `output/a/b.txt` as initial destination.                                               |
+| `mappings`            |          | **Mandatory** unless `mappingTable` is set. List of `{input: ..., output: ...}` folders. A file at `input/a/b.txt` has `output/a/b.txt` as initial destination.                 |
+| `mappingTable`        | none     | Many mappings sharing base folders, see [mapping table](#mapping-table).                                                                                                             |
 | `scan.maxDepth`       | no limit | How many levels of sub-folders are visited, `1` only processes the files directly in `input`.                                                                                       |
 | `scan.skipHidden`     | `false`  | Ignore hidden files and folders.                                                                                                                                                      |
 | `scan.excludedFolders`| none     | Regexes matched against the folder path relative to `input`, using `/` as separator (e.g. `"a/b"`). Matching folders are not visited.                                                |
@@ -102,9 +103,38 @@ otherwise be read as YAML syntax. A single quote inside is written `''`.
 
 Enum values are case-insensitive. A file whose destination is itself (input and output being the same folder) is left untouched, unless it is converted.
 
+### Mapping table
+
+`mappingTable` writes many mappings between two base folders as a table, one line per mapping. Each entry `key: value` becomes the mapping
+`{input: <input>/<key>, output: <output>/<value>}`, in the order of the entries, after the pipeline's own `mappings` (which can then be omitted).
+
+| Key       | Description                                                                                                                                                                  |
+|-----------|------------------------------------------------------------------------------------------------------------------------------------------------------------------------------|
+| `input`   | **Mandatory**. Base folder of the entry keys.                                                                                                                               |
+| `output`  | **Mandatory**. Base folder of the entry values.                                                                                                                             |
+| `entries` | **Mandatory**. Map of relative input path to relative output path. Paths can't be empty, absolute (`/a`, `D:/a`) or contain `..`, and each key can only appear once.       |
+| `paths`   | Rewrites applied separately to every key and every value: the first rule whose `regex` fully matches it is applied, `replacement` can use its groups (`$1`, `${name}`). Paths matching no rule are kept. |
+
+This moves `D:/base/in/LINE/alice_42` to `D:/base/out/Whatsapp/3/3/6/0/0/0/0/33600000001` and `D:/base/in/Whatsapp/33600000002` to
+`D:/base/out/Instagram/someone`, Whatsapp folders being split by digit:
+
+```yaml
+mappingTable:
+  input: D:/base/in
+  output: D:/base/out
+  paths:
+    - regex: 'Whatsapp/(\d)(\d)(\d)(\d)(\d)(\d)(\d)(\d*)'
+      replacement: 'Whatsapp/$1/$2/$3/$4/$5/$6/$7/$1$2$3$4$5$6$7$8'
+  entries:
+    LINE/alice_42: Whatsapp/33600000001
+    Whatsapp/33600000002: Instagram/someone
+```
+
+Keys are always read as text. Values read as numbers or booleans (`123`, `1e3`, `true`) are rejected and must be quoted.
+
 ### Defaults
 
-`defaults` holds settings written once for all pipelines. It accepts the same keys as a pipeline, except `name`, `enabled` and `mappings`, and is
+`defaults` holds settings written once for all pipelines. It accepts the same keys as a pipeline, except `name`, `enabled`, `mappings` and `mappingTable`, and is
 merged into every pipeline:
 
 * `stages` and `folderActions`: the default entries are placed before the pipeline's own.

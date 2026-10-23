@@ -129,6 +129,131 @@ class ConfigurationTest{
 	}
 
 	@Test
+	fun expandsMappingTableAfterOwnMappings(){
+		val pipeline = Configuration.parse("""
+			pipelines:
+			  - name: Chats
+			    mappings:
+			      - input: /x/in
+			        output: /x/out
+			    mappingTable:
+			      input: /base/in/
+			      output: /base/out
+			      paths:
+			        - regex: 'Whatsapp/(\d)(\d)(\d)(\d)(\d)(\d)(\d)(\d*)'
+			          replacement: 'Whatsapp/$1/$2/$3/$4/$5/$6/$7/$1$2$3$4$5$6$7$8'
+			        - regex: 'Other/(?<user>.*)'
+			          replacement: 'Renamed/${'$'}{user}'
+			      entries:
+			        LINE/alice_42: Whatsapp/33600000001
+			        Whatsapp/33600000002: Instagram/someone
+			        Whatsapp/123: Other/bob
+			        0600000003: Telegram/0600000003
+		""".trimIndent()).pipelines.single()
+		
+		assertThat(pipeline.mappings).containsExactly(
+			Mapping(Path.of("/x/in"), Path.of("/x/out")),
+			Mapping(Path.of("/base/in/LINE/alice_42"), Path.of("/base/out/Whatsapp/3/3/6/0/0/0/0/33600000001")),
+			Mapping(Path.of("/base/in/Whatsapp/3/3/6/0/0/0/0/33600000002"), Path.of("/base/out/Instagram/someone")),
+			Mapping(Path.of("/base/in/Whatsapp/123"), Path.of("/base/out/Renamed/bob")),
+			Mapping(Path.of("/base/in/0600000003"), Path.of("/base/out/Telegram/0600000003")),
+		)
+	}
+	
+	@Test
+	fun expandsMappingTableWithoutMappingsOnWindowsAndUncBases(){
+		val pipeline = Configuration.parse("""
+			pipelines:
+			  - mappingTable:
+			      input: D:/base/in
+			      output: //nas.home/share
+			      entries:
+			        a/b: c
+			        d: e/f
+		""".trimIndent()).pipelines.single()
+		
+		assertThat(pipeline.mappings).containsExactly(
+			Mapping(Path.of("D:/base/in/a/b"), Path.of("//nas.home/share/c")),
+			Mapping(Path.of("D:/base/in/d"), Path.of("//nas.home/share/e/f")),
+		)
+	}
+	
+	@Test
+	fun expandsMappingTableEntriesFromTemplates(){
+		val pipelines = Configuration.parse("""
+			templates:
+			  table: &table
+			    a: b
+			    c: d
+			pipelines:
+			  - mappingTable:
+			      input: /in
+			      output: /out
+			      entries: *table
+			  - mappingTable:
+			      input: /in2
+			      output: /out2
+			      entries: *table
+		""".trimIndent()).pipelines
+		
+		assertThat(pipelines[0].mappings).containsExactly(Mapping(Path.of("/in/a"), Path.of("/out/b")), Mapping(Path.of("/in/c"), Path.of("/out/d")))
+		assertThat(pipelines[1].mappings).containsExactly(Mapping(Path.of("/in2/a"), Path.of("/out2/b")), Mapping(Path.of("/in2/c"), Path.of("/out2/d")))
+	}
+	
+	@Test
+	fun expandsMappingTableInJson(){
+		val pipeline = Configuration.parse("""{"pipelines": [{"mappingTable": {"input": "/in", "output": "/out", "entries": {"a": "b"}}}]}""", json = true).pipelines.single()
+		
+		assertThat(pipeline.mappings).containsExactly(Mapping(Path.of("/in/a"), Path.of("/out/b")))
+	}
+	
+	@Test
+	fun rejectsInvalidMappingTables(){
+		mapOf(
+			"input: /in\n      entries: {a: b}" to "'output'",
+			"output: /out\n      entries: {a: b}" to "'input'",
+			"input: /in\n      output: /out" to "'entries'",
+			"input: /in\n      output: /out\n      entries: [a]" to "'entries'",
+			"input: /in\n      output: /out\n      entries: {a: b}\n      path: []" to "'path'",
+			"input: /in\n      output: /out\n      entries: {a: b}\n      paths: [{regex: a, replacement: b, mode: x}]" to "'mode'",
+			"input: /in\n      output: /out\n      entries: {a: b}\n      paths: [{regex: '(a', replacement: b}]" to "'(a'",
+			"input: /in\n      output: /out\n      entries: {a: b}\n      paths: [{regex: a}]" to "'replacement'",
+			"input: /in\n      output: /out\n      entries: {a: ''}" to "empty",
+			"input: /in\n      output: /out\n      entries: {'': b}" to "empty",
+			"input: /in\n      output: /out\n      entries: {/a: b}" to "'/a'",
+			"input: /in\n      output: /out\n      entries: {a: 'C:/b'}" to "'C:/b'",
+			"input: /in\n      output: /out\n      entries: {'C:b': b}" to "'C:b'",
+			"input: /in\n      output: /out\n      entries: {a/../b: b}" to "'a/../b'",
+			"input: /in\n      output: /out\n      entries: {a: ..}" to "'..'",
+			"input: /in\n      output: /out\n      entries: {a: 12}" to "'a'",
+			"input: /in\n      output: /out\n      entries: {a: b}\n      paths: [{regex: b, replacement: ../c}]" to "'../c'",
+		).forEach { (table, message) ->
+			assertThatThrownBy { Configuration.parse("pipelines:\n  - name: Chats\n    mappingTable:\n      $table") }
+				.describedAs(table)
+				.isInstanceOf(InvalidConfigurationException::class.java)
+				.hasMessageContaining("'mappingTable' of pipeline 'Chats'")
+				.hasMessageContaining(message)
+		}
+		assertThatThrownBy { Configuration.parse("pipelines:\n  - mappingTable: x") }
+			.isInstanceOf(InvalidConfigurationException::class.java)
+			.hasMessageContaining("pipeline '#1'")
+	}
+	
+	@Test
+	fun rejectsDuplicateMappingTableEntries(){
+		assertThatThrownBy { Configuration.parse("pipelines:\n  - mappingTable:\n      input: /in\n      output: /out\n      entries:\n        a: b\n        a: c") }
+			.isInstanceOf(InvalidConfigurationException::class.java)
+			.hasMessageContaining("Duplicate key 'a'")
+	}
+	
+	@Test
+	fun rejectsPipelineWithEmptyMappingTable(){
+		assertThatThrownBy { Configuration.parse("pipelines:\n  - mappingTable:\n      input: /in\n      output: /out\n      entries: {}") }
+			.isInstanceOf(InvalidConfigurationException::class.java)
+			.hasMessageContaining("has no mappings")
+	}
+
+	@Test
 	fun prependsDefaultStagesAndFolderActions(){
 		val pipelines = Configuration.parse("""
 			defaults:
@@ -227,7 +352,7 @@ class ConfigurationTest{
 	
 	@Test
 	fun rejectsPipelineOnlyKeysInDefaults(){
-		listOf("name: x", "enabled: false", "mappings: []", "useDefaults: false").forEach { entry ->
+		listOf("name: x", "enabled: false", "mappings: []", "mappingTable: {}", "useDefaults: false").forEach { entry ->
 			assertThatThrownBy { Configuration.parse("defaults:\n  $entry\npipelines: []") }
 				.describedAs(entry)
 				.isInstanceOf(InvalidConfigurationException::class.java)
