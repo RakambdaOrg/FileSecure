@@ -9,8 +9,8 @@ import java.util.regex.PatternSyntaxException
 
 internal const val MAPPING_TABLE = "mappingTable"
 private const val MAPPINGS = "mappings"
-private val TABLE_KEYS = setOf("input", "output", "paths", "entries")
-private val RULE_KEYS = setOf("regex", "replacement")
+internal val TABLE_KEYS = setOf("input", "output", "paths", "entries")
+internal val RULE_KEYS = setOf("regex", "replacement")
 private val DRIVE = Regex("[A-Za-z]:.*")
 
 /**

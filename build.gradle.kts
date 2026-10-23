@@ -39,6 +39,7 @@ dependencies {
     testImplementation(libs.bundles.junit)
     testRuntimeOnly(libs.junitPlatformLauncher)
     testImplementation(libs.bundles.assertj)
+    testImplementation(libs.jsonSchemaValidator)
 }
 
 repositories {
@@ -59,6 +60,7 @@ kotlin {
 tasks {
     test {
         useJUnitPlatform()
+        inputs.files("config.schema.json", "README.md").withPathSensitivity(PathSensitivity.RELATIVE)
     }
 
     jar {

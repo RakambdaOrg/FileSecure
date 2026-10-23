@@ -115,6 +115,25 @@ pipelines:
 Regexes are best written between single quotes: backslashes are kept as is, and values starting with characters such as `[`, `*` or `{` would
 otherwise be read as YAML syntax. A single quote inside is written `''`.
 
+### Editor support
+
+[`config.schema.json`](config.schema.json) is a JSON schema of the configuration, giving autocompletion, documentation on hover and validation in
+editors. With VS Code's YAML extension (and other editors using the YAML language server), reference it in the first line of the configuration:
+
+```text
+# yaml-language-server: $schema=https://raw.githubusercontent.com/RakambdaOrg/FileSecure/main/config.schema.json
+```
+
+A local path to the file works too (`$schema=../FileSecure/config.schema.json`, relative to the configuration). In IntelliJ IDEA, the schema can be
+mapped in *Settings → Languages & Frameworks → Schemas and DTDs → JSON Schema Mappings*: add a mapping to `config.schema.json` (schema version 7) and
+add the configuration file to it.
+
+* Enum values are proposed in uppercase. FileSecure also accepts them in lowercase, but the editor flags them.
+* The schema describes the file as written, before `defaults` are merged and `mappingTable` is expanded. Some rules are only checked when FileSecure
+  loads the file (a pipeline without mappings, several `Convert` stages, invalid regexes...).
+* `<<` merge keys are a YAML 1.1 feature: editors not resolving them while validating may flag `<<` or report keys coming from the merged template
+  as missing. FileSecure resolves them.
+
 ### Pipeline
 
 | Key                   | Default  | Description                                                                                                                                                                           |
