@@ -14,7 +14,9 @@ import fr.rakambda.filesecure.stage.FolderPerYear
 import fr.rakambda.filesecure.stage.IfOlderThan
 import fr.rakambda.filesecure.stage.Lowercase
 import fr.rakambda.filesecure.stage.NameFilter
+import fr.rakambda.filesecure.stage.NoRename
 import fr.rakambda.filesecure.stage.RenameWithDate
+import fr.rakambda.filesecure.stage.RenameWithDatePattern
 import fr.rakambda.filesecure.stage.UnhandledStrategy
 import org.assertj.core.api.Assertions.assertThat
 import org.assertj.core.api.Assertions.assertThatThrownBy
@@ -166,5 +168,46 @@ class ConfigMigratorTest{
 
 		assertThat(configuration.pipelines.single().stages).isEmpty()
 		assertThat(migrator.warnings).anyMatch { "'Nope'" in it }
+	}
+
+	@Test
+	fun dropsNoRenameWhenNothingRenames(){
+		val configuration = migrate("old.json" to """
+			{
+			  "rules": [{
+			    "operation": "MOVE",
+			    "mappings": [{"input": "/a", "output": "/b"}],
+			    "fileTransformers": [{"name": "NoRenameTransformer"}, {"name": "FolderPerYearTransformer"}]
+			  }]
+			}
+		""".trimIndent())
+
+		assertThat(configuration.pipelines.single().stages.map { it::class }).containsExactly(FolderPerYear::class)
+		assertThat(migrator.warnings).anyMatch { "NoRename dropped" in it }
+	}
+
+	@Test
+	fun keepsNoRenameAfterRename(){
+		val configuration = migrate("old.json" to """
+			{
+			  "rules": [
+			    {
+			      "operation": "MOVE",
+			      "mappings": [{"input": "/a", "output": "/b"}],
+			      "fileTransformers": [{"name": "NoRenameTransformer"}, {"name": "RenameWithDateTransformer", "format": "yyyyMMdd"}]
+			    },
+			    {
+			      "operation": "MOVE",
+			      "mappings": [{"input": "/c", "output": "/d"}],
+			      "fileTransformers": [{"name": "NoRenameTransformer"}, {"name": "RenameWithDatePatternTransformer", "outputFormat": "yyyyMMdd", "regex": "(?<date>.*) (?<time>.*)", "dateFormat": "yyyyMMdd", "timeFormat": "HHmmss"}]
+			    }
+			  ]
+			}
+		""".trimIndent())
+
+		val (first, second) = configuration.pipelines
+		assertThat(first.stages.map { it::class }).containsExactly(RenameWithDate::class, NoRename::class)
+		assertThat(second.stages.map { it::class }).containsExactly(RenameWithDatePattern::class, NoRename::class)
+		assertThat(migrator.warnings).noneMatch { "NoRename dropped" in it }
 	}
 }

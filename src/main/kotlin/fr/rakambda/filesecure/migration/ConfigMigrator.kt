@@ -65,7 +65,7 @@ class ConfigMigrator{
 			if(includes.size() > 0) filter.set<JsonNode>("includes", includes)
 			if(excludes.size() > 0) filter.set<JsonNode>("excludes", excludes)
 		}
-		stages.addAll(migrateTransformers(rule.path("fileTransformers"), FILE_TRANSFORMERS, name, "file transformer"))
+		stages.addAll(migrateTransformers(withoutUselessNoRename(rule.path("fileTransformers"), name), FILE_TRANSFORMERS, name, "file transformer"))
 		if(stages.size() > 0){
 			pipeline.set<JsonNode>("stages", stages)
 		}
@@ -93,6 +93,18 @@ class ConfigMigrator{
 			_warnings += "$name: DeleteIfEmpty used to delete the input folder itself once empty, it now keeps it"
 		}
 		return pipeline
+	}
+
+	/**
+	 * NoRename comes last (highest priority), it only does something when a stage before it renamed the file.
+	 */
+	private fun withoutUselessNoRename(transformers: JsonNode, name: String): JsonNode{
+		val types = transformers.map { it.path("name").asText() }
+		if("NoRenameTransformer" !in types || types.any { it in RENAME_TRANSFORMERS }){
+			return transformers
+		}
+		_warnings += "$name: NoRename dropped, nothing renames files so it did nothing"
+		return nodes.arrayNode().addAll(transformers.filter { it.path("name").asText() != "NoRenameTransformer" })
 	}
 
 	/**
@@ -215,6 +227,7 @@ class ConfigMigrator{
 			"LowercaseTransformer" to TransformerDefinition("Lowercase", Int.MAX_VALUE, emptySet()),
 			"NoRenameTransformer" to TransformerDefinition("NoRename", Int.MAX_VALUE, emptySet()),
 		)
+		private val RENAME_TRANSFORMERS = setOf("RenameWithDateTransformer", "RenameWithDatePatternTransformer")
 		private val FOLDER_TRANSFORMERS = mapOf(
 			"DeleteChildrenTransformer" to TransformerDefinition("DeleteChildren", 10, setOf("names")),
 			"DeleteIfEmptyTransformer" to TransformerDefinition("DeleteIfEmpty", Int.MAX_VALUE, setOf("depth")),
