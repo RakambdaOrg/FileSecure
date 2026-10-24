@@ -1,16 +1,12 @@
 package fr.rakambda.filesecure.metadata
 
-import com.fasterxml.jackson.databind.json.JsonMapper
 import io.github.oshai.kotlinlogging.KotlinLogging
-import java.net.URI
-import java.net.URLEncoder
-import java.net.http.HttpClient
-import java.net.http.HttpRequest
-import java.net.http.HttpResponse
-import java.nio.charset.StandardCharsets
-import java.time.Duration
+import net.iakovlev.timeshape.TimeZoneEngine
 import java.time.ZoneId
+import java.util.Optional
 import java.util.concurrent.ConcurrentHashMap
+import java.util.concurrent.atomic.AtomicBoolean
+import kotlin.jvm.optionals.getOrNull
 
 private val log = KotlinLogging.logger {}
 
@@ -19,39 +15,44 @@ fun interface TimeZoneResolver{
 }
 
 /**
- * Resolves the time zone of coordinates with the geonames.org web service.
+ * Resolves the time zone of coordinates offline, with the time zone boundaries bundled by timeshape.
+ *
+ * The data is loaded on the first call only, as it takes time and memory. If it can't be loaded, every call returns null and loading isn't retried.
  */
-class GeonamesTimeZoneResolver(private val username: String) : TimeZoneResolver{
-	private val client = HttpClient.newBuilder()
-		.connectTimeout(Duration.ofSeconds(30))
-		.build()
-	private val mapper = JsonMapper()
-	private val cache = ConcurrentHashMap<Pair<Double, Double>, ZoneId>()
+class OfflineTimeZoneResolver(engineFactory: () -> TimeZoneEngine = TimeZoneEngine::initialize) : TimeZoneResolver{
+	private val engine: Result<TimeZoneEngine> by lazy {
+		try{
+			Result.success(engineFactory())
+		}
+		catch(e: Throwable){
+			if(e !is Exception && e !is LinkageError && e !is OutOfMemoryError){
+				throw e
+			}
+			Result.failure(e)
+		}
+	}
+	private val cache = ConcurrentHashMap<Pair<Double, Double>, Optional<ZoneId>>()
+	private val initFailureLogged = AtomicBoolean()
+	private val notFoundLogged = AtomicBoolean()
 
 	override fun resolve(latitude: Double, longitude: Double): ZoneId?{
-		cache[latitude to longitude]?.let { return it }
-		try{
-			val query = "lat=$latitude&lng=$longitude&username=${URLEncoder.encode(username, StandardCharsets.UTF_8)}"
-			val request = HttpRequest.newBuilder(URI.create("http://api.geonames.org/timezoneJSON?$query"))
-				.timeout(Duration.ofSeconds(30))
-				.GET()
-				.build()
-			val response = client.send(request, HttpResponse.BodyHandlers.ofString())
-			if(response.statusCode() !in 200..299){
-				log.warn { "Geonames answered ${response.statusCode()} for coordinates $latitude;$longitude, the system time zone is used" }
-				return null
+		val engine = engine.getOrElse { e ->
+			if(initFailureLogged.compareAndSet(false, true)){
+				log.warn { "Failed to load the time zone data for coordinates $latitude;$longitude, the system time zone is used for every geotagged file: ${e.javaClass.simpleName}: ${e.message}" }
 			}
-			val zoneId = mapper.readTree(response.body()).path("timezoneId").textValue()?.let(ZoneId::of)
-			zoneId?.let { cache[latitude to longitude] = it }
-			return zoneId
-		}
-		catch(e: InterruptedException){
-			Thread.currentThread().interrupt()
 			return null
 		}
-		catch(e: Exception){
-			log.warn { "Failed to get the time zone of coordinates $latitude;$longitude from geonames, the system time zone is used: ${e.javaClass.simpleName}: ${e.message}" }
-			return null
-		}
+		return cache.computeIfAbsent(latitude to longitude) {
+			engine.query(latitude, longitude).also { zone ->
+				if(zone.isEmpty){
+					if(notFoundLogged.compareAndSet(false, true)){
+						log.warn { "No time zone found for coordinates $latitude;$longitude, the system time zone is used (next ones are logged at debug level)" }
+					}
+					else{
+						log.debug { "No time zone found for coordinates $latitude;$longitude, the system time zone is used" }
+					}
+				}
+			}
+		}.getOrNull()
 	}
 }

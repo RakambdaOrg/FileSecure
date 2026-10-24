@@ -8,6 +8,7 @@ clikt-version = "5.1.0"
 jackson-version = "2.22.3"
 metadata-extractor-version = "2.21.0"
 pointlocation6709-version = "5.0.1"
+timeshape-version = "2026b.29"
 jaffree-version = "2024.08.29"
 progressbar-version = "0.10.2"
 h2-version = "2.5.252"
@@ -36,6 +37,7 @@ jackson-kotlin = { group = "com.fasterxml.jackson.module", name = "jackson-modul
 jackson-yaml = { group = "com.fasterxml.jackson.dataformat", name = "jackson-dataformat-yaml" }
 metadataExtractor = { group = "com.drewnoakes", name = "metadata-extractor", version.ref = "metadata-extractor-version" }
 pointLocation = { group = "us.fatehi", name = "pointlocation6709", version.ref = "pointlocation6709-version" }
+timeshape = { group = "net.iakovlev", name = "timeshape", version.ref = "timeshape-version" }
 jaffree = { group = "com.github.kokorin.jaffree", name = "jaffree", version.ref = "jaffree-version" }
 progressbar = { group = "me.tongfei", name = "progressbar", version.ref = "progressbar-version" }
 h2 = { group = "com.h2database", name = "h2", version.ref = "h2-version" }

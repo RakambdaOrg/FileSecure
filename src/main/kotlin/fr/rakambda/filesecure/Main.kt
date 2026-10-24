@@ -17,8 +17,8 @@ import fr.rakambda.filesecure.console.ConsoleHandler
 import fr.rakambda.filesecure.console.PauseGate
 import fr.rakambda.filesecure.conversion.ConversionTools
 import fr.rakambda.filesecure.conversion.WindowsAffinity
-import fr.rakambda.filesecure.metadata.GeonamesTimeZoneResolver
 import fr.rakambda.filesecure.metadata.MetadataExtractor
+import fr.rakambda.filesecure.metadata.OfflineTimeZoneResolver
 import fr.rakambda.filesecure.pipeline.FileOperations
 import fr.rakambda.filesecure.pipeline.PipelineRunner
 import fr.rakambda.filesecure.pipeline.PipelineStats
@@ -65,8 +65,6 @@ class FileSecureCommand : CliktCommand(name = "filesecure"){
 		.check("must be > 0") { it > 0 }
 	private val progress by option("--progress", help = "Show progress bars, enabled by default when running in a terminal")
 		.flag("--no-progress", default = System.console()?.isTerminal == true)
-	private val geonamesUsername by option("--geonames-username", help = "geonames.org account used to find the time zone of geotagged media")
-		.default("mrcraftcod")
 
 	override fun help(context: Context): String = "Moves, backs up and converts files through configurable pipelines."
 
@@ -86,7 +84,7 @@ class FileSecureCommand : CliktCommand(name = "filesecure"){
 		val completed = progressReporter.use {
 			val environment = RunEnvironment(
 				fileOperations = FileOperations(dryRun),
-				metadataExtractor = MetadataExtractor(GeonamesTimeZoneResolver(geonamesUsername)),
+				metadataExtractor = MetadataExtractor(OfflineTimeZoneResolver()),
 				tools = ConversionTools(ffmpegDirectory, ffprobeDirectory, magick, ffmpegThreads, affinity?.let { it::apply }),
 				conversionThreads = threads,
 				workers = workers,

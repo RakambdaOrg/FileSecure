@@ -27,7 +27,6 @@ java -jar FileSecure.jar -c config.yaml
 | `--magick`                 | ImageMagick executable used for photo conversions. Default `magick`.                                         |
 | `--affinity`               | Windows only. Mask of the CPU cores conversions run on, e.g. `7` for cores 1, 2 and 3.                       |
 | `--progress/--no-progress` | Show progress bars. Enabled by default when running in a terminal.                                            |
-| `--geonames-username`      | [geonames.org](https://www.geonames.org) account used to find the time zone of geotagged photos and videos. |
 
 While running, these commands can be typed in the console:
 
@@ -276,7 +275,9 @@ are a YAML feature and don't exist in JSON configurations.
 ### Stages
 
 Several stages use **the date of the file**: the date found in its name (e.g. `2023-05-12 10.15.12.jpg`, `IMG_20230512_101512.jpg`), otherwise the
-date it was taken from its metadata (EXIF, QuickTime, MP4, XMP), otherwise its last modification date.
+date it was taken from its metadata (EXIF, QuickTime, MP4, XMP), otherwise its last modification date. Time zones of geotagged media are found
+offline from their GPS coordinates: metadata dates without a time zone are read in the time zone of the place the file was taken, or in the
+system time zone when the file isn't geotagged or no time zone is found there.
 
 | Type                    | Parameters                                                                                       | Description                                                                                                                                                                                                                  |
 |-------------------------|--------------------------------------------------------------------------------------------------|------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------|

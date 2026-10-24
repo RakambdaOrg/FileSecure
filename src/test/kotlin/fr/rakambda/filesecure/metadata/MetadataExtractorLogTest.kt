@@ -1,10 +1,6 @@
 package fr.rakambda.filesecure.metadata
 
 import org.apache.logging.log4j.Level
-import org.apache.logging.log4j.core.LogEvent
-import org.apache.logging.log4j.core.LoggerContext
-import org.apache.logging.log4j.core.appender.AbstractAppender
-import org.apache.logging.log4j.core.config.Property
 import org.assertj.core.api.Assertions.assertThat
 import org.junit.jupiter.api.AfterEach
 import org.junit.jupiter.api.BeforeEach
@@ -14,7 +10,6 @@ import java.awt.image.BufferedImage
 import java.io.ByteArrayOutputStream
 import java.nio.file.Files
 import java.nio.file.Path
-import java.util.concurrent.CopyOnWriteArrayList
 import javax.imageio.ImageIO
 import kotlin.random.Random
 
@@ -27,18 +22,12 @@ class MetadataExtractorLogTest{
 
 	@BeforeEach
 	fun attachAppender(){
-		val context = LoggerContext.getContext(false)
-		appender.start()
-		context.configuration.rootLogger.addAppender(appender, Level.ALL, null)
-		context.updateLoggers()
+		appender.attach()
 	}
 
 	@AfterEach
 	fun detachAppender(){
-		val context = LoggerContext.getContext(false)
-		context.configuration.rootLogger.removeAppender(appender.name)
-		context.updateLoggers()
-		appender.stop()
+		appender.detach()
 	}
 
 	@Test
@@ -87,15 +76,5 @@ class MetadataExtractorLogTest{
 		}
 		ImageIO.write(image, "jpg", output)
 		return output.toByteArray()
-	}
-
-	private class MemoryAppender : AbstractAppender("memory", null, null, true, Property.EMPTY_ARRAY){
-		private val events = CopyOnWriteArrayList<LogEvent>()
-
-		override fun append(event: LogEvent){
-			events += event.toImmutable()
-		}
-
-		fun problems(): List<LogEvent> = events.filter { it.level.isMoreSpecificThan(Level.WARN) }
 	}
 }

@@ -28,6 +28,7 @@ dependencies {
     implementation(libs.bundles.jackson)
 
     implementation(libs.pointLocation)
+    implementation(libs.timeshape)
     implementation(libs.metadataExtractor)
 
     implementation(libs.jaffree)
