@@ -12,6 +12,9 @@
         </Logger>
         <!-- Error lines printed by ffmpeg and ffprobe, also for files they handle; on failure they are part of the exception FileSecure logs -->
         <Logger name="com.github.kokorin.jaffree.process.BaseStdReader" level="off" additivity="false"/>
+        <Logger name="net.iakovlev.timeshape" level="warn" additivity="false">
+            <AppenderRef ref="console"/>
+        </Logger>
         <Root level="info" additivity="false">
             <AppenderRef ref="console"/>
         </Root>

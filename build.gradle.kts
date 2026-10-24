@@ -29,6 +29,11 @@ dependencies {
 
     implementation(libs.pointLocation)
     implementation(libs.timeshape)
+    constraints {
+        implementation(libs.protobuf) {
+            because("Versions before 4.36 call sun.misc.Unsafe memory methods, printing JVM warnings since JDK 24")
+        }
+    }
     implementation(libs.metadataExtractor)
 
     implementation(libs.jaffree)
@@ -61,12 +66,15 @@ kotlin {
 tasks {
     test {
         useJUnitPlatform()
+        jvmArgs("--enable-native-access=ALL-UNNAMED")
         inputs.files("config.schema.json", "README.md").withPathSensitivity(PathSensitivity.RELATIVE)
     }
 
     jar {
         manifest {
             attributes["Multi-Release"] = "true"
+            // The zstd library used by timeshape loads a native library
+            attributes["Enable-Native-Access"] = "ALL-UNNAMED"
         }
     }
 
@@ -107,6 +115,7 @@ jib {
         }
     }
     container {
+        jvmFlags = listOf("--enable-native-access=ALL-UNNAMED")
         creationTime.set("USE_CURRENT_TIMESTAMP")
         user = "1027:100"
     }
