@@ -64,6 +64,9 @@
         "conflict": {
           "$ref": "#/definitions/conflict"
         },
+        "verify": {
+          "$ref": "#/definitions/verify"
+        },
         "setFileCreationDate": {
           "description": "Set the creation and modification dates of the destination to the date found in the file name or in its metadata.",
           "type": "boolean",
@@ -104,6 +107,9 @@
         },
         "conflict": {
           "$ref": "#/definitions/pipeline/properties/conflict"
+        },
+        "verify": {
+          "$ref": "#/definitions/pipeline/properties/verify"
         },
         "setFileCreationDate": {
           "$ref": "#/definitions/pipeline/properties/setFileCreationDate"
@@ -241,6 +247,15 @@
         "SKIP"
       ],
       "default": "RENAME"
+    },
+    "verify": {
+      "description": "How files copied to their destination (COPY, MOVE_WITH_COPY, MOVE across file systems, converted files) are checked before being renamed to their final name: SIZE compares the sizes; CHECKSUM also compares the SHA-256 of the source, computed while copying, with the one of the copy read back (slower: the copy is forced to storage then read again). Atomic renames on the same file system aren't checked, nothing being copied. Case-insensitive for FileSecure.",
+      "type": "string",
+      "enum": [
+        "SIZE",
+        "CHECKSUM"
+      ],
+      "default": "SIZE"
     },
     "processor": {
       "description": "VIDEO_TO_HEVC_MKV, VIDEO_TO_HEVC_MP4: H264, VP9, WMV3, MPEG2 videos into HEVC + AAC. VIDEO_TO_AV1_MKV: into AV1 + OPUS. MP3_TO_AAC: MP3 into AAC (.m4a). AUDIO_TO_OPUS: MP3, AAC into OPUS. TIFF_TO_JPG: TIFF into JPEG. PHOTO_TO_AVIF, PHOTO_TO_JXL: heic, tiff, jpg, raf into AVIF, JXL. Case-insensitive for FileSecure.",

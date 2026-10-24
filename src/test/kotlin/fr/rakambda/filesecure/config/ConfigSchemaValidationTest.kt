@@ -55,6 +55,18 @@ class ConfigSchemaValidationTest{
 	}
 
 	@Test
+	fun acceptsVerify(){
+		listOf(
+			"pipelines:\n  - mappings: [{input: /a, output: /b}]\n    verify: CHECKSUM",
+			"pipelines:\n  - mappings: [{input: /a, output: /b}]\n    verify: SIZE",
+			"defaults: {verify: CHECKSUM}\npipelines:\n  - mappings: [{input: /a, output: /b}]",
+		).forEach { content ->
+			assertThat(errors(readTree(content))).describedAs(content).isEmpty()
+			assertThatCode { Configuration.parse(content) }.describedAs(content).doesNotThrowAnyException()
+		}
+	}
+
+	@Test
 	fun rejectsInvalidConfigurations(){
 		val pipeline = "pipelines:\n  - mappings: [{input: /a, output: /b}]\n"
 		listOf(
@@ -66,6 +78,9 @@ class ConfigSchemaValidationTest{
 			"${pipeline}    scan: {maxDepth: -1}",
 			"${pipeline}    operation: DELETE",
 			"${pipeline}    conflict: OVERWRITE",
+			"${pipeline}    verify: MD5",
+			"${pipeline}    verify: true",
+			"defaults: {verify: SHA256}\npipelines: []",
 			"${pipeline}    enabled: maybe",
 			"pipelines:\n  - mappings: [{input: /a}]",
 			"pipelines:\n  - mappings: [{input: /a, output: /b, depth: 1}]",
@@ -104,7 +119,7 @@ class ConfigSchemaValidationTest{
 		private val README_BLOCK = Regex("```yaml\\n(.*?)```", RegexOption.DOT_MATCHES_ALL)
 		private val PARSED_SAMPLE = Regex("Configuration\\.parse\\(\"\"\"(.*?)\"\"\"", RegexOption.DOT_MATCHES_ALL)
 		private val TOP_LEVEL_KEYS = setOf("pipelines", "defaults", "templates")
-		private val ENUM_KEYS = setOf("operation", "conflict", "unhandled", "unmatched", "processors")
+		private val ENUM_KEYS = setOf("operation", "conflict", "verify", "unhandled", "unmatched", "processors")
 		private val schema = SchemaRegistry.withDefaultDialect(SpecificationVersion.DRAFT_7)
 			.getSchema(ConfigSchemaTest.SCHEMA_PATH.readText(), InputFormat.JSON)
 

@@ -147,6 +147,7 @@ add the configuration file to it.
 | `stages`              | none     | The [stages](#stages), applied in the given order.                                                                                                                                    |
 | `operation`           | `NONE`   | What is done with accepted files: `COPY`, `MOVE`, `MOVE_WITH_COPY` (copy then delete, for moves across file systems) or `NONE` (only logs what would be done).                     |
 | `conflict`            | `RENAME` | When the destination already exists: `RENAME` uses the first free name among `name (1).ext`, `name (2).ext`...; `SKIP` leaves the file untouched.                                  |
+| `verify`              | `SIZE`   | How files copied to their destination are checked: `SIZE` compares the sizes, `CHECKSUM` also compares their SHA-256, see below.                                                   |
 | `setFileCreationDate` | `false`  | Set the creation and modification dates of the destination to the date found in the file name or in its metadata.                                                                  |
 | `temp`                | system   | Folder where conversions write before their result is moved to its destination.                                                                                                     |
 | `folderActions`       | none     | [Actions](#folder-actions) applied to every visited input folder once all files are processed, deepest folders first.                                                              |
@@ -158,8 +159,14 @@ Moves and copies never leave an incomplete file under its final name, even if th
 
 * `MOVE` first tries an atomic rename, which succeeds when the source and the destination are on the same disk.
 * Otherwise (different disks, e.g. a local disk and a NAS), and for `COPY` and `MOVE_WITH_COPY`, the file is copied to `.<name>.filesecure-partial` in
-  the destination folder, its size is checked against the source, then it is renamed to its final name. The source is only deleted after that, and
+  the destination folder, checked against the source (see `verify`), then renamed to its final name. The source is only deleted after that, and
   is left untouched if anything fails.
+* With `verify: SIZE` (default), the size of the copy is compared with the one of the source. With `verify: CHECKSUM`, the SHA-256 of the source
+  is computed while it is read for the copy, the copy is forced to storage then read back, and both SHA-256 must match (sizes are compared too). It
+  catches corruptions that keep the size, at the cost of reading the copy again. The copy keeps the dates of the source, but not its other
+  attributes (permissions, Windows file attributes) that `SIZE` copies where the file systems allow it. Reading back right after writing may be
+  served from the cache of the operating system or of the SMB client: it proves the data went through the copy correctly up to the destination
+  file system, not what the NAS disks physically hold.
 * Converted files are put in place the same way from the `temp` folder.
 * An existing destination is never overwritten. `.filesecure-partial` files left by an interrupted run are ignored by the scan (a warning is logged)
   and can safely be deleted.
@@ -200,7 +207,7 @@ merged into every pipeline:
 
 * `stages` and `folderActions`: the default entries are placed before the pipeline's own.
 * `scan`: merged key by key, the pipeline's keys win.
-* Other keys (`operation`, `conflict`, `setFileCreationDate`, `temp`): the default applies when the pipeline doesn't set the key.
+* Other keys (`operation`, `conflict`, `verify`, `setFileCreationDate`, `temp`): the default applies when the pipeline doesn't set the key.
 
 A pipeline with `useDefaults: false` ignores `defaults`.
 

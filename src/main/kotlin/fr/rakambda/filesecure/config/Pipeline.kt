@@ -16,6 +16,7 @@ data class Pipeline(
 	val stages: List<Stage> = emptyList(),
 	val operation: Operation = Operation.NONE,
 	val conflict: ConflictStrategy = ConflictStrategy.RENAME,
+	val verify: Verification = Verification.SIZE,
 	val setFileCreationDate: Boolean = false,
 	val temp: Path? = null,
 	val folderActions: List<FolderAction> = emptyList(),
@@ -50,4 +51,15 @@ enum class ConflictStrategy{
 	 */
 	RENAME,
 	SKIP,
+}
+
+/**
+ * How a file copied to its destination is checked before being renamed to its final name.
+ */
+enum class Verification{
+	SIZE,
+	/**
+	 * The SHA-256 of the source, computed while copying, is compared with the one of the copy read back.
+	 */
+	CHECKSUM,
 }

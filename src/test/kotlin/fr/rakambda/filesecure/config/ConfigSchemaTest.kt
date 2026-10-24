@@ -82,6 +82,8 @@ class ConfigSchemaTest{
 	fun listsEnumValues(){
 		assertThat(enumValues(definition("operation"))).containsExactlyElementsOf(Operation.entries.map { it.name })
 		assertThat(enumValues(definition("conflict"))).containsExactlyElementsOf(ConflictStrategy.entries.map { it.name })
+		assertThat(enumValues(definition("verify"))).containsExactlyElementsOf(Verification.entries.map { it.name })
+		assertThat(definition("verify")["default"].asText()).isEqualTo(Pipeline().verify.name)
 		assertThat(enumValues(definition("processor"))).containsExactlyElementsOf(ProcessorType.entries.map { it.name })
 		assertThat(resolve(definition("Convert")["properties"]["processors"]["items"])).isSameAs(definition("processor"))
 		listOf(definition("Convert")["properties"]["unhandled"], definition("RegexPath")["properties"]["unmatched"]).forEach {

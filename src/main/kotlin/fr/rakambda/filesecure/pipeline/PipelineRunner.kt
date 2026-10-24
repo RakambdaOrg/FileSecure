@@ -211,7 +211,7 @@ class PipelineRunner(private val environment: RunEnvironment){
 			val fileDate = if(pipeline.setFileCreationDate) item.metadata.nameDate ?: item.metadata.takenDate else null
 
 			if(conversion == null){
-				withContext(Dispatchers.IO) { fileOperations.transfer(operation, source, destination) }
+				withContext(Dispatchers.IO) { fileOperations.transfer(operation, source, destination, pipeline.verify) }
 				stats.record(if(operation == Operation.COPY) FileOutcome.COPIED else FileOutcome.MOVED)
 			}
 			else{
@@ -221,7 +221,7 @@ class PipelineRunner(private val environment: RunEnvironment){
 					return
 				}
 				try{
-					withContext(Dispatchers.IO) { fileOperations.commitConverted(operation, source, converted, destination, replaceSource) }
+					withContext(Dispatchers.IO) { fileOperations.commitConverted(operation, source, converted, destination, replaceSource, pipeline.verify) }
 				}
 				finally{
 					withContext(NonCancellable + Dispatchers.IO) { Files.deleteIfExists(converted) }

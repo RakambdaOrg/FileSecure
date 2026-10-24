@@ -5,6 +5,7 @@ import fr.rakambda.filesecure.config.Mapping
 import fr.rakambda.filesecure.config.Operation
 import fr.rakambda.filesecure.config.Pipeline
 import fr.rakambda.filesecure.config.ScanOptions
+import fr.rakambda.filesecure.config.Verification
 import fr.rakambda.filesecure.conversion.ConversionTools
 import fr.rakambda.filesecure.folder.DeleteChildren
 import fr.rakambda.filesecure.folder.DeleteIfEmpty
@@ -261,6 +262,30 @@ class PipelineRunnerTest{
 		assertThat(bad).exists()
 		assertThat(output.resolve("good1.txt")).exists()
 		assertThat(output.resolve("sub/good2.txt")).exists()
+	}
+
+	@Test
+	fun corruptedCopyWithChecksumIsCounted(){
+		val bad = file("bad.txt", "bad content")
+		file("good.txt")
+		val fileOperations = FileOperations(
+			false,
+			{ source, destination -> throw AtomicMoveNotSupportedException(source.toString(), destination.toString(), "test") },
+			{ _, _ -> error("SIZE copy used") },
+			{ source, partial ->
+				if(source == bad){
+					FileOperationsTest.flipMiddleByte(partial)
+				}
+			},
+		)
+
+		val stats = run(pipeline(Operation.MOVE).copy(verify = Verification.CHECKSUM), fileOperations = fileOperations)
+
+		assertThat(stats.describe(false)).isEqualTo("2 found, 1 moved, 1 errors")
+		assertThat(bad).hasContent("bad content")
+		assertThat(output.resolve("bad.txt")).doesNotExist()
+		assertThat(output.resolve("good.txt")).hasContent("good.txt")
+		assertThat(Files.list(output).use { it.count() }).describedAs("no partial file left").isEqualTo(1)
 	}
 
 	@Test

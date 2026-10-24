@@ -47,6 +47,7 @@ class ConfigurationTest{
 			        format: yyyy-MM-dd
 			    operation: move
 			    conflict: skip
+			    verify: checksum
 			    setFileCreationDate: true
 			    folderActions:
 			      - type: DeleteIfEmpty
@@ -71,6 +72,7 @@ class ConfigurationTest{
 		assertThat((pipeline.stages[3] as RenameWithDate).format).isEqualTo("yyyy-MM-dd")
 		assertThat(pipeline.operation).isEqualTo(Operation.MOVE)
 		assertThat(pipeline.conflict).isEqualTo(ConflictStrategy.SKIP)
+		assertThat(pipeline.verify).isEqualTo(Verification.CHECKSUM)
 		assertThat(pipeline.setFileCreationDate).isTrue()
 		assertThat(pipeline.folderActions).containsExactly(DeleteIfEmpty(2))
 	}
@@ -82,6 +84,7 @@ class ConfigurationTest{
 		assertThat(pipeline.enabled).isTrue()
 		assertThat(pipeline.operation).isEqualTo(Operation.NONE)
 		assertThat(pipeline.conflict).isEqualTo(ConflictStrategy.RENAME)
+		assertThat(pipeline.verify).isEqualTo(Verification.SIZE)
 		assertThat(pipeline.scan.maxDepth).isEqualTo(Int.MAX_VALUE)
 		assertThat(pipeline.stages).isEmpty()
 	}
@@ -307,6 +310,7 @@ class ConfigurationTest{
 			defaults:
 			  operation: MOVE
 			  conflict: SKIP
+			  verify: CHECKSUM
 			  setFileCreationDate: true
 			  temp: /temp
 			pipelines:
@@ -314,16 +318,19 @@ class ConfigurationTest{
 			  - mappings: [{input: /c, output: /d}]
 			    operation: COPY
 			    conflict: RENAME
+			    verify: SIZE
 			    setFileCreationDate: false
 			    temp: /other
 		""".trimIndent()).pipelines
 		
 		assertThat(pipelines[0].operation).isEqualTo(Operation.MOVE)
 		assertThat(pipelines[0].conflict).isEqualTo(ConflictStrategy.SKIP)
+		assertThat(pipelines[0].verify).isEqualTo(Verification.CHECKSUM)
 		assertThat(pipelines[0].setFileCreationDate).isTrue()
 		assertThat(pipelines[0].temp).isEqualTo(Path.of("/temp"))
 		assertThat(pipelines[1].operation).isEqualTo(Operation.COPY)
 		assertThat(pipelines[1].conflict).isEqualTo(ConflictStrategy.RENAME)
+		assertThat(pipelines[1].verify).isEqualTo(Verification.SIZE)
 		assertThat(pipelines[1].setFileCreationDate).isFalse()
 		assertThat(pipelines[1].temp).isEqualTo(Path.of("/other"))
 	}
