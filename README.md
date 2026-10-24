@@ -177,8 +177,8 @@ Moves and copies never leave an incomplete file under its final name, even if th
 | `entries` | **Mandatory**. Map of relative input path to relative output path. Paths can't be empty, absolute (`/a`, `D:/a`) or contain `..`, and each key can only appear once.       |
 | `paths`   | Rewrites applied separately to every key and every value: the first rule whose `regex` fully matches it is applied, `replacement` can use its groups (`$1`, `${name}`). Paths matching no rule are kept. |
 
-This moves `D:/base/in/LINE/alice_42` to `D:/base/out/Whatsapp/3/3/6/0/0/0/0/33600000001` and `D:/base/in/Whatsapp/33600000002` to
-`D:/base/out/Instagram/someone`, Whatsapp folders being split by digit:
+This moves `D:/base/in/LINE/alice_42` to `D:/base/out/Whatsapp/3/3/6/0/0/0/0/33600000001` and `D:/base/in/Whatsapp/3/3/6/0/0/0/0/33600000002` to
+`D:/base/out/Instagram/someone`: the rewrite applies to keys as well as values, splitting Whatsapp folders by digit:
 
 ```yaml
 mappingTable:
