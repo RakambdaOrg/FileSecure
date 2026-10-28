@@ -211,6 +211,49 @@ class ConfigurationTest{
 	}
 	
 	@Test
+	fun includesMappingsFileBeforeMappingTable(@TempDir directory: Path){
+		val file = directory.resolve("aliases.json")
+		file.writeText("""[{"input": "/aliases/in", "output": "/aliases/out"}]""")
+		val pipeline = Configuration.parse("""
+			pipelines:
+			  - mappings:
+			      - input: /x/in
+			        output: /x/out
+			    mappingsFile: '$file'
+			    mappingTable: {input: /in, output: /out, entries: {a: b}}
+		""".trimIndent()).pipelines.single()
+
+		assertThat(pipeline.mappings).containsExactly(
+			Mapping(Path.of("/x/in"), Path.of("/x/out")),
+			Mapping(Path.of("/aliases/in"), Path.of("/aliases/out")),
+			Mapping(Path.of("/in/a"), Path.of("/out/b")),
+		)
+	}
+
+	@Test
+	fun rejectsInvalidMappingsFiles(@TempDir directory: Path){
+		val notList = directory.resolve("map.yaml").apply { writeText("a: b") }
+		val empty = directory.resolve("empty.yaml").apply { writeText("") }
+		mapOf(
+			"'${directory.resolve("missing.json")}'" to "can't be read",
+			"'$notList'" to "must contain a list",
+			"12" to "non-empty text",
+		).forEach { (file, message) ->
+			assertThatThrownBy { Configuration.parse("pipelines:\n  - name: Chats\n    mappingsFile: $file") }
+				.describedAs(file)
+				.isInstanceOf(InvalidConfigurationException::class.java)
+				.hasMessageContaining("'mappingsFile' of pipeline 'Chats'")
+				.hasMessageContaining(message)
+		}
+		assertThatThrownBy { Configuration.parse("pipelines:\n  - mappingsFile: '$empty'") }
+			.isInstanceOf(InvalidConfigurationException::class.java)
+			.hasMessageContaining("has no mappings")
+		assertThatThrownBy { Configuration.parse("defaults:\n  mappingsFile: '$empty'\npipelines: []") }
+			.isInstanceOf(InvalidConfigurationException::class.java)
+			.hasMessageContaining("'mappingsFile' can't be set in 'defaults'")
+	}
+
+	@Test
 	fun rejectsInvalidMappingTables(){
 		mapOf(
 			"input: /in\n      entries: {a: b}" to "'output'",

@@ -2,12 +2,17 @@ package fr.rakambda.filesecure.config
 
 import com.fasterxml.jackson.databind.JsonNode
 import com.fasterxml.jackson.databind.node.ArrayNode
+import com.fasterxml.jackson.databind.node.MissingNode
 import com.fasterxml.jackson.databind.node.NullNode
 import com.fasterxml.jackson.databind.node.ObjectNode
+import java.io.IOException
+import java.nio.file.Files
+import java.nio.file.Path
 import java.util.regex.Pattern
 import java.util.regex.PatternSyntaxException
 
 internal const val MAPPING_TABLE = "mappingTable"
+internal const val MAPPINGS_FILE = "mappingsFile"
 private const val MAPPINGS = "mappings"
 internal val TABLE_KEYS = setOf("input", "output", "paths", "entries")
 internal val RULE_KEYS = setOf("regex", "replacement")
@@ -19,22 +24,49 @@ private val DRIVE = Regex("[A-Za-z]:.*")
  *
  * @throws InvalidConfigurationException If a `mappingTable` is invalid.
  */
-internal fun expandMappingTables(tree: ConfigurationTree){
+internal fun expandMappingTables(tree: ConfigurationTree) = forEachPipeline(tree) { pipeline, name ->
+	val table = pipeline.remove(MAPPING_TABLE) ?: return@forEachPipeline
+	val generated = MappingTable.read(table, name).expand()
+	val mappings = ownMappings(pipeline, name, MAPPING_TABLE)
+	generated.forEach { (input, output) -> mappings.addObject().put("input", input).put("output", output) }
+}
+
+/**
+ * Appends to the mappings of every pipeline the list of mappings read from its `mappingsFile` (YAML or JSON, an empty file meaning no mapping), so a
+ * tool can rewrite that file without touching the main configuration. A relative path is resolved against the working directory.
+ *
+ * @throws InvalidConfigurationException If a `mappingsFile` is invalid or can't be read.
+ */
+internal fun includeMappingsFiles(tree: ConfigurationTree) = forEachPipeline(tree) { pipeline, name ->
+	val node = pipeline.remove(MAPPINGS_FILE) ?: return@forEachPipeline
+	fun error(message: String) = InvalidConfigurationException("'$MAPPINGS_FILE' of pipeline '$name' $message")
+	val path = node.takeIf { it.isTextual }?.asText()?.takeIf { it.isNotEmpty() } ?: throw error("must be a non-empty text")
+	val included = try{
+		Files.newBufferedReader(Path.of(path)).use { ConfigurationTree.readYaml(it).root }
+	}
+	catch(e: IOException){
+		throw error("can't be read: $e")
+	}
+	when(included){
+		is MissingNode, is NullNode -> {}
+		is ArrayNode -> ownMappings(pipeline, name, MAPPINGS_FILE).addAll(included)
+		else -> throw error("must contain a list of mappings: $path")
+	}
+}
+
+private fun forEachPipeline(tree: ConfigurationTree, action: (ObjectNode, String) -> Unit){
 	val root = tree.root as? ObjectNode ?: return
 	(root.get("pipelines") as? ArrayNode)?.forEachIndexed { index, pipeline ->
-		if(pipeline !is ObjectNode){
-			return@forEachIndexed
+		if(pipeline is ObjectNode){
+			action(pipeline, pipeline.get("name")?.takeIf { it.isTextual }?.asText() ?: "#${index + 1}")
 		}
-		val table = pipeline.remove(MAPPING_TABLE) ?: return@forEachIndexed
-		val name = pipeline.get("name")?.takeIf { it.isTextual }?.asText() ?: "#${index + 1}"
-		val generated = MappingTable.read(table, name).expand()
-		val mappings = when(val own = pipeline.get(MAPPINGS)){
-			null, is NullNode -> pipeline.putArray(MAPPINGS)
-			is ArrayNode -> own
-			else -> throw InvalidConfigurationException("'$MAPPINGS' of pipeline '$name' must be a list to be combined with '$MAPPING_TABLE'")
-		}
-		generated.forEach { (input, output) -> mappings.addObject().put("input", input).put("output", output) }
 	}
+}
+
+private fun ownMappings(pipeline: ObjectNode, name: String, combinedWith: String): ArrayNode = when(val own = pipeline.get(MAPPINGS)){
+	null, is NullNode -> pipeline.putArray(MAPPINGS)
+	is ArrayNode -> own
+	else -> throw InvalidConfigurationException("'$MAPPINGS' of pipeline '$name' must be a list to be combined with '$combinedWith'")
 }
 
 private class MappingTable(

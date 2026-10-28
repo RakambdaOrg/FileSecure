@@ -39,7 +39,7 @@
           "default": true
         },
         "mappings": {
-          "description": "Mandatory unless mappingTable is set. Folders to process: a file at input/a/b.txt has output/a/b.txt as initial destination.",
+          "description": "Mandatory unless mappingTable or mappingsFile is set. Folders to process: a file at input/a/b.txt has output/a/b.txt as initial destination.",
           "type": "array",
           "items": {
             "$ref": "#/definitions/mapping"
@@ -47,6 +47,11 @@
         },
         "mappingTable": {
           "$ref": "#/definitions/mappingTable"
+        },
+        "mappingsFile": {
+          "description": "YAML or JSON file holding a list of mappings, added after the pipeline's own mappings. Meant to be rewritten by another tool without touching this configuration. A relative path is resolved against the working directory.",
+          "type": "string",
+          "minLength": 1
         },
         "scan": {
           "$ref": "#/definitions/scan"

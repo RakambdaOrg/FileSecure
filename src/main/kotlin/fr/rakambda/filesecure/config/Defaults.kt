@@ -8,7 +8,7 @@ import com.fasterxml.jackson.databind.node.ObjectNode
 
 private const val DEFAULTS = "defaults"
 internal const val USE_DEFAULTS = "useDefaults"
-internal val FORBIDDEN_KEYS = listOf("name", "mappings", MAPPING_TABLE, "enabled", USE_DEFAULTS)
+internal val FORBIDDEN_KEYS = listOf("name", "mappings", MAPPING_TABLE, MAPPINGS_FILE, "enabled", USE_DEFAULTS)
 private val LIST_KEYS = setOf("stages", "folderActions")
 private const val SCAN = "scan"
 

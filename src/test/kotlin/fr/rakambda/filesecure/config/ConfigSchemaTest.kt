@@ -37,14 +37,14 @@ class ConfigSchemaTest{
 
 	@Test
 	fun describesPipelineKeys(){
-		assertStrictObject(definition("pipeline"), parameters(Pipeline::class) + listOf(USE_DEFAULTS, MAPPING_TABLE))
+		assertStrictObject(definition("pipeline"), parameters(Pipeline::class) + listOf(USE_DEFAULTS, MAPPING_TABLE, MAPPINGS_FILE))
 		assertThat(required(definition("pipeline"))).isEmpty()
 	}
 
 	@Test
 	fun describesDefaultsKeys(){
 		val defaults = definition("defaults")
-		assertStrictObject(defaults, parameters(Pipeline::class) + listOf(USE_DEFAULTS, MAPPING_TABLE) - FORBIDDEN_KEYS.toSet())
+		assertStrictObject(defaults, parameters(Pipeline::class) + listOf(USE_DEFAULTS, MAPPING_TABLE, MAPPINGS_FILE) - FORBIDDEN_KEYS.toSet())
 		properties(defaults).forEach { (key, value) ->
 			assertThat(value["\$ref"].asText()).describedAs(key).isEqualTo("#/definitions/pipeline/properties/$key")
 		}

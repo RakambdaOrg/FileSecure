@@ -139,8 +139,9 @@ add the configuration file to it.
 |-----------------------|----------|---------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------|
 | `name`                | `#index` | Name used in logs.                                                                                                                                                                    |
 | `enabled`             | `true`   | Disabled pipelines are skipped.                                                                                                                                                       |
-| `mappings`            |          | **Mandatory** unless `mappingTable` is set. List of `{input: ..., output: ...}` folders. A file at `input/a/b.txt` has `output/a/b.txt` as initial destination.                 |
+| `mappings`            |          | **Mandatory** unless `mappingTable` or `mappingsFile` is set. List of `{input: ..., output: ...}` folders. A file at `input/a/b.txt` has `output/a/b.txt` as initial destination. |
 | `mappingTable`        | none     | Many mappings sharing base folders, see [mapping table](#mapping-table).                                                                                                             |
+| `mappingsFile`        | none     | File holding more mappings, rewritten by another tool, see [mappings file](#mappings-file).                                                                                          |
 | `scan.maxDepth`       | no limit | How many levels of sub-folders are visited, `1` only processes the files directly in `input`.                                                                                       |
 | `scan.skipHidden`     | `false`  | Ignore hidden files and folders.                                                                                                                                                      |
 | `scan.excludedFolders`| none     | Regexes matched against the folder path relative to `input`, using `/` as separator (e.g. `"a/b"`). Matching folders are not visited.                                                |
@@ -199,6 +200,19 @@ mappingTable:
 ```
 
 Keys are always read as text. Values read as numbers or booleans (`123`, `1e3`, `true`) are rejected and must be quoted.
+
+### Mappings file
+
+`mappingsFile` reads more mappings from a separate YAML or JSON file holding a list of `{input, output}`, added after the pipeline's own `mappings`
+and before those of its `mappingTable`. It lets another tool rewrite that file without touching the main configuration, which keeps its comments
+and anchors. A relative path is resolved against the working directory, an empty file holds no mapping. For example
+`mappingsFile: D:/config/aliases.json` with this file:
+
+```json
+[
+  {"input": "D:/base/LINE/alice_42", "output": "D:/base/Whatsapp/3/3/6/0/0/0/0/33600000001"}
+]
+```
 
 ### Defaults
 

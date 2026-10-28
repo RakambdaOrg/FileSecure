@@ -64,14 +64,15 @@ data class Configuration(
 		}
 		
 		/**
-		 * Reads a configuration: YAML anchors and aliases are resolved, `templates` is dropped, `defaults` is merged into the pipelines and
-		 * `mappingTable`s are expanded into mappings before binding.
+		 * Reads a configuration: YAML anchors and aliases are resolved, `templates` is dropped, `defaults` is merged into the pipelines,
+		 * `mappingsFile`s are read and `mappingTable`s are expanded into mappings before binding.
 		 */
 		fun parse(reader: Reader, json: Boolean = false): Configuration{
 			val mapper = if(json) jsonMapper else yamlMapper
 			val tree = if(json) ConfigurationTree(mapper.readTree(reader)) else ConfigurationTree.readYaml(reader)
 			(tree.root as? ObjectNode)?.remove(TEMPLATES)
 			applyDefaults(tree, mapper)
+			includeMappingsFiles(tree)
 			expandMappingTables(tree)
 			return tree.bind(mapper, tree.root, Configuration::class.java).also { it.validate() }
 		}
