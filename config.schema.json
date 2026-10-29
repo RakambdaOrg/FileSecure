@@ -1,0 +1,835 @@
+{
+  "$schema": "http://json-schema.org/draft-07/schema#",
+  "title": "FileSecure configuration",
+  "description": "Configuration of FileSecure 13: pipelines of stages moving, copying and converting files. See the README for details.",
+  "type": "object",
+  "properties": {
+    "pipelines": {
+      "description": "The pipelines, run one after another.",
+      "type": "array",
+      "items": {
+        "$ref": "#/definitions/pipeline"
+      }
+    },
+    "defaults": {
+      "$ref": "#/definitions/defaults"
+    },
+    "templates": {
+      "description": "Ignored by FileSecure, free content. The place to define YAML anchors (&name) reused elsewhere with aliases (*name) or merge keys (<<: *name)."
+    }
+  },
+  "additionalProperties": false,
+  "definitions": {
+    "pipeline": {
+      "description": "A sequence of stages applied to every file found in the inputs of its mappings.",
+      "type": "object",
+      "properties": {
+        "name": {
+          "description": "Name used in logs. Default: #index.",
+          "type": "string"
+        },
+        "enabled": {
+          "description": "Disabled pipelines are skipped.",
+          "type": "boolean",
+          "default": true
+        },
+        "useDefaults": {
+          "description": "Merge the top-level defaults into this pipeline.",
+          "type": "boolean",
+          "default": true
+        },
+        "mappings": {
+          "description": "Mandatory unless mappingTable or mappingsFile is set. Folders to process: a file at input/a/b.txt has output/a/b.txt as initial destination.",
+          "type": "array",
+          "items": {
+            "$ref": "#/definitions/mapping"
+          }
+        },
+        "mappingTable": {
+          "$ref": "#/definitions/mappingTable"
+        },
+        "mappingsFile": {
+          "description": "YAML or JSON file holding a list of mappings, added after the pipeline's own mappings. Meant to be rewritten by another tool without touching this configuration. A relative path is resolved against the working directory.",
+          "type": "string",
+          "minLength": 1
+        },
+        "scan": {
+          "$ref": "#/definitions/scan"
+        },
+        "stages": {
+          "description": "The stages, applied in the given order. Stages from defaults are placed before them.",
+          "type": "array",
+          "items": {
+            "$ref": "#/definitions/stage"
+          }
+        },
+        "operation": {
+          "$ref": "#/definitions/operation"
+        },
+        "conflict": {
+          "$ref": "#/definitions/conflict"
+        },
+        "verify": {
+          "$ref": "#/definitions/verify"
+        },
+        "setFileCreationDate": {
+          "description": "Set the creation and modification dates of the destination to the date found in the file name or in its metadata.",
+          "type": "boolean",
+          "default": false
+        },
+        "temp": {
+          "description": "Folder where conversions write before their result is moved to its destination. Default: the system temporary folder.",
+          "type": [
+            "string",
+            "null"
+          ]
+        },
+        "folderActions": {
+          "description": "Actions applied to every visited input folder once all files are processed, deepest folders first. Actions from defaults are placed before them.",
+          "type": "array",
+          "items": {
+            "$ref": "#/definitions/folderAction"
+          }
+        }
+      },
+      "additionalProperties": false
+    },
+    "defaults": {
+      "description": "Settings merged into every pipeline not having useDefaults: false. Their stages and folderActions are placed before the pipeline's own, scan is merged key by key (the pipeline's keys win), other keys apply when the pipeline doesn't set them.",
+      "type": [
+        "object",
+        "null"
+      ],
+      "properties": {
+        "scan": {
+          "$ref": "#/definitions/pipeline/properties/scan"
+        },
+        "stages": {
+          "$ref": "#/definitions/pipeline/properties/stages"
+        },
+        "operation": {
+          "$ref": "#/definitions/pipeline/properties/operation"
+        },
+        "conflict": {
+          "$ref": "#/definitions/pipeline/properties/conflict"
+        },
+        "verify": {
+          "$ref": "#/definitions/pipeline/properties/verify"
+        },
+        "setFileCreationDate": {
+          "$ref": "#/definitions/pipeline/properties/setFileCreationDate"
+        },
+        "temp": {
+          "$ref": "#/definitions/pipeline/properties/temp"
+        },
+        "folderActions": {
+          "$ref": "#/definitions/pipeline/properties/folderActions"
+        }
+      },
+      "additionalProperties": false
+    },
+    "mapping": {
+      "description": "An input folder and the output folder its files are sent to.",
+      "type": "object",
+      "properties": {
+        "input": {
+          "description": "Folder scanned for files.",
+          "type": "string"
+        },
+        "output": {
+          "description": "Folder the files are sent to, keeping their path relative to input.",
+          "type": "string"
+        }
+      },
+      "required": [
+        "input",
+        "output"
+      ],
+      "additionalProperties": false
+    },
+    "mappingTable": {
+      "description": "Many mappings sharing base folders: each entry key: value becomes the mapping {input: <input>/<key>, output: <output>/<value>}, added after the pipeline's own mappings.",
+      "type": "object",
+      "properties": {
+        "input": {
+          "description": "Base folder of the entry keys.",
+          "type": "string",
+          "minLength": 1
+        },
+        "output": {
+          "description": "Base folder of the entry values.",
+          "type": "string",
+          "minLength": 1
+        },
+        "paths": {
+          "description": "Rewrites applied separately to every key and every value: the first rule whose regex fully matches it is applied. Paths matching no rule are kept.",
+          "type": [
+            "array",
+            "null"
+          ],
+          "items": {
+            "$ref": "#/definitions/regexRule"
+          }
+        },
+        "entries": {
+          "description": "Map of relative input path to relative output path. Paths can't be empty, absolute or contain '..'. Values read as numbers or booleans must be quoted.",
+          "type": "object",
+          "propertyNames": {
+            "minLength": 1
+          },
+          "additionalProperties": {
+            "type": "string",
+            "minLength": 1
+          }
+        }
+      },
+      "required": [
+        "input",
+        "output",
+        "entries"
+      ],
+      "additionalProperties": false
+    },
+    "regexRule": {
+      "description": "Rewrites a path fully matching regex with replacement.",
+      "type": "object",
+      "properties": {
+        "regex": {
+          "description": "Java regex that must match the whole path, '/' being the separator. Best written between single quotes.",
+          "type": "string"
+        },
+        "replacement": {
+          "description": "Replacement where $1 or ${name} refer to the groups of the regex.",
+          "type": "string"
+        }
+      },
+      "required": [
+        "regex",
+        "replacement"
+      ],
+      "additionalProperties": false
+    },
+    "scan": {
+      "description": "How the input folders are visited.",
+      "type": "object",
+      "properties": {
+        "maxDepth": {
+          "description": "How many levels of sub-folders are visited, 1 only processes the files directly in input. Default: no limit.",
+          "type": "integer",
+          "minimum": 0
+        },
+        "skipHidden": {
+          "description": "Ignore hidden files and folders.",
+          "type": "boolean",
+          "default": false
+        },
+        "excludedFolders": {
+          "description": "Java regexes matched against the folder path relative to input, using '/' as separator (e.g. 'a/b'). Matching folders are not visited.",
+          "type": "array",
+          "items": {
+            "type": "string"
+          }
+        }
+      },
+      "additionalProperties": false
+    },
+    "operation": {
+      "description": "What is done with accepted files: COPY, MOVE, MOVE_WITH_COPY (copy then delete, for moves across file systems) or NONE (only logs what would be done). Case-insensitive for FileSecure.",
+      "type": "string",
+      "enum": [
+        "COPY",
+        "MOVE",
+        "MOVE_WITH_COPY",
+        "NONE"
+      ],
+      "default": "NONE"
+    },
+    "conflict": {
+      "description": "When the destination already exists: RENAME uses the first free name among 'name (1).ext', 'name (2).ext'...; SKIP leaves the file untouched. Case-insensitive for FileSecure.",
+      "type": "string",
+      "enum": [
+        "RENAME",
+        "SKIP"
+      ],
+      "default": "RENAME"
+    },
+    "verify": {
+      "description": "How files copied to their destination (COPY, MOVE_WITH_COPY, MOVE across file systems, converted files) are checked before being renamed to their final name: SIZE compares the sizes; CHECKSUM also compares the SHA-256 of the source, computed while copying, with the one of the copy read back (slower: the copy is forced to storage then read again). Atomic renames on the same file system aren't checked, nothing being copied. Case-insensitive for FileSecure.",
+      "type": "string",
+      "enum": [
+        "SIZE",
+        "CHECKSUM"
+      ],
+      "default": "SIZE"
+    },
+    "processor": {
+      "description": "VIDEO_TO_HEVC_MKV, VIDEO_TO_HEVC_MP4: H264, VP9, WMV3, MPEG2 videos into HEVC + AAC. VIDEO_TO_AV1_MKV: into AV1 + OPUS. MP3_TO_AAC: MP3 into AAC (.m4a). AUDIO_TO_OPUS: MP3, AAC into OPUS. TIFF_TO_JPG: TIFF into JPEG. PHOTO_TO_AVIF, PHOTO_TO_JXL: heic, tiff, jpg, raf into AVIF, JXL. Case-insensitive for FileSecure.",
+      "type": "string",
+      "enum": [
+        "VIDEO_TO_HEVC_MP4",
+        "VIDEO_TO_HEVC_MKV",
+        "VIDEO_TO_AV1_MKV",
+        "MP3_TO_AAC",
+        "AUDIO_TO_OPUS",
+        "TIFF_TO_JPG",
+        "PHOTO_TO_AVIF",
+        "PHOTO_TO_JXL"
+      ]
+    },
+    "pattern": {
+      "description": "Java regex. Best written between single quotes.",
+      "type": "string"
+    },
+    "zone": {
+      "description": "Time zone ID (e.g. Europe/Paris) of the date. Default: the system time zone.",
+      "type": [
+        "string",
+        "null"
+      ]
+    },
+    "locale": {
+      "description": "Language of the date format (month and day names).",
+      "type": "string",
+      "default": "en"
+    },
+    "stage": {
+      "description": "A stage, chosen by its type.",
+      "type": "object",
+      "properties": {
+        "type": {
+          "description": "Kind of stage.",
+          "type": "string",
+          "enum": [
+            "NameFilter",
+            "IfOlderThan",
+            "FolderCanonical",
+            "FolderPerDay",
+            "FolderPerWeek",
+            "FolderPerMonth",
+            "FolderPerYear",
+            "FolderUniquePerDay",
+            "Lowercase",
+            "NoRename",
+            "RenameWithDate",
+            "RenameWithDatePattern",
+            "RegexPath",
+            "Convert"
+          ]
+        }
+      },
+      "required": [
+        "type"
+      ],
+      "oneOf": [
+        {
+          "$ref": "#/definitions/NameFilter"
+        },
+        {
+          "$ref": "#/definitions/IfOlderThan"
+        },
+        {
+          "$ref": "#/definitions/FolderCanonical"
+        },
+        {
+          "$ref": "#/definitions/FolderPerDay"
+        },
+        {
+          "$ref": "#/definitions/FolderPerWeek"
+        },
+        {
+          "$ref": "#/definitions/FolderPerMonth"
+        },
+        {
+          "$ref": "#/definitions/FolderPerYear"
+        },
+        {
+          "$ref": "#/definitions/FolderUniquePerDay"
+        },
+        {
+          "$ref": "#/definitions/Lowercase"
+        },
+        {
+          "$ref": "#/definitions/NoRename"
+        },
+        {
+          "$ref": "#/definitions/RenameWithDate"
+        },
+        {
+          "$ref": "#/definitions/RenameWithDatePattern"
+        },
+        {
+          "$ref": "#/definitions/RegexPath"
+        },
+        {
+          "$ref": "#/definitions/Convert"
+        }
+      ]
+    },
+    "NameFilter": {
+      "description": "Keeps files whose name fully matches one of the includes (all files if empty) and none of the excludes.",
+      "type": "object",
+      "properties": {
+        "type": {
+          "const": "NameFilter"
+        },
+        "includes": {
+          "description": "Java regexes, the file name must fully match one of them. All files are included when empty.",
+          "type": "array",
+          "items": {
+            "$ref": "#/definitions/pattern"
+          }
+        },
+        "excludes": {
+          "description": "Java regexes, files whose name fully matches one of them are skipped.",
+          "type": "array",
+          "items": {
+            "$ref": "#/definitions/pattern"
+          }
+        }
+      },
+      "required": [
+        "type"
+      ],
+      "additionalProperties": false
+    },
+    "IfOlderThan": {
+      "description": "Keeps files whose date (from their name, metadata or last modification) is older than the offset.",
+      "type": "object",
+      "properties": {
+        "type": {
+          "const": "IfOlderThan"
+        },
+        "dayOffset": {
+          "description": "Days of the offset.",
+          "type": "integer",
+          "default": 0
+        },
+        "minuteOffset": {
+          "description": "Minutes added to the offset.",
+          "type": "integer",
+          "default": 0
+        }
+      },
+      "required": [
+        "type"
+      ],
+      "additionalProperties": false
+    },
+    "FolderCanonical": {
+      "description": "Prefixes the destination with one folder per character of its first path element: 'going/file' with 3 becomes 'g/o/i/going/file'.",
+      "type": "object",
+      "properties": {
+        "type": {
+          "const": "FolderCanonical"
+        },
+        "elementCount": {
+          "description": "How many characters, and so folders, are used.",
+          "type": "integer"
+        }
+      },
+      "required": [
+        "type",
+        "elementCount"
+      ],
+      "additionalProperties": false
+    },
+    "FolderPerDay": {
+      "description": "Prefixes the destination with yyyy/MM/dd/ from the file date.",
+      "type": "object",
+      "properties": {
+        "type": {
+          "const": "FolderPerDay"
+        }
+      },
+      "required": [
+        "type"
+      ],
+      "additionalProperties": false
+    },
+    "FolderPerWeek": {
+      "description": "Prefixes the destination with yyyy/MM/w/ from the file date, w being the week of the month.",
+      "type": "object",
+      "properties": {
+        "type": {
+          "const": "FolderPerWeek"
+        }
+      },
+      "required": [
+        "type"
+      ],
+      "additionalProperties": false
+    },
+    "FolderPerMonth": {
+      "description": "Prefixes the destination with yyyy/MM/ from the file date.",
+      "type": "object",
+      "properties": {
+        "type": {
+          "const": "FolderPerMonth"
+        }
+      },
+      "required": [
+        "type"
+      ],
+      "additionalProperties": false
+    },
+    "FolderPerYear": {
+      "description": "Prefixes the destination with yyyy/ from the file date.",
+      "type": "object",
+      "properties": {
+        "type": {
+          "const": "FolderPerYear"
+        }
+      },
+      "required": [
+        "type"
+      ],
+      "additionalProperties": false
+    },
+    "FolderUniquePerDay": {
+      "description": "Prefixes the destination with yyyy-MM-dd/ from the file date.",
+      "type": "object",
+      "properties": {
+        "type": {
+          "const": "FolderUniquePerDay"
+        }
+      },
+      "required": [
+        "type"
+      ],
+      "additionalProperties": false
+    },
+    "Lowercase": {
+      "description": "Lowercases the destination folders (not the file name).",
+      "type": "object",
+      "properties": {
+        "type": {
+          "const": "Lowercase"
+        }
+      },
+      "required": [
+        "type"
+      ],
+      "additionalProperties": false
+    },
+    "NoRename": {
+      "description": "Restores the original file name.",
+      "type": "object",
+      "properties": {
+        "type": {
+          "const": "NoRename"
+        }
+      },
+      "required": [
+        "type"
+      ],
+      "additionalProperties": false
+    },
+    "RenameWithDate": {
+      "description": "Renames the file with its date (from its name, metadata or last modification), keeping its extension.",
+      "type": "object",
+      "properties": {
+        "type": {
+          "const": "RenameWithDate"
+        },
+        "format": {
+          "description": "Java DateTimeFormatter pattern of the new name.",
+          "type": "string",
+          "default": "yyyy-MM-dd HH.mm.ss"
+        },
+        "locale": {
+          "$ref": "#/definitions/locale"
+        },
+        "filters": {
+          "description": "When set, only files whose original name fully matches one of these Java regexes are renamed.",
+          "type": "array",
+          "items": {
+            "$ref": "#/definitions/pattern"
+          }
+        },
+        "zone": {
+          "$ref": "#/definitions/zone"
+        }
+      },
+      "required": [
+        "type"
+      ],
+      "additionalProperties": false
+    },
+    "RenameWithDatePattern": {
+      "description": "Renames the file with a date read from its current name, keeping its extension. Files not matching regex are skipped.",
+      "type": "object",
+      "properties": {
+        "type": {
+          "const": "RenameWithDatePattern"
+        },
+        "regex": {
+          "description": "Java regex fully matching the name, defining the named groups date and time.",
+          "type": "string"
+        },
+        "dateFormat": {
+          "description": "Java DateTimeFormatter pattern of the date group.",
+          "type": "string"
+        },
+        "timeFormat": {
+          "description": "Java DateTimeFormatter pattern of the time group.",
+          "type": "string"
+        },
+        "outputFormat": {
+          "description": "Java DateTimeFormatter pattern of the new name.",
+          "type": "string",
+          "default": "yyyy-MM-dd HH.mm.ss"
+        },
+        "locale": {
+          "$ref": "#/definitions/locale"
+        },
+        "zone": {
+          "$ref": "#/definitions/zone"
+        }
+      },
+      "required": [
+        "type",
+        "regex",
+        "dateFormat",
+        "timeFormat"
+      ],
+      "additionalProperties": false
+    },
+    "RegexPath": {
+      "description": "Rewrites the destination relative to the output folder (with '/' separators) with the first rule whose regex fully matches it.",
+      "type": "object",
+      "properties": {
+        "type": {
+          "const": "RegexPath"
+        },
+        "rules": {
+          "description": "Rules tried in order.",
+          "type": "array",
+          "items": {
+            "$ref": "#/definitions/regexRule"
+          }
+        },
+        "unmatched": {
+          "description": "What happens to files matching no rule: SKIP leaves them untouched, PASS keeps them unchanged in the pipeline. Case-insensitive for FileSecure.",
+          "type": "string",
+          "enum": [
+            "PASS",
+            "SKIP"
+          ],
+          "default": "SKIP"
+        }
+      },
+      "required": [
+        "type",
+        "rules"
+      ],
+      "additionalProperties": false
+    },
+    "Convert": {
+      "description": "Plans the conversion of media files with the first processor able to handle them, the destination extension changes accordingly. Only one per pipeline.",
+      "type": "object",
+      "properties": {
+        "type": {
+          "const": "Convert"
+        },
+        "processors": {
+          "description": "Processors tried in order. Default: VIDEO_TO_HEVC_MKV, MP3_TO_AAC, TIFF_TO_JPG.",
+          "type": "array",
+          "items": {
+            "$ref": "#/definitions/processor"
+          }
+        },
+        "extensions": {
+          "description": "Only files with these extensions are probed. Default: mp4, mov, mkv, avi, tiff, mp3, m4a, m4v, ts, m2ts, mts, heic, jpg, raf.",
+          "type": "array",
+          "items": {
+            "type": "string"
+          }
+        },
+        "filters": {
+          "description": "Probe filters, all must pass.",
+          "type": "array",
+          "items": {
+            "$ref": "#/definitions/probeFilter"
+          }
+        },
+        "unhandled": {
+          "description": "What happens to files that won't be converted: SKIP leaves them untouched, PASS lets them continue through the pipeline unchanged. Case-insensitive for FileSecure.",
+          "type": "string",
+          "enum": [
+            "PASS",
+            "SKIP"
+          ],
+          "default": "SKIP"
+        },
+        "cache": {
+          "description": "H2 database file remembering files that can't be converted, so they aren't probed again on the next runs.",
+          "type": [
+            "string",
+            "null"
+          ]
+        }
+      },
+      "required": [
+        "type"
+      ],
+      "additionalProperties": false
+    },
+    "probeFilter": {
+      "description": "A filter on the media probed by ffprobe, chosen by its type. Files that couldn't be probed never pass.",
+      "type": "object",
+      "properties": {
+        "type": {
+          "description": "Kind of filter.",
+          "type": "string",
+          "enum": [
+            "LengthMoreThan",
+            "LengthLessThan"
+          ]
+        }
+      },
+      "required": [
+        "type"
+      ],
+      "oneOf": [
+        {
+          "$ref": "#/definitions/LengthMoreThan"
+        },
+        {
+          "$ref": "#/definitions/LengthLessThan"
+        }
+      ]
+    },
+    "LengthMoreThan": {
+      "description": "Keeps media lasting at least value seconds.",
+      "type": "object",
+      "properties": {
+        "type": {
+          "const": "LengthMoreThan"
+        },
+        "value": {
+          "description": "Duration in seconds.",
+          "type": "integer"
+        }
+      },
+      "required": [
+        "type",
+        "value"
+      ],
+      "additionalProperties": false
+    },
+    "LengthLessThan": {
+      "description": "Keeps media lasting at most value seconds.",
+      "type": "object",
+      "properties": {
+        "type": {
+          "const": "LengthLessThan"
+        },
+        "value": {
+          "description": "Duration in seconds.",
+          "type": "integer"
+        }
+      },
+      "required": [
+        "type",
+        "value"
+      ],
+      "additionalProperties": false
+    },
+    "folderAction": {
+      "description": "An action applied to every visited input folder, chosen by its type.",
+      "type": "object",
+      "properties": {
+        "type": {
+          "description": "Kind of folder action.",
+          "type": "string",
+          "enum": [
+            "DeleteIfEmpty",
+            "DeleteIfOlderThan",
+            "DeleteChildren"
+          ]
+        }
+      },
+      "required": [
+        "type"
+      ],
+      "oneOf": [
+        {
+          "$ref": "#/definitions/DeleteIfEmpty"
+        },
+        {
+          "$ref": "#/definitions/DeleteIfOlderThan"
+        },
+        {
+          "$ref": "#/definitions/DeleteChildren"
+        }
+      ]
+    },
+    "DeleteIfEmpty": {
+      "description": "Deletes empty folders at least depth levels below the input folder.",
+      "type": "object",
+      "properties": {
+        "type": {
+          "const": "DeleteIfEmpty"
+        },
+        "depth": {
+          "$ref": "#/definitions/depth"
+        }
+      },
+      "required": [
+        "type"
+      ],
+      "additionalProperties": false
+    },
+    "DeleteIfOlderThan": {
+      "description": "Deletes empty folders at least depth levels below the input folder, last modified before the offset.",
+      "type": "object",
+      "properties": {
+        "type": {
+          "const": "DeleteIfOlderThan"
+        },
+        "dayOffset": {
+          "description": "Days of the offset.",
+          "type": "integer",
+          "default": 0
+        },
+        "minuteOffset": {
+          "description": "Minutes added to the offset.",
+          "type": "integer",
+          "default": 0
+        },
+        "depth": {
+          "$ref": "#/definitions/depth"
+        }
+      },
+      "required": [
+        "type"
+      ],
+      "additionalProperties": false
+    },
+    "DeleteChildren": {
+      "description": "Deletes the given files in every folder.",
+      "type": "object",
+      "properties": {
+        "type": {
+          "const": "DeleteChildren"
+        },
+        "names": {
+          "description": "Names of the files to delete, e.g. [Thumbs.db, desktop.ini].",
+          "type": "array",
+          "items": {
+            "type": "string"
+          }
+        }
+      },
+      "required": [
+        "type"
+      ],
+      "additionalProperties": false
+    },
+    "depth": {
+      "description": "Minimum depth of the deleted folders below the input folder, the input itself being at depth 0.",
+      "type": "integer",
+      "default": 1
+    }
+  }
+}

@@ -260,6 +260,9 @@ ij_java_wrap_comments = false
 ij_java_wrap_first_method_in_call_chain = false
 ij_java_wrap_long_lines = false
 
+[*.kt]
+indent_style = tab
+
 [{*.ad,*.adoc,*.asciidoc,.asciidoctorconfig}]
 ij_asciidoc_blank_lines_after_header = 1
 ij_asciidoc_blank_lines_keep_after_header = 1

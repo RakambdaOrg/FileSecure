@@ -1,57 +1,433 @@
 # FileSecure
 
-Backup files from a base directory to a target directory.
+Moves, backs up and converts files through pipelines of stages.
 
-To work this program needs a configuration file that will be passed as a parameter. The config file file must be in a json format. Here's an example:
+Every file found in the input folder of a pipeline goes through its stages in order. A stage can filter the file out, change its destination (folders, name)
+or plan its conversion into another format. Once all stages accepted the file, the conversion (if any) runs and the file is copied or moved to its
+destination.
 
-```json
-{
-  "rules": [
-    {
-      "mappings": [
-        {
-          "input": "/Input",
-          "output": "/Output"
-        }
-      ]
-    },
-    {
-      "operation": "move",
-      "depth": 2,
-      "filters": [
-        ".*\\.png",
-        ".*\\.jpg"
-      ],
-      "excludes": [
-        ".*\\.ini"
-      ],
-      "mappings": [
-        {
-          "input": "/Input2",
-          "output": "/Output2"
-        }
-      ]
-    }
-  ]
-}
+Version 13 is a rewrite in Kotlin merging FileSecure and [MediaConverter](https://github.com/RakambdaOrg/MediaConverter). Its configuration format is
+new, see [migrating](#migrating-from-previous-versions).
+
+## Running
+
+```shell
+java -jar FileSecure.jar -c config.yaml
 ```
 
-Each backup to do is an object in the array called "mappings". Two fields are mandatory:
+| Flag                       | Description                                                                                                   |
+|----------------------------|---------------------------------------------------------------------------------------------------------------|
+| `-c`, `--config`           | **Mandatory**. Path to the configuration file.                                                               |
+| `--dry`                    | Dry run: everything is logged, no file is copied, moved, converted or deleted (the `Convert` cache is still updated). |
+| `-t`, `--threads`          | How many conversions run in parallel. Default 1.                                                              |
+| `-w`, `--workers`          | How many files are processed in parallel (scanning, probing, copying). Default 8.                            |
+| `-ft`, `--ffmpeg-threads`  | Value of ffmpeg's `-threads` option for each conversion.                                                      |
+| `--ffmpeg`                 | Folder containing the `ffmpeg` executable. Uses the `PATH` if not set.                                       |
+| `--ffprobe`                | Folder containing the `ffprobe` executable. Uses the `PATH` if not set.                                      |
+| `--magick`                 | ImageMagick executable used for photo conversions. Default `magick`.                                         |
+| `--affinity`               | Windows only. Mask of the CPU cores conversions run on, e.g. `7` for cores 1, 2 and 3.                       |
+| `--progress/--no-progress` | Show progress bars. Enabled by default when running in a terminal.                                            |
 
-* input
-* output
+While running, these commands can be typed in the console:
 
-The input folder is backed up recursively up to a certain depth.
+* `p`: pause, conversions already running finish but nothing new starts.
+* `r`: resume.
+* `q`: quit, running conversions are stopped and their temporary files removed. Stopping the process (Ctrl+C, `SIGTERM`) does the same.
 
-Other fields are optionals:
+At the end of the run (also when stopped with `q`), a summary is logged: one line per enabled pipeline, then a total. Counters that are zero are
+omitted, except `found` and `errors`. The lines are logged at `ERROR` level when there are errors, `INFO` otherwise.
 
-* operation: define the strategy to copy files. Can be "copy", "move" or "none" (just displays in standard output). Default is none.
-* depth: The number of sub-folders to visit.
-* filters: Regexes to apply to determine which files to keep. By default, all files are kept.
-* excludes: Regexes to apply to determine which files to not process. By default, none are excluded.
-* folderExcludes: Regexes to apply to determine which folders to not process. This is a relative path from the `input` folder, separated by `/`. By default, none are excluded.
-* skipIfAlreadyExists: If destination file already exists, skip it instead of generating a unique name for it.
-* fileTransformers: Transformations to apply when moving the file.
-    * TODO describe options
-* folderTransformers: Transformations to apply to input folders after operation has been applied.
-    * TODO describe options
+```text
+Pipeline 'Photos': 123 found, 100 moved, 3 converted, 10 skipped by stages, 5 destination exists, 2 errors
+Pipeline 'Backup': 40 found, 38 copied, 2 already in place, 0 errors
+Total: 163 found, 100 moved, 38 copied, 3 converted, 10 skipped by stages, 5 destination exists, 2 already in place, 2 errors
+```
+
+* `moved`, `copied`, `converted`: files transferred (`MOVE_WITH_COPY` counts as moved, a converted file counts as converted whatever the operation).
+  During a dry run, they read `would move`, `would copy` and `would convert`, and the lines are marked `(dry run)`. With the `NONE` operation, accepted
+  files are counted as `would process (operation NONE)`.
+* `skipped by stages`: filtered out by a stage.
+* `destination exists`: skipped because of the `SKIP` conflict strategy.
+* `already in place`: the file is already at its destination.
+* `errors`: files that failed (stage, conversion, transfer, setting dates), failed folder actions, and pipelines that failed as a whole (e.g. a `Convert`
+  cache that can't be opened). A missing input folder is only a warning.
+
+Each counted error is logged once at `ERROR` level when it happens. Problems the run works around (missing input folder, file that can't be probed,
+unreadable metadata, time zone lookup failure) are logged at `WARN` level and aren't counted.
+
+Exit codes:
+
+| Code | Meaning                                                                    |
+|------|----------------------------------------------------------------------------|
+| 0    | Success.                                                                   |
+| 1    | Invalid command line or configuration.                                     |
+| 2    | At least one error happened during the run.                                |
+| 3    | Stopped with the `q` command (takes precedence over 2).                    |
+
+When the process is stopped by Ctrl+C or `SIGTERM`, running conversions are stopped and the summary is still logged, but the exit code is the one set by
+the JVM for the signal (usually 130 for Ctrl+C and 143 for `SIGTERM`).
+
+Conversions need [ffmpeg](https://ffmpeg.org) (video and audio) and [ImageMagick](https://imagemagick.org) (photos) to be installed.
+
+## Configuration
+
+The configuration is a YAML file. Unknown keys are rejected to catch typos. Files whose name ends with `.json` are read as JSON instead
+(comments and trailing commas allowed), with the same keys.
+
+```yaml
+# Settings shared by all pipelines, see below
+defaults:
+  operation: MOVE
+
+pipelines:
+  # Back up photos from the phone, sorted by month and renamed with their date
+  - name: Phone photos
+    mappings:
+      - input: /phone/DCIM
+        output: /backup/Photos
+    scan:
+      skipHidden: true
+      excludedFolders: ['\.thumbnails']
+    stages:
+      - type: NameFilter
+        includes: ['.*\.jpg', '.*\.mp4']
+      - type: IfOlderThan
+        dayOffset: 2
+      - type: FolderPerMonth
+      - type: RenameWithDate
+    setFileCreationDate: true
+    folderActions:
+      - type: DeleteIfEmpty
+
+  # Convert videos to HEVC in place, files that can't be converted are left untouched
+  - name: Videos
+    mappings:
+      - input: /media/Videos
+        output: /media/Videos
+    stages:
+      - type: Convert
+        processors: [VIDEO_TO_HEVC_MKV]
+        cache: /data/videos.db
+    temp: /data/temp
+```
+
+Regexes are best written between single quotes: backslashes are kept as is, and values starting with characters such as `[`, `*` or `{` would
+otherwise be read as YAML syntax. A single quote inside is written `''`.
+
+### Editor support
+
+[`config.schema.json`](config.schema.json) is a JSON schema of the configuration, giving autocompletion, documentation on hover and validation in
+editors. With VS Code's YAML extension (and other editors using the YAML language server), reference it in the first line of the configuration:
+
+```text
+# yaml-language-server: $schema=https://raw.githubusercontent.com/RakambdaOrg/FileSecure/main/config.schema.json
+```
+
+A local path to the file works too (`$schema=../FileSecure/config.schema.json`, relative to the configuration). In IntelliJ IDEA, the schema can be
+mapped in *Settings → Languages & Frameworks → Schemas and DTDs → JSON Schema Mappings*: add a mapping to `config.schema.json` (schema version 7) and
+add the configuration file to it.
+
+* Enum values are proposed in uppercase. FileSecure also accepts them in lowercase, but the editor flags them.
+* The schema describes the file as written, before `defaults` are merged and `mappingTable` is expanded. Some rules are only checked when FileSecure
+  loads the file (a pipeline without mappings, several `Convert` stages, invalid regexes...).
+* `<<` merge keys are a YAML 1.1 feature: editors not resolving them while validating may flag `<<` or report keys coming from the merged template
+  as missing. FileSecure resolves them.
+
+### Pipeline
+
+| Key                   | Default  | Description                                                                                                                                                                           |
+|-----------------------|----------|---------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------|
+| `name`                | `#index` | Name used in logs.                                                                                                                                                                    |
+| `enabled`             | `true`   | Disabled pipelines are skipped.                                                                                                                                                       |
+| `mappings`            |          | **Mandatory** unless `mappingTable` or `mappingsFile` is set. List of `{input: ..., output: ...}` folders. A file at `input/a/b.txt` has `output/a/b.txt` as initial destination. |
+| `mappingTable`        | none     | Many mappings sharing base folders, see [mapping table](#mapping-table).                                                                                                             |
+| `mappingsFile`        | none     | File holding more mappings, rewritten by another tool, see [mappings file](#mappings-file).                                                                                          |
+| `scan.maxDepth`       | no limit | How many levels of sub-folders are visited, `1` only processes the files directly in `input`.                                                                                       |
+| `scan.skipHidden`     | `false`  | Ignore hidden files and folders.                                                                                                                                                      |
+| `scan.excludedFolders`| none     | Regexes matched against the folder path relative to `input`, using `/` as separator (e.g. `"a/b"`). Matching folders are not visited.                                                |
+| `stages`              | none     | The [stages](#stages), applied in the given order.                                                                                                                                    |
+| `operation`           | `NONE`   | What is done with accepted files: `COPY`, `MOVE`, `MOVE_WITH_COPY` (copy then delete, for moves across file systems) or `NONE` (only logs what would be done).                     |
+| `conflict`            | `RENAME` | When the destination already exists: `RENAME` uses the first free name among `name (1).ext`, `name (2).ext`...; `SKIP` leaves the file untouched.                                  |
+| `verify`              | `SIZE`   | How files copied to their destination are checked: `SIZE` compares the sizes, `CHECKSUM` also compares their SHA-256, see below.                                                   |
+| `setFileCreationDate` | `false`  | Set the creation and modification dates of the destination to the date found in the file name or in its metadata.                                                                  |
+| `temp`                | system   | Folder where conversions write before their result is moved to its destination.                                                                                                     |
+| `folderActions`       | none     | [Actions](#folder-actions) applied to every visited input folder once all files are processed, deepest folders first.                                                              |
+| `useDefaults`         | `true`   | Merge the [defaults](#defaults) into this pipeline.                                                                                                                                |
+
+Enum values are case-insensitive. A file whose destination is itself (input and output being the same folder) is left untouched, unless it is converted.
+
+Moves and copies never leave an incomplete file under its final name, even if the run is interrupted (network drop, crash):
+
+* `MOVE` first tries an atomic rename, which succeeds when the source and the destination are on the same disk.
+* Otherwise (different disks, e.g. a local disk and a NAS), and for `COPY` and `MOVE_WITH_COPY`, the file is copied to `.<name>.filesecure-partial` in
+  the destination folder, checked against the source (see `verify`), then renamed to its final name. The source is only deleted after that, and
+  is left untouched if anything fails.
+* With `verify: SIZE` (default), the size of the copy is compared with the one of the source. With `verify: CHECKSUM`, the SHA-256 of the source
+  is computed while it is read for the copy, the copy is forced to storage then read back, and both SHA-256 must match (sizes are compared too). It
+  catches corruptions that keep the size, at the cost of reading the copy again. The copy keeps the dates of the source, but not its other
+  attributes (permissions, Windows file attributes) that `SIZE` copies where the file systems allow it. Reading back right after writing may be
+  served from the cache of the operating system or of the SMB client: it proves the data went through the copy correctly up to the destination
+  file system, not what the NAS disks physically hold.
+* Converted files are put in place the same way from the `temp` folder.
+* An existing destination is never overwritten. `.filesecure-partial` files left by an interrupted run are ignored by the scan (a warning is logged)
+  and can safely be deleted.
+
+### Mapping table
+
+`mappingTable` writes many mappings between two base folders as a table, one line per mapping. Each entry `key: value` becomes the mapping
+`{input: <input>/<key>, output: <output>/<value>}`, in the order of the entries, after the pipeline's own `mappings` (which can then be omitted).
+
+| Key       | Description                                                                                                                                                                  |
+|-----------|------------------------------------------------------------------------------------------------------------------------------------------------------------------------------|
+| `input`   | **Mandatory**. Base folder of the entry keys.                                                                                                                               |
+| `output`  | **Mandatory**. Base folder of the entry values.                                                                                                                             |
+| `entries` | **Mandatory**. Map of relative input path to relative output path. Paths can't be empty, absolute (`/a`, `D:/a`) or contain `..`, and each key can only appear once.       |
+| `paths`   | Rewrites applied separately to every key and every value: the first rule whose `regex` fully matches it is applied, `replacement` can use its groups (`$1`, `${name}`). Paths matching no rule are kept. |
+
+This moves `D:/base/in/LINE/alice_42` to `D:/base/out/Whatsapp/3/3/6/0/0/0/0/33600000001` and `D:/base/in/Whatsapp/3/3/6/0/0/0/0/33600000002` to
+`D:/base/out/Instagram/someone`: the rewrite applies to keys as well as values, splitting Whatsapp folders by digit:
+
+```yaml
+mappingTable:
+  input: D:/base/in
+  output: D:/base/out
+  paths:
+    - regex: 'Whatsapp/(\d)(\d)(\d)(\d)(\d)(\d)(\d)(\d*)'
+      replacement: 'Whatsapp/$1/$2/$3/$4/$5/$6/$7/$1$2$3$4$5$6$7$8'
+  entries:
+    LINE/alice_42: Whatsapp/33600000001
+    Whatsapp/33600000002: Instagram/someone
+```
+
+Keys are always read as text. Values read as numbers or booleans (`123`, `1e3`, `true`) are rejected and must be quoted.
+
+### Mappings file
+
+`mappingsFile` reads more mappings from a separate YAML or JSON file holding a list of `{input, output}`, added after the pipeline's own `mappings`
+and before those of its `mappingTable`. It lets another tool rewrite that file without touching the main configuration, which keeps its comments
+and anchors. A relative path is resolved against the working directory, an empty file holds no mapping. For example
+`mappingsFile: D:/config/aliases.json` with this file:
+
+```json
+[
+  {"input": "D:/base/LINE/alice_42", "output": "D:/base/Whatsapp/3/3/6/0/0/0/0/33600000001"}
+]
+```
+
+### Defaults
+
+`defaults` holds settings written once for all pipelines. It accepts the same keys as a pipeline, except `name`, `enabled`, `mappings` and `mappingTable`, and is
+merged into every pipeline:
+
+* `stages` and `folderActions`: the default entries are placed before the pipeline's own.
+* `scan`: merged key by key, the pipeline's keys win.
+* Other keys (`operation`, `conflict`, `verify`, `setFileCreationDate`, `temp`): the default applies when the pipeline doesn't set the key.
+
+A pipeline with `useDefaults: false` ignores `defaults`.
+
+```yaml
+defaults:
+  scan:
+    skipHidden: true
+  stages:
+    - type: NameFilter
+      excludes: ['.*\.db', '.*\.ini']
+  operation: MOVE
+
+pipelines:
+  # Excludes .db and .ini files, then sorts by year, moved
+  - mappings:
+      - input: /in/Photos
+        output: /out/Photos
+    stages:
+      - type: FolderPerYear
+  # Excludes .db, .ini and .txt files (several NameFilter stages exclude every pattern of each), copied
+  - mappings:
+      - input: /in/Notes
+        output: /out/Notes
+    stages:
+      - type: NameFilter
+        excludes: ['.*\.txt']
+    operation: COPY
+  # Not affected by defaults: copies hidden files too, nothing excluded, operation NONE
+  - mappings:
+      - input: /in/Other
+        output: /out/Other
+    useDefaults: false
+```
+
+### Anchors and templates
+
+YAML anchors (`&name`) and aliases (`*name`) repeat a value written once, and the merge key `<<` copies the keys of a mapping, the keys written
+next to it taking precedence. Anchors are best defined under the top-level `templates` key, which FileSecure ignores and whose content is free.
+
+```yaml
+templates:
+  cleanup: &cleanup
+    - type: DeleteChildren
+      names: [Thumbs.db]
+    - type: DeleteIfEmpty
+  archive: &archive
+    stages:
+      - type: FolderPerYear
+    conflict: SKIP
+    folderActions: *cleanup
+
+pipelines:
+  - <<: *archive
+    mappings:
+      - input: /in/Scans
+        output: /archive/Scans
+  # Same as above, with conflict: RENAME
+  - <<: *archive
+    mappings:
+      - input: /in/Letters
+        output: /archive/Letters
+    conflict: RENAME
+  - mappings:
+      - input: /in/Photos
+        output: /out/Photos
+    folderActions: *cleanup
+```
+
+`<<` replaces whole keys: a pipeline merging `*archive` and writing its own `stages` doesn't get the template's stages. Unlike `defaults`, anchors
+are a YAML feature and don't exist in JSON configurations.
+
+### Stages
+
+Several stages use **the date of the file**: the date found in its name (e.g. `2023-05-12 10.15.12.jpg`, `IMG_20230512_101512.jpg`), otherwise the
+date it was taken from its metadata (EXIF, QuickTime, MP4, XMP), otherwise its last modification date. Time zones of geotagged media are found
+offline from their GPS coordinates: metadata dates without a time zone are read in the time zone of the place the file was taken, or in the
+system time zone when the file isn't geotagged or no time zone is found there.
+
+| Type                    | Parameters                                                                                       | Description                                                                                                                                                                                                                  |
+|-------------------------|--------------------------------------------------------------------------------------------------|------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------|
+| `NameFilter`            | `includes`, `excludes`: regex lists                                                              | Keeps files whose name fully matches one of the `includes` (all if empty) and none of the `excludes`.                                                                                                                       |
+| `IfOlderThan`           | `dayOffset`, `minuteOffset`                                                                      | Keeps files whose date is older than the offset.                                                                                                                                                                            |
+| `FolderPerYear`         |                                                                                                  | Prefixes the destination with `yyyy/` from the file date.                                                                                                                                                                   |
+| `FolderPerMonth`        |                                                                                                  | Prefixes the destination with `yyyy/MM/`.                                                                                                                                                                                   |
+| `FolderPerWeek`         |                                                                                                  | Prefixes the destination with `yyyy/MM/w/`, `w` being the week of the month.                                                                                                                                               |
+| `FolderPerDay`          |                                                                                                  | Prefixes the destination with `yyyy/MM/dd/`.                                                                                                                                                                                |
+| `FolderUniquePerDay`    |                                                                                                  | Prefixes the destination with `yyyy-MM-dd/`.                                                                                                                                                                                |
+| `FolderCanonical`       | `elementCount` (mandatory)                                                                       | Prefixes the destination with one folder per character of its first path element: `going/file` with `3` becomes `g/o/i/going/file`.                                                                                       |
+| `Lowercase`             |                                                                                                  | Lowercases the destination folders (not the file name).                                                                                                                                                                     |
+| `NoRename`              |                                                                                                  | Restores the original file name.                                                                                                                                                                                            |
+| `RenameWithDate`        | `format` (`yyyy-MM-dd HH.mm.ss`), `locale` (`en`), `zone`, `filters`                           | Renames the file with its date, keeping its extension. When `filters` (regexes) is set, only files whose original name matches one of them are renamed.                                                                   |
+| `RenameWithDatePattern` | `regex`, `dateFormat`, `timeFormat` (mandatory), `outputFormat`, `locale`, `zone`               | Renames the file with a date read from its current name. `regex` must define the groups `date` and `time`, parsed with `dateFormat` and `timeFormat`. Files not matching are skipped.                                     |
+| `RegexPath`             | `rules` (mandatory), `unmatched` (`SKIP`)                                                        | Rewrites the destination relative to the output folder (with `/` separators) with the first rule whose `regex` fully matches it, `replacement` can use its groups (`$1`, `${name}`). Files matching no rule are skipped, or kept unchanged with `unmatched: PASS`. See the example below. |
+| `Convert`               | see below                                                                                        | Plans the conversion of media files.                                                                                                                                                                                        |
+
+`RegexPath` can replace many similar mappings. This moves `DropOff/Bob - 123/a.jpg` to `Whatsapp/123/a.jpg` and `DropOff/bob_tw/a.jpg` to
+`Twitter/bob_tw/a.jpg`, other files are left in place:
+
+```yaml
+mappings:
+  - input: /data/DropOff
+    output: /data
+stages:
+  - type: RegexPath
+    rules:
+      - regex: '(?:[^/]* - )?(\d+)/(.*)'
+        replacement: Whatsapp/$1/$2
+      - regex: '(bob_tw|carol_tw)/(.*)'
+        replacement: Twitter/$1/$2
+operation: MOVE
+```
+
+### Convert
+
+The file is probed with ffprobe and converted by the first processor able to handle it. Its destination extension changes accordingly, so stages placed
+after `Convert` see the new extension. The conversion only runs once all stages accepted the file and its destination is free, so with
+`conflict: SKIP` already converted files are not converted again.
+
+With `MOVE` or `MOVE_WITH_COPY` the source is sent to the trash (deleted where there is none) once the converted file is in place. When the destination
+is the source itself, the source is replaced. A pipeline can contain only one `Convert` stage.
+
+| Key          | Default                                      | Description                                                                                                                                                       |
+|--------------|----------------------------------------------|-------------------------------------------------------------------------------------------------------------------------------------------------------------------|
+| `processors` | `VIDEO_TO_HEVC_MKV`, `MP3_TO_AAC`, `TIFF_TO_JPG` | Processors tried in order.                                                                                                                                    |
+| `extensions` | `mp4`, `mov`, `mkv`, `avi`, `tiff`, `mp3`, `m4a`, `m4v`, `ts`, `m2ts`, `mts`, `heic`, `jpg`, `raf` | Only files with these extensions are probed.                                                                    |
+| `filters`    | none                                         | Probe filters, all must pass: `{type: LengthMoreThan, value: seconds}`, `{type: LengthLessThan, value: seconds}`.                                     |
+| `unhandled`  | `SKIP`                                       | What happens to files that won't be converted: `SKIP` leaves them untouched, `PASS` lets them continue through the pipeline unchanged (e.g. to back them up too). |
+| `cache`      | none                                         | H2 database file remembering files that can't be converted, so they aren't probed again on the next runs (until they are modified).                               |
+
+| Processor           | Converts                                                    | Into                                                                            |
+|---------------------|-------------------------------------------------------------|---------------------------------------------------------------------------------|
+| `VIDEO_TO_HEVC_MKV` | `H264`, `VP9`, `WMV3`, `MPEG2` videos, HEVC with another tag or container | `HEVC` + `AAC` in `MKV` (HEVC sources are only remuxed)                     |
+| `VIDEO_TO_HEVC_MP4` | same                                                        | `HEVC` + `AAC` in `MP4`                                                         |
+| `VIDEO_TO_AV1_MKV`  | `H264`, `HEVC`, `VP9`, `WMV3`, `MPEG2` videos               | `AV1` + `OPUS` in `MKV`                                                         |
+| `MP3_TO_AAC`        | `MP3` audio files                                           | `AAC` (`.m4a`)                                                                  |
+| `AUDIO_TO_OPUS`     | `MP3`, `AAC` audio files                                    | `OPUS`                                                                          |
+| `TIFF_TO_JPG`       | `TIFF` images                                               | `JPEG`                                                                          |
+| `PHOTO_TO_AVIF`     | `heic`, `tiff`, `jpg`, `raf` files                          | `AVIF`                                                                          |
+| `PHOTO_TO_JXL`      | `heic`, `tiff`, `jpg`, `raf` files                          | `JXL`                                                                           |
+
+### Folder actions
+
+| Type                | Parameters                                   | Description                                                                                  |
+|---------------------|----------------------------------------------|----------------------------------------------------------------------------------------------|
+| `DeleteIfEmpty`     | `depth` (`1`)                                | Deletes empty folders at least `depth` levels below the input folder (the input is level 0). |
+| `DeleteIfOlderThan` | `dayOffset`, `minuteOffset`, `depth` (`1`)   | Same, for empty folders last modified before the offset.                                     |
+| `DeleteChildren`    | `names`                                      | Deletes the given files in every folder, e.g. `["Thumbs.db", "desktop.ini"]`.                |
+
+## Migrating from previous versions
+
+A converter turns FileSecure 12 and MediaConverter configuration files into the new YAML format. Several files can be given, they are merged into one
+configuration, one pipeline per old rule or conversion:
+
+```shell
+java -cp FileSecure.jar fr.rakambda.filesecure.migration.MigrateConfigCommandKt FileSecure.json MediaConverter.json -o config.yaml
+# or from the sources
+./gradlew migrateConfig --args="/absolute/path/FileSecure.json -o /absolute/path/config.yaml"
+```
+
+Without `-o` the result is printed. An existing output file is only replaced with `--force`. The result is checked against the new format before
+being written, and warnings list what couldn't be converted exactly (unknown keys that were already ignored, transformer order, behaviour
+changes): review them before using the new configuration, ideally with a `--dry` run first.
+
+The tables below detail the conversion.
+
+### FileSecure 12
+
+Each `rule` becomes a pipeline, with the same `mappings` and `operation`.
+
+| FileSecure 12                         | FileSecure 13                                                                      |
+|---------------------------------------|------------------------------------------------------------------------------------|
+| `filters`, `excludes`                 | A `NameFilter` stage with `includes`, `excludes`                                   |
+| `folderExcludes`                      | `scan.excludedFolders`                                                             |
+| `maxDepth`                            | `scan.maxDepth`                                                                    |
+| `skipIfAlreadyExists: true`           | `conflict: SKIP`                                                                   |
+| `fileTransformers`                    | `stages`, without the `Transformer` suffix (`FolderPerYearTransformer` → `FolderPerYear`), `name` becomes `type` |
+| `folderTransformers`                  | `folderActions`, same renaming                                                     |
+| `setFileCreationDate`                 | unchanged                                                                          |
+
+Transformers used to run in an unspecified order (their priority was never applied). Stages run in the order they are written, list them in the order
+you expect: filters first, then folders, then renaming.
+
+### MediaConverter
+
+Each `conversion` becomes a pipeline with a `Convert` stage.
+
+| MediaConverter                 | FileSecure 13                                                                     |
+|--------------------------------|-----------------------------------------------------------------------------------|
+| `input`, `output`              | A mapping                                                                         |
+| `deleteInput: true` (default)  | `operation: MOVE`                                                                 |
+| `deleteInput: false`           | `operation: COPY` and `conflict: SKIP`                                            |
+| `database`                     | `cache` of the `Convert` stage, existing database files can be reused             |
+| `temp`                         | `temp`                                                                            |
+| `excluded`                     | `scan.excludedFolders` (regexes, so escape special characters such as `.`)       |
+| `processors`, `extensions`     | Same keys in the `Convert` stage                                                  |
+| `filters` (`name`, `value`)    | `filters` of the `Convert` stage, `name` becomes `type`                           |
+| hidden files were ignored      | `scan: {skipHidden: true}`                                                        |
+| `-ft`, `--ffmpegThreads`       | `-ft`, `--ffmpeg-threads`                                                         |
+
+### Behaviour changes
+
+* Only regular files are processed. Previously, folders beyond `maxDepth` were copied or moved as if they were files.
+* `DeleteIfEmpty` never deletes the input folder itself with its default depth (it used to, unlike `DeleteIfOlderThan`).
+* Files without extension no longer abort the whole mapping when their destination already exists.
+* With MediaConverter, an input file could be left in the temporary folder if its output already existed. The source is now only removed once the
+  converted file is in place.
+* The Windows CPU affinity was never applied by MediaConverter (a process id was used as a process handle), it now is.
+* An error on one file or folder is logged and the others are still processed.
+* Pipelines run one after another (MediaConverter ran its conversions in parallel), `--threads` conversions run in parallel within a pipeline.

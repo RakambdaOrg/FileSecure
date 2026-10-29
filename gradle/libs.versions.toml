@@ -1,52 +1,66 @@
 [versions]
+kotlin-version = "2.4.21"
+coroutines-version = "1.11.0"
 slf4j-version = "2.0.20"
 log4j2-version = "2.26.1"
-picocli-version = "4.7.7"
+kotlin-logging-version = "8.0.4"
+clikt-version = "5.1.0"
 jackson-version = "2.22.4"
-jspecify-version = "1.0.1"
 metadata-extractor-version = "2.22.0"
 pointlocation6709-version = "5.0.1"
-unirest-version = "4.0.0-RC2"
-lombok-version = "1.18.48"
+timeshape-version = "2026b.29"
+protobuf-version = "4.36.2"
+jaffree-version = "2024.08.29"
+progressbar-version = "0.10.2"
+h2-version = "2.5.252"
+jna-version = "5.19.1"
 junitVersion = "6.1.3"
 assertj-core-version = "3.27.7"
-mockito-version = "5.24.0"
+json-schema-validator-version = "3.0.8"
 
 shadow-version = "9.6.1"
 jib-version = "3.5.4"
 
 [libraries]
+coroutines = { group = "org.jetbrains.kotlinx", name = "kotlinx-coroutines-core", version.ref = "coroutines-version" }
 slf4j = { group = "org.slf4j", name = "slf4j-api", version.ref = "slf4j-version" }
-log4j2Bom = { group = "org.apache.logging.log4j", name = "log4j-bom", version.ref = "log4j2-version"}
+log4j2Bom = { group = "org.apache.logging.log4j", name = "log4j-bom", version.ref = "log4j2-version" }
 log4j2-core = { group = "org.apache.logging.log4j", name = "log4j-core" }
 log4j2-slf4j = { group = "org.apache.logging.log4j", name = "log4j-slf4j2-impl" }
 log4j2-json = { group = "org.apache.logging.log4j", name = "log4j-layout-template-json" }
-picocli = { group = "info.picocli", name = "picocli", version.ref = "picocli-version" }
-jacksonBom = { group = "com.fasterxml.jackson", name = "jackson-bom", version.ref = "jackson-version"}
+kotlinLogging = { group = "io.github.oshai", name = "kotlin-logging-jvm", version.ref = "kotlin-logging-version" }
+clikt = { group = "com.github.ajalt.clikt", name = "clikt", version.ref = "clikt-version" }
+jacksonBom = { group = "com.fasterxml.jackson", name = "jackson-bom", version.ref = "jackson-version" }
 jackson-core = { group = "com.fasterxml.jackson.core", name = "jackson-core" }
 jackson-annotations = { group = "com.fasterxml.jackson.core", name = "jackson-annotations" }
 jackson-databind = { group = "com.fasterxml.jackson.core", name = "jackson-databind" }
-jSpecify = { group = "org.jspecify", name = "jspecify", version.ref = "jspecify-version" }
+jackson-kotlin = { group = "com.fasterxml.jackson.module", name = "jackson-module-kotlin" }
+jackson-yaml = { group = "com.fasterxml.jackson.dataformat", name = "jackson-dataformat-yaml" }
 metadataExtractor = { group = "com.drewnoakes", name = "metadata-extractor", version.ref = "metadata-extractor-version" }
 pointLocation = { group = "us.fatehi", name = "pointlocation6709", version.ref = "pointlocation6709-version" }
-unirest = { group = "com.konghq", name = "unirest-java", version.ref = "unirest-version" }
-lombok = { group = "org.projectlombok", name = "lombok", version.ref = "lombok-version" }
-junitBom = { group = "org.junit", name = "junit-bom", version.ref = "junitVersion"}
+timeshape = { group = "net.iakovlev", name = "timeshape", version.ref = "timeshape-version" }
+protobuf = { group = "com.google.protobuf", name = "protobuf-java", version.ref = "protobuf-version" }
+jaffree = { group = "com.github.kokorin.jaffree", name = "jaffree", version.ref = "jaffree-version" }
+progressbar = { group = "me.tongfei", name = "progressbar", version.ref = "progressbar-version" }
+h2 = { group = "com.h2database", name = "h2", version.ref = "h2-version" }
+jna = { group = "net.java.dev.jna", name = "jna", version.ref = "jna-version" }
+jna-platform = { group = "net.java.dev.jna", name = "jna-platform", version.ref = "jna-version" }
+junitBom = { group = "org.junit", name = "junit-bom", version.ref = "junitVersion" }
 junit-api = { group = "org.junit.jupiter", name = "junit-jupiter-api" }
 junit-params = { group = "org.junit.jupiter", name = "junit-jupiter-params" }
 junit-engine = { group = "org.junit.jupiter", name = "junit-jupiter-engine" }
 junitPlatformLauncher = { group = "org.junit.platform", name = "junit-platform-launcher" }
 assertj-core = { group = "org.assertj", name = "assertj-core", version.ref = "assertj-core-version" }
-mockito-core = { group = "org.mockito", name = "mockito-core", version.ref = "mockito-version" }
-mockito-junit = { group = "org.mockito", name = "mockito-junit-jupiter", version.ref = "mockito-version" }
+jsonSchemaValidator = { group = "com.networknt", name = "json-schema-validator", version.ref = "json-schema-validator-version" }
 
 [bundles]
-jackson = ["jackson-core", "jackson-annotations", "jackson-databind"]
+jackson = ["jackson-core", "jackson-annotations", "jackson-databind", "jackson-kotlin", "jackson-yaml"]
 log4j2 = ["log4j2-core", "log4j2-slf4j", "log4j2-json"]
+jna = ["jna", "jna-platform"]
 junit = ["junit-api", "junit-params", "junit-engine"]
-mockito = ["mockito-core", "mockito-junit"]
 assertj = ["assertj-core"]
 
 [plugins]
+kotlin = { id = "org.jetbrains.kotlin.jvm", version.ref = "kotlin-version" }
 shadow = { id = "com.gradleup.shadow", version.ref = "shadow-version" }
 jib = { id = "com.google.cloud.tools.jib", version.ref = "jib-version" }

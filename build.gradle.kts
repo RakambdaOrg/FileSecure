@@ -1,9 +1,10 @@
 import com.github.jengelman.gradle.plugins.shadow.transformers.Log4j2PluginsCacheFileTransformer
+import org.jetbrains.kotlin.gradle.dsl.JvmTarget
 
 plugins {
     idea
-    java
     application
+    alias(libs.plugins.kotlin)
     alias(libs.plugins.shadow)
     alias(libs.plugins.jib)
 }
@@ -11,66 +12,78 @@ plugins {
 group = "fr.rakambda"
 description = "FileSecure"
 
+val javaVersion = providers.gradleProperty("javaVersion").get()
+
 dependencies {
     implementation(platform(libs.jacksonBom))
     implementation(platform(libs.log4j2Bom))
 
+    implementation(libs.coroutines)
+
     implementation(libs.slf4j)
     implementation(libs.bundles.log4j2)
+    implementation(libs.kotlinLogging)
 
-    implementation(libs.unirest)
+    implementation(libs.clikt)
+    implementation(libs.bundles.jackson)
+
     implementation(libs.pointLocation)
+    implementation(libs.timeshape)
+    constraints {
+        implementation(libs.protobuf) {
+            because("Versions before 4.36 call sun.misc.Unsafe memory methods, printing JVM warnings since JDK 24")
+        }
+    }
     implementation(libs.metadataExtractor)
 
-    implementation(libs.picocli)
-    implementation(libs.bundles.jackson)
-    implementation(libs.jSpecify)
+    implementation(libs.jaffree)
+    implementation(libs.progressbar)
+    implementation(libs.h2)
+    implementation(libs.bundles.jna)
 
-    compileOnly(libs.lombok)
-
-    annotationProcessor(libs.lombok)
-
-    implementation(platform(libs.junitBom))
+    testImplementation(platform(libs.junitBom))
     testImplementation(libs.bundles.junit)
     testRuntimeOnly(libs.junitPlatformLauncher)
-
     testImplementation(libs.bundles.assertj)
-    testImplementation(libs.bundles.mockito)
-
-    testCompileOnly(libs.lombok)
-
-    testAnnotationProcessor(libs.lombok)
+    testImplementation(libs.jsonSchemaValidator)
 }
 
 repositories {
     mavenCentral()
 }
 
+java {
+    sourceCompatibility = JavaVersion.toVersion(javaVersion)
+    targetCompatibility = JavaVersion.toVersion(javaVersion)
+}
+
+kotlin {
+    compilerOptions {
+        jvmTarget.set(JvmTarget.fromTarget(javaVersion))
+    }
+}
+
 tasks {
-    processResources {
-        expand(project.properties)
-    }
-
-    compileJava {
-        val moduleName: String by project
-        inputs.property("moduleName", moduleName)
-
-        options.encoding = "UTF-8"
-        options.isDeprecation = true
-    }
-
-    compileTestJava {
-        options.encoding = "UTF-8"
-    }
-
     test {
         useJUnitPlatform()
+        jvmArgs("--enable-native-access=ALL-UNNAMED")
+        inputs.files("config.schema.json", "README.md").withPathSensitivity(PathSensitivity.RELATIVE)
     }
 
     jar {
         manifest {
             attributes["Multi-Release"] = "true"
+            // The zstd library used by timeshape loads a native library
+            attributes["Enable-Native-Access"] = "ALL-UNNAMED"
         }
+    }
+
+    register<JavaExec>("migrateConfig") {
+        group = "application"
+        description = "Converts FileSecure 12 and MediaConverter configurations, pass the files with --args"
+        classpath = sourceSets["main"].runtimeClasspath
+        mainClass.set("fr.rakambda.filesecure.migration.MigrateConfigCommandKt")
+        jvmArgs("--enable-native-access=ALL-UNNAMED")
     }
 
     shadowJar {
@@ -84,16 +97,7 @@ tasks {
 }
 
 application {
-    val moduleName: String by project
-    val className: String by project
-
-    mainModule.set(moduleName)
-    mainClass.set(className)
-}
-
-java {
-    sourceCompatibility = JavaVersion.VERSION_26
-    targetCompatibility = JavaVersion.VERSION_26
+    mainClass.set(providers.gradleProperty("className"))
 }
 
 jib {
@@ -111,6 +115,7 @@ jib {
         }
     }
     container {
+        jvmFlags = listOf("--enable-native-access=ALL-UNNAMED")
         creationTime.set("USE_CURRENT_TIMESTAMP")
         user = "1027:100"
     }

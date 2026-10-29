@@ -1,0 +1,560 @@
+package fr.rakambda.filesecure.config
+
+import com.fasterxml.jackson.databind.exc.UnrecognizedPropertyException
+import fr.rakambda.filesecure.conversion.LengthMoreThan
+import fr.rakambda.filesecure.conversion.ProcessorType
+import fr.rakambda.filesecure.folder.DeleteChildren
+import fr.rakambda.filesecure.folder.DeleteIfEmpty
+import fr.rakambda.filesecure.stage.Convert
+import fr.rakambda.filesecure.stage.FolderPerMonth
+import fr.rakambda.filesecure.stage.FolderPerYear
+import fr.rakambda.filesecure.stage.NameFilter
+import fr.rakambda.filesecure.stage.RenameWithDate
+import fr.rakambda.filesecure.stage.UnhandledStrategy
+import org.assertj.core.api.Assertions.assertThat
+import org.assertj.core.api.Assertions.assertThatThrownBy
+import org.junit.jupiter.api.Test
+import org.junit.jupiter.api.io.TempDir
+import java.nio.file.Path
+import kotlin.io.path.writeText
+
+class ConfigurationTest{
+	@Test
+	fun parsesFullPipeline(){
+		val configuration = Configuration.parse("""
+			# Comments are allowed
+			pipelines:
+			  - name: Phone
+			    mappings:
+			      - input: /in
+			        output: /out
+			    scan:
+			      maxDepth: 3
+			      skipHidden: true
+			      excludedFolders: ['\.thumbnails']
+			    stages:
+			      - type: NameFilter
+			        includes: ['.*\.mp4']
+			      - type: Convert
+			        processors: [video_to_hevc_mkv]
+			        filters:
+			          - type: LengthMoreThan
+			            value: 50
+			        unhandled: PASS
+			        cache: /db/cache
+			      - type: FolderPerMonth
+			      - type: RenameWithDate
+			        format: yyyy-MM-dd
+			    operation: move
+			    conflict: skip
+			    verify: checksum
+			    setFileCreationDate: true
+			    folderActions:
+			      - type: DeleteIfEmpty
+			        depth: 2
+		""".trimIndent())
+
+		val pipeline = configuration.pipelines.single()
+		assertThat(pipeline.name).isEqualTo("Phone")
+		assertThat(pipeline.mappings).containsExactly(Mapping(Path.of("/in"), Path.of("/out")))
+		assertThat(pipeline.scan.maxDepth).isEqualTo(3)
+		assertThat(pipeline.scan.skipHidden).isTrue()
+		assertThat(pipeline.scan.excludedFolders.single().pattern()).isEqualTo("""\.thumbnails""")
+		assertThat(pipeline.stages).hasSize(4)
+		assertThat(pipeline.stages[0]).isInstanceOf(NameFilter::class.java)
+		assertThat(pipeline.stages[1]).isEqualTo(Convert(
+			processors = listOf(ProcessorType.VIDEO_TO_HEVC_MKV),
+			filters = listOf(LengthMoreThan(50)),
+			unhandled = UnhandledStrategy.PASS,
+			cache = Path.of("/db/cache"),
+		))
+		assertThat(pipeline.stages[2]).isInstanceOf(FolderPerMonth::class.java)
+		assertThat((pipeline.stages[3] as RenameWithDate).format).isEqualTo("yyyy-MM-dd")
+		assertThat(pipeline.operation).isEqualTo(Operation.MOVE)
+		assertThat(pipeline.conflict).isEqualTo(ConflictStrategy.SKIP)
+		assertThat(pipeline.verify).isEqualTo(Verification.CHECKSUM)
+		assertThat(pipeline.setFileCreationDate).isTrue()
+		assertThat(pipeline.folderActions).containsExactly(DeleteIfEmpty(2))
+	}
+
+	@Test
+	fun appliesDefaults(){
+		val pipeline = Configuration.parse("""{"pipelines": [{"mappings": [{"input": "/in", "output": "/out"}]}]}""").pipelines.single()
+
+		assertThat(pipeline.enabled).isTrue()
+		assertThat(pipeline.operation).isEqualTo(Operation.NONE)
+		assertThat(pipeline.conflict).isEqualTo(ConflictStrategy.RENAME)
+		assertThat(pipeline.verify).isEqualTo(Verification.SIZE)
+		assertThat(pipeline.scan.maxDepth).isEqualTo(Int.MAX_VALUE)
+		assertThat(pipeline.stages).isEmpty()
+	}
+
+	@Test
+	fun readsWindowsPathsOnAnyPlatform(){
+		val pipeline = Configuration.parse("""{"pipelines": [{"mappings": [{"input": "D:/Documents/In", "output": "//nas.home/share"}]}]}""").pipelines.single()
+		
+		assertThat(pipeline.mappings.single().input).isEqualTo(Path.of("D:/Documents/In"))
+	}
+	
+	@Test
+	fun loadsJsonFilesWithJsonParser(@TempDir directory: Path){
+		val file = directory.resolve("config.json")
+		file.writeText("{\n\t// Tabs, comments and trailing commas\n\t\"pipelines\": [{\"mappings\": [{\"input\": \"/in\", \"output\": \"/out\"}],}],\n}")
+		
+		assertThat(Configuration.load(file).pipelines).hasSize(1)
+	}
+	
+	@Test
+	fun loadsYamlFiles(@TempDir directory: Path){
+		val file = directory.resolve("config.yaml")
+		file.writeText("pipelines:\n  - mappings:\n      - input: D:/in\n        output: //nas/out\n")
+		
+		assertThat(Configuration.load(file).pipelines.single().mappings.single().output).isEqualTo(Path.of("//nas/out"))
+	}
+	
+	@Test
+	fun rejectsUnknownProperties(){
+		assertThatThrownBy { Configuration.parse("""{"pipelines": [{"mappings": [], "depth": 2}]}""") }
+			.isInstanceOf(UnrecognizedPropertyException::class.java)
+	}
+
+	@Test
+	fun rejectsSeveralConversions(){
+		assertThatThrownBy {
+			Configuration.parse("""{"pipelines": [{"mappings": [{"input": "/in", "output": "/out"}], "stages": [{"type": "Convert"}, {"type": "Convert"}]}]}""")
+		}.isInstanceOf(InvalidConfigurationException::class.java)
+	}
+
+	@Test
+	fun rejectsPipelineWithoutMapping(){
+		assertThatThrownBy { Configuration.parse("""{"pipelines": [{}]}""") }
+			.isInstanceOf(InvalidConfigurationException::class.java)
+	}
+
+	@Test
+	fun expandsMappingTableAfterOwnMappings(){
+		val pipeline = Configuration.parse("""
+			pipelines:
+			  - name: Chats
+			    mappings:
+			      - input: /x/in
+			        output: /x/out
+			    mappingTable:
+			      input: /base/in/
+			      output: /base/out
+			      paths:
+			        - regex: 'Whatsapp/(\d)(\d)(\d)(\d)(\d)(\d)(\d)(\d*)'
+			          replacement: 'Whatsapp/$1/$2/$3/$4/$5/$6/$7/$1$2$3$4$5$6$7$8'
+			        - regex: 'Other/(?<user>.*)'
+			          replacement: 'Renamed/${'$'}{user}'
+			      entries:
+			        LINE/alice_42: Whatsapp/33600000001
+			        Whatsapp/33600000002: Instagram/someone
+			        Whatsapp/123: Other/bob
+			        0600000003: Telegram/0600000003
+		""".trimIndent()).pipelines.single()
+		
+		assertThat(pipeline.mappings).containsExactly(
+			Mapping(Path.of("/x/in"), Path.of("/x/out")),
+			Mapping(Path.of("/base/in/LINE/alice_42"), Path.of("/base/out/Whatsapp/3/3/6/0/0/0/0/33600000001")),
+			Mapping(Path.of("/base/in/Whatsapp/3/3/6/0/0/0/0/33600000002"), Path.of("/base/out/Instagram/someone")),
+			Mapping(Path.of("/base/in/Whatsapp/123"), Path.of("/base/out/Renamed/bob")),
+			Mapping(Path.of("/base/in/0600000003"), Path.of("/base/out/Telegram/0600000003")),
+		)
+	}
+	
+	@Test
+	fun expandsMappingTableWithoutMappingsOnWindowsAndUncBases(){
+		val pipeline = Configuration.parse("""
+			pipelines:
+			  - mappingTable:
+			      input: D:/base/in
+			      output: //nas.home/share
+			      entries:
+			        a/b: c
+			        d: e/f
+		""".trimIndent()).pipelines.single()
+		
+		assertThat(pipeline.mappings).containsExactly(
+			Mapping(Path.of("D:/base/in/a/b"), Path.of("//nas.home/share/c")),
+			Mapping(Path.of("D:/base/in/d"), Path.of("//nas.home/share/e/f")),
+		)
+	}
+	
+	@Test
+	fun expandsMappingTableEntriesFromTemplates(){
+		val pipelines = Configuration.parse("""
+			templates:
+			  table: &table
+			    a: b
+			    c: d
+			pipelines:
+			  - mappingTable:
+			      input: /in
+			      output: /out
+			      entries: *table
+			  - mappingTable:
+			      input: /in2
+			      output: /out2
+			      entries: *table
+		""".trimIndent()).pipelines
+		
+		assertThat(pipelines[0].mappings).containsExactly(Mapping(Path.of("/in/a"), Path.of("/out/b")), Mapping(Path.of("/in/c"), Path.of("/out/d")))
+		assertThat(pipelines[1].mappings).containsExactly(Mapping(Path.of("/in2/a"), Path.of("/out2/b")), Mapping(Path.of("/in2/c"), Path.of("/out2/d")))
+	}
+	
+	@Test
+	fun expandsMappingTableInJson(){
+		val pipeline = Configuration.parse("""{"pipelines": [{"mappingTable": {"input": "/in", "output": "/out", "entries": {"a": "b"}}}]}""", json = true).pipelines.single()
+		
+		assertThat(pipeline.mappings).containsExactly(Mapping(Path.of("/in/a"), Path.of("/out/b")))
+	}
+	
+	@Test
+	fun includesMappingsFileBeforeMappingTable(@TempDir directory: Path){
+		val file = directory.resolve("aliases.json")
+		file.writeText("""[{"input": "/aliases/in", "output": "/aliases/out"}]""")
+		val pipeline = Configuration.parse("""
+			pipelines:
+			  - mappings:
+			      - input: /x/in
+			        output: /x/out
+			    mappingsFile: '$file'
+			    mappingTable: {input: /in, output: /out, entries: {a: b}}
+		""".trimIndent()).pipelines.single()
+
+		assertThat(pipeline.mappings).containsExactly(
+			Mapping(Path.of("/x/in"), Path.of("/x/out")),
+			Mapping(Path.of("/aliases/in"), Path.of("/aliases/out")),
+			Mapping(Path.of("/in/a"), Path.of("/out/b")),
+		)
+	}
+
+	@Test
+	fun rejectsInvalidMappingsFiles(@TempDir directory: Path){
+		val notList = directory.resolve("map.yaml").apply { writeText("a: b") }
+		val empty = directory.resolve("empty.yaml").apply { writeText("") }
+		mapOf(
+			"'${directory.resolve("missing.json")}'" to "can't be read",
+			"'$notList'" to "must contain a list",
+			"12" to "non-empty text",
+		).forEach { (file, message) ->
+			assertThatThrownBy { Configuration.parse("pipelines:\n  - name: Chats\n    mappingsFile: $file") }
+				.describedAs(file)
+				.isInstanceOf(InvalidConfigurationException::class.java)
+				.hasMessageContaining("'mappingsFile' of pipeline 'Chats'")
+				.hasMessageContaining(message)
+		}
+		assertThatThrownBy { Configuration.parse("pipelines:\n  - mappingsFile: '$empty'") }
+			.isInstanceOf(InvalidConfigurationException::class.java)
+			.hasMessageContaining("has no mappings")
+		assertThatThrownBy { Configuration.parse("defaults:\n  mappingsFile: '$empty'\npipelines: []") }
+			.isInstanceOf(InvalidConfigurationException::class.java)
+			.hasMessageContaining("'mappingsFile' can't be set in 'defaults'")
+	}
+
+	@Test
+	fun rejectsInvalidMappingTables(){
+		mapOf(
+			"input: /in\n      entries: {a: b}" to "'output'",
+			"output: /out\n      entries: {a: b}" to "'input'",
+			"input: /in\n      output: /out" to "'entries'",
+			"input: /in\n      output: /out\n      entries: [a]" to "'entries'",
+			"input: /in\n      output: /out\n      entries: {a: b}\n      path: []" to "'path'",
+			"input: /in\n      output: /out\n      entries: {a: b}\n      paths: [{regex: a, replacement: b, mode: x}]" to "'mode'",
+			"input: /in\n      output: /out\n      entries: {a: b}\n      paths: [{regex: '(a', replacement: b}]" to "'(a'",
+			"input: /in\n      output: /out\n      entries: {a: b}\n      paths: [{regex: a}]" to "'replacement'",
+			"input: /in\n      output: /out\n      entries: {a: ''}" to "empty",
+			"input: /in\n      output: /out\n      entries: {'': b}" to "empty",
+			"input: /in\n      output: /out\n      entries: {/a: b}" to "'/a'",
+			"input: /in\n      output: /out\n      entries: {a: 'C:/b'}" to "'C:/b'",
+			"input: /in\n      output: /out\n      entries: {'C:b': b}" to "'C:b'",
+			"input: /in\n      output: /out\n      entries: {a/../b: b}" to "'a/../b'",
+			"input: /in\n      output: /out\n      entries: {a: ..}" to "'..'",
+			"input: /in\n      output: /out\n      entries: {a: 12}" to "'a'",
+			"input: /in\n      output: /out\n      entries: {a: b}\n      paths: [{regex: b, replacement: ../c}]" to "'../c'",
+		).forEach { (table, message) ->
+			assertThatThrownBy { Configuration.parse("pipelines:\n  - name: Chats\n    mappingTable:\n      $table") }
+				.describedAs(table)
+				.isInstanceOf(InvalidConfigurationException::class.java)
+				.hasMessageContaining("'mappingTable' of pipeline 'Chats'")
+				.hasMessageContaining(message)
+		}
+		assertThatThrownBy { Configuration.parse("pipelines:\n  - mappingTable: x") }
+			.isInstanceOf(InvalidConfigurationException::class.java)
+			.hasMessageContaining("pipeline '#1'")
+	}
+	
+	@Test
+	fun rejectsDuplicateMappingTableEntries(){
+		assertThatThrownBy { Configuration.parse("pipelines:\n  - mappingTable:\n      input: /in\n      output: /out\n      entries:\n        a: b\n        a: c") }
+			.isInstanceOf(InvalidConfigurationException::class.java)
+			.hasMessageContaining("Duplicate key 'a'")
+	}
+	
+	@Test
+	fun rejectsPipelineWithEmptyMappingTable(){
+		assertThatThrownBy { Configuration.parse("pipelines:\n  - mappingTable:\n      input: /in\n      output: /out\n      entries: {}") }
+			.isInstanceOf(InvalidConfigurationException::class.java)
+			.hasMessageContaining("has no mappings")
+	}
+
+	@Test
+	fun prependsDefaultStagesAndFolderActions(){
+		val pipelines = Configuration.parse("""
+			defaults:
+			  stages:
+			    - type: NameFilter
+			      excludes: ['.*\.db']
+			    - type: FolderPerYear
+			  folderActions:
+			    - type: DeleteChildren
+			      names: [Thumbs.db]
+			pipelines:
+			  - mappings: [{input: /a, output: /b}]
+			    stages:
+			      - type: RenameWithDate
+			    folderActions:
+			      - type: DeleteIfEmpty
+			  - mappings: [{input: /c, output: /d}]
+		""".trimIndent()).pipelines
+		
+		assertThat(pipelines[0].stages.map { it::class }).containsExactly(NameFilter::class, FolderPerYear::class, RenameWithDate::class)
+		assertThat((pipelines[0].stages[0] as NameFilter).excludes.map { it.pattern() }).containsExactly(""".*\.db""")
+		assertThat(pipelines[0].folderActions).containsExactly(DeleteChildren(listOf("Thumbs.db")), DeleteIfEmpty())
+		assertThat(pipelines[1].stages.map { it::class }).containsExactly(NameFilter::class, FolderPerYear::class)
+		assertThat(pipelines[1].folderActions).containsExactly(DeleteChildren(listOf("Thumbs.db")))
+	}
+	
+	@Test
+	fun mergesDefaultScanKeyByKey(){
+		val pipelines = Configuration.parse("""
+			defaults:
+			  scan:
+			    skipHidden: true
+			    maxDepth: 2
+			pipelines:
+			  - mappings: [{input: /a, output: /b}]
+			    scan:
+			      maxDepth: 5
+			      excludedFolders: [tmp]
+			  - mappings: [{input: /c, output: /d}]
+		""".trimIndent()).pipelines
+		
+		assertThat(pipelines[0].scan.skipHidden).isTrue()
+		assertThat(pipelines[0].scan.maxDepth).isEqualTo(5)
+		assertThat(pipelines[0].scan.excludedFolders.map { it.pattern() }).containsExactly("tmp")
+		assertThat(pipelines[1].scan).isEqualTo(ScanOptions(maxDepth = 2, skipHidden = true))
+	}
+	
+	@Test
+	fun usesDefaultValuesOnlyWhenPipelineDoesNotSetThem(){
+		val pipelines = Configuration.parse("""
+			defaults:
+			  operation: MOVE
+			  conflict: SKIP
+			  verify: CHECKSUM
+			  setFileCreationDate: true
+			  temp: /temp
+			pipelines:
+			  - mappings: [{input: /a, output: /b}]
+			  - mappings: [{input: /c, output: /d}]
+			    operation: COPY
+			    conflict: RENAME
+			    verify: SIZE
+			    setFileCreationDate: false
+			    temp: /other
+		""".trimIndent()).pipelines
+		
+		assertThat(pipelines[0].operation).isEqualTo(Operation.MOVE)
+		assertThat(pipelines[0].conflict).isEqualTo(ConflictStrategy.SKIP)
+		assertThat(pipelines[0].verify).isEqualTo(Verification.CHECKSUM)
+		assertThat(pipelines[0].setFileCreationDate).isTrue()
+		assertThat(pipelines[0].temp).isEqualTo(Path.of("/temp"))
+		assertThat(pipelines[1].operation).isEqualTo(Operation.COPY)
+		assertThat(pipelines[1].conflict).isEqualTo(ConflictStrategy.RENAME)
+		assertThat(pipelines[1].verify).isEqualTo(Verification.SIZE)
+		assertThat(pipelines[1].setFileCreationDate).isFalse()
+		assertThat(pipelines[1].temp).isEqualTo(Path.of("/other"))
+	}
+	
+	@Test
+	fun ignoresDefaultsWhenPipelineOptsOut(){
+		val pipelines = Configuration.parse("""
+			defaults:
+			  operation: MOVE
+			  stages:
+			    - type: FolderPerYear
+			pipelines:
+			  - mappings: [{input: /a, output: /b}]
+			    useDefaults: false
+			    stages:
+			      - type: RenameWithDate
+			  - mappings: [{input: /c, output: /d}]
+			    useDefaults: true
+		""".trimIndent()).pipelines
+		
+		assertThat(pipelines[0].operation).isEqualTo(Operation.NONE)
+		assertThat(pipelines[0].stages.map { it::class }).containsExactly(RenameWithDate::class)
+		assertThat(pipelines[1].operation).isEqualTo(Operation.MOVE)
+		assertThat(pipelines[1].stages.map { it::class }).containsExactly(FolderPerYear::class)
+	}
+	
+	@Test
+	fun rejectsPipelineOnlyKeysInDefaults(){
+		listOf("name: x", "enabled: false", "mappings: []", "mappingTable: {}", "useDefaults: false").forEach { entry ->
+			assertThatThrownBy { Configuration.parse("defaults:\n  $entry\npipelines: []") }
+				.describedAs(entry)
+				.isInstanceOf(InvalidConfigurationException::class.java)
+				.hasMessageContaining(entry.substringBefore(':'))
+		}
+	}
+	
+	@Test
+	fun rejectsUnknownPropertiesInDefaults(){
+		assertThatThrownBy { Configuration.parse("defaults:\n  operaton: MOVE\npipelines: []") }
+			.isInstanceOf(UnrecognizedPropertyException::class.java)
+			.hasMessageContaining("operaton")
+			.hasMessageContaining("defaults")
+		assertThatThrownBy { Configuration.parse("defaults:\n  stages:\n    - type: NameFilter\n      exclude: [a]\npipelines: []") }
+			.isInstanceOf(UnrecognizedPropertyException::class.java)
+	}
+	
+	@Test
+	fun rejectsUseDefaultsOutsidePipelines(){
+		assertThatThrownBy { Configuration.parse("useDefaults: false\npipelines: []") }
+			.isInstanceOf(UnrecognizedPropertyException::class.java)
+		assertThatThrownBy { Configuration.parse("pipelines:\n  - mappings: [{input: /a, output: /b}]\n    scan:\n      useDefaults: false") }
+			.isInstanceOf(UnrecognizedPropertyException::class.java)
+		assertThatThrownBy { Configuration.parse("pipelines:\n  - mappings: [{input: /a, output: /b}]\n    useDefaults: maybe") }
+			.isInstanceOf(InvalidConfigurationException::class.java)
+	}
+	
+	@Test
+	fun leavesConfigurationWithoutDefaultsUnchanged(){
+		val content = """
+			pipelines:
+			  - name: A
+			    mappings: [{input: /a, output: /b}]
+			    scan:
+			      skipHidden: true
+			    stages:
+			      - type: FolderPerYear
+			    operation: COPY
+		""".trimIndent()
+		
+		val pipeline = Configuration.parse(content).pipelines.single()
+		
+		assertThat(pipeline.copy(stages = emptyList())).isEqualTo(Pipeline(
+			name = "A",
+			mappings = listOf(Mapping(Path.of("/a"), Path.of("/b"))),
+			scan = ScanOptions(skipHidden = true),
+			operation = Operation.COPY,
+		))
+		assertThat(pipeline.stages.single()).isInstanceOf(FolderPerYear::class.java)
+	}
+
+	@Test
+	fun resolvesAliasedStage(){
+		val pipelines = Configuration.parse("""
+			pipelines:
+			  - mappings: [{input: /a, output: /b}]
+			    stages:
+			      - &rename
+			        type: RenameWithDate
+			        format: yyyy-MM-dd
+			  - mappings: [{input: /c, output: /d}]
+			    stages:
+			      - type: FolderPerYear
+			      - *rename
+		""".trimIndent()).pipelines
+		
+		assertThat((pipelines[0].stages.single() as RenameWithDate).format).isEqualTo("yyyy-MM-dd")
+		assertThat((pipelines[1].stages[1] as RenameWithDate).format).isEqualTo("yyyy-MM-dd")
+	}
+	
+	@Test
+	fun resolvesAliasedStageListDefinedInTemplates(){
+		val pipelines = Configuration.parse("""
+			templates:
+			  sortByYear: &sortByYear
+			    - type: FolderPerYear
+			    - type: RenameWithDate
+			  anything: [1, {free: form}]
+			pipelines:
+			  - mappings: [{input: /a, output: /b}]
+			    stages: *sortByYear
+			  - mappings: [{input: /c, output: /d}]
+			    stages: *sortByYear
+		""".trimIndent()).pipelines
+		
+		assertThat(pipelines).allSatisfy { assertThat(it.stages.map { stage -> stage::class }).containsExactly(FolderPerYear::class, RenameWithDate::class) }
+	}
+	
+	@Test
+	fun mergesAnchoredMappingIntoPipeline(){
+		val pipelines = Configuration.parse("""
+			templates:
+			  archive: &archive
+			    operation: COPY
+			    conflict: SKIP
+			    folderActions:
+			      - type: DeleteIfEmpty
+			pipelines:
+			  - <<: *archive
+			    mappings: [{input: /a, output: /b}]
+			  - <<: *archive
+			    mappings: [{input: /c, output: /d}]
+			    conflict: RENAME
+		""".trimIndent()).pipelines
+		
+		assertThat(pipelines.map { it.operation }).containsExactly(Operation.COPY, Operation.COPY)
+		assertThat(pipelines.map { it.conflict }).containsExactly(ConflictStrategy.SKIP, ConflictStrategy.RENAME)
+		assertThat(pipelines).allSatisfy { assertThat(it.folderActions).containsExactly(DeleteIfEmpty()) }
+	}
+	
+	@Test
+	fun ignoresTemplatesOnlyAtTopLevel(){
+		assertThat(Configuration.parse("templates: {a: b}\npipelines: []").pipelines).isEmpty()
+		assertThatThrownBy { Configuration.parse("pipelines:\n  - mappings: [{input: /a, output: /b}]\n    templates: {a: b}") }
+			.isInstanceOf(UnrecognizedPropertyException::class.java)
+	}
+	
+	@Test
+	fun keepsYamlScalarsAsText(){
+		val pipeline = Configuration.parse("""
+			pipelines:
+			  - name: no
+			    mappings: [{input: /a, output: /b}]
+			    stages:
+			      - type: NameFilter
+			        excludes: [on, 2023-05-12, 0755]
+		""".trimIndent()).pipelines.single()
+		
+		assertThat(pipeline.name).isEqualTo("no")
+		assertThat((pipeline.stages.single() as NameFilter).excludes.map { it.pattern() }).containsExactly("on", "2023-05-12", "0755")
+	}
+	
+	@Test
+	fun reportsLineOfInvalidValue(){
+		assertThatThrownBy {
+			Configuration.parse("""
+				pipelines:
+				  - mappings: [{input: /a, output: /b}]
+				    stages:
+				      - type: FolderPerYear
+				      - typo: x
+			""".trimIndent())
+		}.hasMessageContaining("line: 5").hasMessageContaining("pipelines")
+		assertThatThrownBy { Configuration.parse("pipelines:\n  - name: a\n  - mappings: [{input: /a, output: /b}]\n    depth: 2") }
+			.hasMessageContaining("line: 3")
+			.hasMessageContaining("depth")
+	}
+	
+	@Test
+	fun rejectsDuplicateKeys(){
+		assertThatThrownBy { Configuration.parse("pipelines: []\npipelines: []") }
+			.isInstanceOf(InvalidConfigurationException::class.java)
+			.hasMessageContaining("line 2")
+	}
+}
