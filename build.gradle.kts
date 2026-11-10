@@ -115,6 +115,7 @@ jib {
         }
     }
     container {
+        mainClass = providers.gradleProperty("className").get()
         jvmFlags = listOf("--enable-native-access=ALL-UNNAMED")
         creationTime.set("USE_CURRENT_TIMESTAMP")
         user = "1027:100"
