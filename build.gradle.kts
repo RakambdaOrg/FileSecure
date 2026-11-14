@@ -25,6 +25,7 @@ dependencies {
     implementation(libs.kotlinLogging)
 
     implementation(libs.clikt)
+    implementation(libs.mordant)
     implementation(libs.bundles.jackson)
 
     implementation(libs.pointLocation)
@@ -37,7 +38,6 @@ dependencies {
     implementation(libs.metadataExtractor)
 
     implementation(libs.jaffree)
-    implementation(libs.progressbar)
     implementation(libs.h2)
     implementation(libs.bundles.jna)
 
@@ -98,6 +98,7 @@ tasks {
 
 application {
     mainClass.set(providers.gradleProperty("className"))
+    applicationDefaultJvmArgs = listOf("--enable-native-access=ALL-UNNAMED")
 }
 
 jib {
