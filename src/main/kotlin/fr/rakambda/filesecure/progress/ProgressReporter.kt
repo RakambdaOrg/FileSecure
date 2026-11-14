@@ -105,13 +105,14 @@ class ConsoleProgressReporter(terminal: Terminal = stdoutTerminal()) : ProgressR
 	// Mordant doesn't serialize prints and bar redraws, done concurrently they leave duplicated bars behind
 	private val lock = Any()
 	private var closed = false
+	private val streams = listOf(TerminalStream(terminal, lock), TerminalStream(terminal, lock))
 	private val refresher: Timer
 
 	init{
 		// The animation stops itself once every task is finished, e.g. when all the files found so far are processed. This hidden task never finishes.
 		animation.addTask(countLayout, "", visible = false)
-		System.setOut(PrintStream(TerminalStream(terminal, lock), true))
-		System.setErr(PrintStream(TerminalStream(terminal, lock), true))
+		System.setOut(PrintStream(streams[0], true))
+		System.setErr(PrintStream(streams[1], true))
 		// Started last, it needs the hidden task and the lock
 		refresher = timer(daemon = true, period = REFRESH_PERIOD) { refresh(false) }
 	}
@@ -176,10 +177,10 @@ class ConsoleProgressReporter(terminal: Terminal = stdoutTerminal()) : ProgressR
 	override fun close(){
 		refresher.cancel()
 		refresh(true)
-		System.out.flush()
-		System.err.flush()
 		System.setOut(out)
 		System.setErr(err)
+		// Not closed: a thread that read System.out before it was restored can still print through them
+		streams.forEach(TerminalStream::drain)
 	}
 
 	private companion object{
@@ -214,5 +215,16 @@ private class TerminalStream(private val terminal: Terminal, private val lock: A
 		synchronized(lock) { terminal.rawPrint(String(buf, 0, end, Charset.defaultCharset())) }
 		reset()
 		writeBytes(rest)
+	}
+
+	/**
+	 * Prints everything left, an unfinished line included.
+	 */
+	@Synchronized
+	fun drain(){
+		if(count > 0 && buf[count - 1] != '\n'.code.toByte()){
+			write('\n'.code)
+		}
+		flush()
 	}
 }
