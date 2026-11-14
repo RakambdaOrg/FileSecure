@@ -5,13 +5,13 @@ slf4j-version = "2.0.20"
 log4j2-version = "2.26.1"
 kotlin-logging-version = "8.0.7"
 clikt-version = "5.1.0"
+mordant-version = "3.0.2"
 jackson-version = "2.23.0"
 metadata-extractor-version = "2.22.0"
 pointlocation6709-version = "5.0.1"
 timeshape-version = "2026b.29"
 protobuf-version = "4.36.2"
 jaffree-version = "2024.08.29"
-progressbar-version = "0.10.2"
 h2-version = "2.5.252"
 jna-version = "5.19.1"
 junitVersion = "6.1.3"
@@ -30,6 +30,7 @@ log4j2-slf4j = { group = "org.apache.logging.log4j", name = "log4j-slf4j2-impl" 
 log4j2-json = { group = "org.apache.logging.log4j", name = "log4j-layout-template-json" }
 kotlinLogging = { group = "io.github.oshai", name = "kotlin-logging-jvm", version.ref = "kotlin-logging-version" }
 clikt = { group = "com.github.ajalt.clikt", name = "clikt", version.ref = "clikt-version" }
+mordant = { group = "com.github.ajalt.mordant", name = "mordant", version.ref = "mordant-version" }
 jacksonBom = { group = "com.fasterxml.jackson", name = "jackson-bom", version.ref = "jackson-version" }
 jackson-core = { group = "com.fasterxml.jackson.core", name = "jackson-core" }
 jackson-annotations = { group = "com.fasterxml.jackson.core", name = "jackson-annotations" }
@@ -41,7 +42,6 @@ pointLocation = { group = "us.fatehi", name = "pointlocation6709", version.ref =
 timeshape = { group = "net.iakovlev", name = "timeshape", version.ref = "timeshape-version" }
 protobuf = { group = "com.google.protobuf", name = "protobuf-java", version.ref = "protobuf-version" }
 jaffree = { group = "com.github.kokorin.jaffree", name = "jaffree", version.ref = "jaffree-version" }
-progressbar = { group = "me.tongfei", name = "progressbar", version.ref = "progressbar-version" }
 h2 = { group = "com.h2database", name = "h2", version.ref = "h2-version" }
 jna = { group = "net.java.dev.jna", name = "jna", version.ref = "jna-version" }
 jna-platform = { group = "net.java.dev.jna", name = "jna-platform", version.ref = "jna-version" }

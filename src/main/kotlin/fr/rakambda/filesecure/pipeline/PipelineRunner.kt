@@ -116,6 +116,7 @@ class PipelineRunner(private val environment: RunEnvironment){
 						}
 					}
 					finally{
+						progress.scanDone()
 						files.close()
 					}
 				}

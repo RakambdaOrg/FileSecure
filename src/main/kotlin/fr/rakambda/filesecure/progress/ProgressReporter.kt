@@ -1,18 +1,29 @@
 package fr.rakambda.filesecure.progress
 
-import me.tongfei.progressbar.InteractiveConsoleProgressBarConsumer
-import me.tongfei.progressbar.ProgressBar
-import me.tongfei.progressbar.ProgressBarBuilder
-import java.io.FileDescriptor
-import java.io.FileOutputStream
+import com.github.ajalt.mordant.animation.progress.MultiProgressBarAnimation
+import com.github.ajalt.mordant.animation.progress.advance
+import com.github.ajalt.mordant.animation.progress.removeTask
+import com.github.ajalt.mordant.terminal.PrintRequest
+import com.github.ajalt.mordant.terminal.Terminal
+import com.github.ajalt.mordant.terminal.TerminalInterface
+import com.github.ajalt.mordant.widgets.progress.percentage
+import com.github.ajalt.mordant.widgets.progress.progressBar
+import com.github.ajalt.mordant.widgets.progress.progressBarContextLayout
+import com.github.ajalt.mordant.widgets.progress.text
+import com.github.ajalt.mordant.widgets.progress.timeRemaining
+import java.io.ByteArrayOutputStream
 import java.io.PrintStream
-import java.time.temporal.ChronoUnit
-import java.util.concurrent.ConcurrentLinkedQueue
-import java.util.concurrent.atomic.AtomicInteger
-import java.util.concurrent.atomic.AtomicLong
+import java.nio.charset.Charset
+import java.util.Timer
+import kotlin.concurrent.timer
 
 interface ProgressReporter : AutoCloseable{
 	fun fileFound()
+
+	/**
+	 * The scan of an input folder ended, [fileFound] starts the next one.
+	 */
+	fun scanDone()
 
 	fun fileProcessed()
 
@@ -50,6 +61,9 @@ object NoOpProgressReporter : ProgressReporter{
 	override fun fileFound(){
 	}
 
+	override fun scanDone(){
+	}
+
 	override fun fileProcessed(){
 	}
 
@@ -62,72 +76,143 @@ object NoOpProgressReporter : ProgressReporter{
 	override fun task(name: String): TaskProgress = NoOpTask
 }
 
+private const val TASK_NAME_LENGTH = 40
+
+private val countLayout = progressBarContextLayout<String> {
+	text { context }
+	progressBar()
+	text { total?.let { "$completed/$it" } ?: "$completed" }
+	timeRemaining()
+}
+private val taskLayout = progressBarContextLayout<String> {
+	text { "  ${context.take(TASK_NAME_LENGTH)}" }
+	progressBar()
+	percentage()
+	timeRemaining()
+}
+
 /**
- * Console progress bars: one for files, one for conversions, and one per running conversion, reused once their conversion ends.
+ * Console progress bars kept at the bottom of the terminal: the overall progress, one per category (scan, conversions) and one per running conversion.
+ * While open, the standard output and error are printed above the bars instead of over them.
  */
-class ConsoleProgressReporter : ProgressReporter{
-	private val filesFound = AtomicLong()
-	private val conversionsQueued = AtomicLong()
-	private val filesBar = ProgressBarBuilder()
-		.setTaskName("Files")
-		.setUnit(" files", 1)
-		.setInitialMax(0)
-		.hideEta()
-		.showSpeed()
-		.build()
-	private val conversionsBar = ProgressBarBuilder()
-		.setTaskName("Conversions")
-		.setInitialMax(0)
-		.build()
-	private val taskCounter = AtomicInteger()
-	private val idleTaskBars = ConcurrentLinkedQueue<ProgressBar>()
+class ConsoleProgressReporter(terminal: Terminal = stdoutTerminal()) : ProgressReporter{
+	private val out = System.out
+	private val err = System.err
+	private val animation = MultiProgressBarAnimation(terminal)
+	private val overall = animation.addTask(countLayout, "Overall", total = 0)
+	private val scan = animation.addTask(countLayout, "Scanning", total = 0)
+	private val conversions = animation.addTask(countLayout, "Conversions", total = 0, visible = false)
+	// Mordant doesn't serialize prints and bar redraws, done concurrently they leave duplicated bars behind
+	private val lock = Any()
+	private var closed = false
+	private val refresher: Timer
+
+	init{
+		// The animation stops itself once every task is finished, e.g. when all the files found so far are processed. This hidden task never finishes.
+		animation.addTask(countLayout, "", visible = false)
+		System.setOut(PrintStream(TerminalStream(terminal, lock), true))
+		System.setErr(PrintStream(TerminalStream(terminal, lock), true))
+		// Started last, it needs the hidden task and the lock
+		refresher = timer(daemon = true, period = REFRESH_PERIOD) { refresh(false) }
+	}
 
 	override fun fileFound(){
-		filesBar.maxHint(filesFound.incrementAndGet())
+		overall.update { total = (total ?: 0) + 1 }
+		// No total while scanning, how many files are left to find is unknown
+		scan.update {
+			completed += 1
+			total = null
+		}
+	}
+
+	override fun scanDone(){
+		scan.update { total = completed }
 	}
 
 	override fun fileProcessed(){
-		filesBar.step()
+		overall.advance()
 	}
 
 	override fun conversionQueued(){
-		conversionsBar.maxHint(conversionsQueued.incrementAndGet())
+		conversions.update {
+			visible = true
+			total = (total ?: 0) + 1
+		}
 	}
 
 	override fun conversionDone(){
-		conversionsBar.step()
+		conversions.advance()
 	}
 
 	override fun task(name: String): TaskProgress{
-		val bar = (idleTaskBars.poll() ?: createTaskBar()).resume()
-		bar.extraMessage = name
+		val task = animation.addTask(taskLayout, name)
 		return object : TaskProgress{
 			override fun setMax(max: Long){
-				bar.maxHint(max)
+				task.update { total = max }
 			}
 
 			override fun stepTo(value: Long){
-				bar.stepTo(value)
+				task.update { completed = value }
 			}
 
 			override fun close(){
-				idleTaskBars.offer(bar.setExtraMessage("").maxHint(-1).reset().pause())
+				animation.removeTask(task)
 			}
 		}
 	}
 
-	private fun createTaskBar(): ProgressBar = ProgressBarBuilder()
-		.setTaskName("Converter ${taskCounter.incrementAndGet()}")
-		.setUnit("s", 1000)
-		.setSpeedUnit(ChronoUnit.SECONDS)
-		.setConsumer(InteractiveConsoleProgressBarConsumer(PrintStream(FileOutputStream(FileDescriptor.err)), -1))
-		.clearDisplayOnFinish()
-		.build()
+	private fun refresh(last: Boolean) = synchronized(lock) {
+		// A refresh running while the reporter closes would draw the bars again
+		if(closed){
+			return
+		}
+		animation.refresh(last)
+		if(last){
+			animation.stop()
+			closed = true
+		}
+	}
 
 	override fun close(){
-		idleTaskBars.forEach(ProgressBar::close)
-		idleTaskBars.clear()
-		conversionsBar.close()
-		filesBar.close()
+		refresher.cancel()
+		refresh(true)
+		System.out.flush()
+		System.err.flush()
+		System.setOut(out)
+		System.setErr(err)
+	}
+
+	private companion object{
+		const val REFRESH_PERIOD = 100L
+	}
+}
+
+/**
+ * Terminal writing to the current standard output, even once [System.out] is replaced.
+ */
+private fun stdoutTerminal(): Terminal{
+	val out = System.out
+	return Terminal(terminalInterface = object : TerminalInterface by Terminal().terminalInterface{
+		override fun completePrintRequest(request: PrintRequest){
+			out.print(request.text)
+			if(request.trailingLinebreak){
+				out.println()
+			}
+			out.flush()
+		}
+	})
+}
+
+/**
+ * Prints complete lines through the terminal, which redraws its bars under them. An unfinished line is kept until its line break, bars can't be drawn after it.
+ */
+private class TerminalStream(private val terminal: Terminal, private val lock: Any) : ByteArrayOutputStream(){
+	@Synchronized
+	override fun flush(){
+		val end = (count - 1 downTo 0).firstOrNull { buf[it] == '\n'.code.toByte() }?.plus(1) ?: return
+		val rest = buf.copyOfRange(end, count)
+		synchronized(lock) { terminal.rawPrint(String(buf, 0, end, Charset.defaultCharset())) }
+		reset()
+		writeBytes(rest)
 	}
 }
