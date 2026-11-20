@@ -103,7 +103,7 @@ application {
 
 jib {
     from {
-        image = "eclipse-temurin:25.0.5_8-jre-alpine"
+        image = "azul/zulu-openjdk-alpine:26-jre-headless"
         platforms {
             platform {
                 os = "linux"
