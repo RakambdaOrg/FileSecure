@@ -103,7 +103,7 @@ application {
 
 jib {
     from {
-        image = "eclipse-temurin:25.0.5_8-jre-alpine"
+        image = "eclipse-temurin:25.0.5.1_2-jre-alpine"
         platforms {
             platform {
                 os = "linux"
