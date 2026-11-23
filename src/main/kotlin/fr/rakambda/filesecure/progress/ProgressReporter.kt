@@ -4,10 +4,11 @@ import com.github.ajalt.mordant.animation.progress.MultiProgressBarAnimation
 import com.github.ajalt.mordant.animation.progress.advance
 import com.github.ajalt.mordant.animation.progress.removeTask
 import com.github.ajalt.mordant.rendering.TextColors
-import com.github.ajalt.mordant.rendering.TextStyles
+import com.github.ajalt.mordant.rendering.TextStyle
 import com.github.ajalt.mordant.terminal.PrintRequest
 import com.github.ajalt.mordant.terminal.Terminal
 import com.github.ajalt.mordant.terminal.TerminalInterface
+import com.github.ajalt.mordant.widgets.progress.ProgressBarDefinition
 import com.github.ajalt.mordant.widgets.progress.percentage
 import com.github.ajalt.mordant.widgets.progress.progressBar
 import com.github.ajalt.mordant.widgets.progress.progressBarContextLayout
@@ -34,9 +35,9 @@ interface ProgressReporter : AutoCloseable{
 	fun conversionDone()
 
 	/**
-	 * Starts tracking a single task, closing it releases its display.
+	 * Starts tracking a single task, closing it releases its display. Tasks of the same [category] share a color.
 	 */
-	fun task(name: String): TaskProgress
+	fun task(name: String, category: String = ""): TaskProgress
 
 	override fun close(){
 	}
@@ -75,13 +76,16 @@ object NoOpProgressReporter : ProgressReporter{
 	override fun conversionDone(){
 	}
 
-	override fun task(name: String): TaskProgress = NoOpTask
+	override fun task(name: String, category: String): TaskProgress = NoOpTask
 }
 
 private const val TASK_NAME_LENGTH = 40
 
-// The bright tip of a bar, it has to stand out from both the completed and the remaining parts
-private val BAR_CURSOR = TextColors.brightYellow + TextStyles.bold
+// The tip of a bar is a blank cell, so it needs a background to be seen
+private val BAR_CURSOR = TextColors.brightYellow.bg
+
+// Colors of the task bars by category, without yellow (the tip) and gray (the remaining part)
+private val CATEGORY_COLORS = listOf(TextColors.brightCyan, TextColors.brightMagenta, TextColors.brightBlue, TextColors.brightRed, TextColors.cyan, TextColors.magenta)
 
 private val countLayout = progressBarContextLayout<String> {
 	text { context }
@@ -89,9 +93,9 @@ private val countLayout = progressBarContextLayout<String> {
 	text { total?.let { "$completed/$it" } ?: "$completed" }
 	timeRemaining()
 }
-private val taskLayout = progressBarContextLayout<String> {
+private fun taskLayout(color: TextStyle) = progressBarContextLayout<String> {
 	text { "  ${context.take(TASK_NAME_LENGTH)}" }
-	progressBar(separatorStyle = BAR_CURSOR)
+	progressBar(completeStyle = color, separatorStyle = BAR_CURSOR)
 	percentage()
 	timeRemaining()
 }
@@ -110,6 +114,7 @@ class ConsoleProgressReporter(terminal: Terminal = stdoutTerminal()) : ProgressR
 	// Mordant doesn't serialize prints and bar redraws, done concurrently they leave duplicated bars behind
 	private val lock = Any()
 	private var closed = false
+	private val taskLayouts = HashMap<String, ProgressBarDefinition<String>>()
 	private val streams = listOf(TerminalStream(terminal, lock), TerminalStream(terminal, lock))
 	private val refresher: Timer
 
@@ -150,8 +155,11 @@ class ConsoleProgressReporter(terminal: Terminal = stdoutTerminal()) : ProgressR
 		conversions.advance()
 	}
 
-	override fun task(name: String): TaskProgress{
-		val task = animation.addTask(taskLayout, name)
+	override fun task(name: String, category: String): TaskProgress{
+		val layout = synchronized(taskLayouts) {
+			taskLayouts.getOrPut(category) { taskLayout(CATEGORY_COLORS[taskLayouts.size % CATEGORY_COLORS.size]) }
+		}
+		val task = animation.addTask(layout, name)
 		return object : TaskProgress{
 			override fun setMax(max: Long){
 				task.update { total = max }
