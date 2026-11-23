@@ -3,6 +3,8 @@ package fr.rakambda.filesecure.progress
 import com.github.ajalt.mordant.animation.progress.MultiProgressBarAnimation
 import com.github.ajalt.mordant.animation.progress.advance
 import com.github.ajalt.mordant.animation.progress.removeTask
+import com.github.ajalt.mordant.rendering.TextColors
+import com.github.ajalt.mordant.rendering.TextStyles
 import com.github.ajalt.mordant.terminal.PrintRequest
 import com.github.ajalt.mordant.terminal.Terminal
 import com.github.ajalt.mordant.terminal.TerminalInterface
@@ -78,15 +80,18 @@ object NoOpProgressReporter : ProgressReporter{
 
 private const val TASK_NAME_LENGTH = 40
 
+// The bright tip of a bar, it has to stand out from both the completed and the remaining parts
+private val BAR_CURSOR = TextColors.brightYellow + TextStyles.bold
+
 private val countLayout = progressBarContextLayout<String> {
 	text { context }
-	progressBar()
+	progressBar(separatorStyle = BAR_CURSOR)
 	text { total?.let { "$completed/$it" } ?: "$completed" }
 	timeRemaining()
 }
 private val taskLayout = progressBarContextLayout<String> {
 	text { "  ${context.take(TASK_NAME_LENGTH)}" }
-	progressBar()
+	progressBar(separatorStyle = BAR_CURSOR)
 	percentage()
 	timeRemaining()
 }
