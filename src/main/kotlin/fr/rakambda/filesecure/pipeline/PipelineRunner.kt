@@ -264,7 +264,7 @@ class PipelineRunner(private val environment: RunEnvironment){
 				environment.conversionLock.withPermit {
 					environment.pauseGate.awaitResumed()
 					log.info { "Converting ${item.source} to $converted" }
-					progress.task(destination.fileName.toString()).use { converter.convert(it) }
+					progress.task(destination.fileName.toString(), conversion.processor::class.simpleName.orEmpty()).use { converter.convert(it) }
 				}
 				val size = withContext(Dispatchers.IO) { if(Files.exists(converted)) Files.size(converted) else -1 }
 				if(size <= 0){
